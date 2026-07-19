@@ -1,0 +1,2603 @@
+{
+  "schema_version": 1,
+  "description": "Consolidated opt-out classifier rules. Rule entries are deduplicated globally by exact pattern text plus flags.",
+  "sources_considered": [
+    "optout_classifier/classifier.py",
+    "optout_classifier/deterministic_rules.py",
+    "deterministic_rules.js",
+    "opt-out-workflow.json node 4 code step"
+  ],
+  "notes": [
+    "The active Python pipeline applies classifier.py rules first, then optout_classifier/deterministic_rules.py.",
+    "deterministic_rules.js overlaps with optout_classifier/deterministic_rules.py; duplicate exact pattern strings are omitted.",
+    "The Zapier workflow code-step rules are included under rules.zapier_code_step because some regex sources differ from the Python port.",
+    "Rules are placed in their first encountered group; later duplicate pattern+flags pairs are omitted."
+  ],
+  "detectors": {
+    "classifier": [
+      {
+        "name": "is_auto_driving",
+        "tag": "not_opt_out",
+        "source": "optout_classifier/classifier.py"
+      },
+      {
+        "name": "is_link",
+        "tag": "not_opt_out",
+        "source": "optout_classifier/classifier.py"
+      }
+    ],
+    "deterministic": [
+      {
+        "name": "is_hot_topic_brand_message + HOT_TOPIC_OPT_OUT_RE",
+        "tag": "opt_out",
+        "source": "optout_classifier/deterministic_rules.py"
+      },
+      {
+        "name": "is_hot_topic_brand_message + HOT_TOPIC_NOT_OPT_OUT_RE",
+        "tag": "not_opt_out",
+        "source": "optout_classifier/deterministic_rules.py"
+      },
+      {
+        "name": "is_emoji_only + contains_stop_emoji",
+        "tag": "opt_out",
+        "source": "optout_classifier/deterministic_rules.py"
+      },
+      {
+        "name": "detect_tapback",
+        "tag": "opt_out",
+        "source": "optout_classifier/deterministic_rules.py"
+      },
+      {
+        "name": "is_single_letter_only",
+        "tag": "not_opt_out",
+        "source": "optout_classifier/deterministic_rules.py"
+      },
+      {
+        "name": "is_number_only",
+        "tag": "not_opt_out",
+        "source": "optout_classifier/deterministic_rules.py"
+      }
+    ]
+  },
+  "rules": {
+    "classifier": {
+      "raw_hard_rules": [
+        {
+          "name": "stop_emoji",
+          "tag": "opt_out",
+          "pattern": "[🛑✋🙅🚫🔕]",
+          "source": "optout_classifier/classifier.py"
+        }
+      ],
+      "specific_request_rules": [
+        {
+          "name": "cancel_subscription",
+          "tag": "not_opt_out",
+          "pattern": "\\bcancel (?:my )?(?:subscription|sub|plan)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "cancel_order",
+          "tag": "not_opt_out",
+          "pattern": "\\bcancel (?:my )?order\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "order_status",
+          "tag": "not_opt_out",
+          "pattern": "\\b(?:where(?: is|'s)? my order|order status|track(?:ing)?(?: my)? order)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "refund_request",
+          "tag": "not_opt_out",
+          "pattern": "\\brefund\\b|\\breturn\\b|\\bexchange\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "shipping_request",
+          "tag": "not_opt_out",
+          "pattern": "\\bshipping\\b|\\bshipment\\b|\\bdelivery\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "account_request",
+          "tag": "not_opt_out",
+          "pattern": "\\b(?:update|change|reset|fix|review) (?:my )?(?:account|login|password|email|address)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "billing_request",
+          "tag": "not_opt_out",
+          "pattern": "\\bbilling\\b|\\binvoice\\b|\\bpayment\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "product_request",
+          "tag": "not_opt_out",
+          "pattern": "\\b(?:size|inventory|availability|color|colour)\\b",
+          "source": "optout_classifier/classifier.py"
+        }
+      ],
+      "hard_rules": [
+        {
+          "name": "keyword_done",
+          "tag": "opt_out",
+          "pattern": "^done$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "keyword_shut_up",
+          "tag": "opt_out",
+          "pattern": "(?:shut\\s+(?:the\\s+fuck\\s+)?up|shut\\s+yourself|\\b(?:stfu|stdu|gtfo)\\b)",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "opt_out",
+          "tag": "opt_out",
+          "pattern": "\\bopt out\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "unsubscribe",
+          "tag": "opt_out",
+          "pattern": "\\bunsubscribe\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "do_not_contact",
+          "tag": "opt_out",
+          "pattern": "\\b(?:do not|dont)\\s+(?:contact|text|message|email|call)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "stop_contacting",
+          "tag": "opt_out",
+          "pattern": "\\bstop\\s+(?:texting|text|messaging|message|emailing|email|calling|contacting|calling)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "remove_me_from_comms",
+          "tag": "opt_out",
+          "pattern": "\\bremove me from (?:texts?|text messages?|messages?|emails?|calls?|contact)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "take_me_off_list",
+          "tag": "opt_out",
+          "pattern": "\\btake me off (?:the )?(?:list|your list|this list)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "leave_me_alone",
+          "tag": "opt_out",
+          "pattern": "\\bleave me(?: the fuck)? alone\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "go_away",
+          "tag": "opt_out",
+          "pattern": "\\bgo away\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "wrong_number",
+          "tag": "opt_out",
+          "pattern": "\\bwrong (?:number|person)\\b|\\b(?:this is not|not) my number\\b|\\byou have the wrong number\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "number_no_longer_in_service",
+          "tag": "opt_out",
+          "pattern": "\\bthis phone(?: number)? is no longer in service\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "not_accepting_messages",
+          "tag": "opt_out",
+          "pattern": "\\bnot accepting (?:messages|texts?|emails?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "cannot_receive_messages",
+          "tag": "opt_out",
+          "pattern": "\\b(?:cannot|cant|can not|can't)\\s+receive (?:messages?|texts?|emails?|calls?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "do_not_call",
+          "tag": "opt_out",
+          "pattern": "\\bdo ?not call(?: list)?\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_dnc",
+          "tag": "opt_out",
+          "pattern": "^dnc$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_stop",
+          "tag": "opt_out",
+          "pattern": "^stop$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_quit",
+          "tag": "opt_out",
+          "pattern": "^quit$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_end",
+          "tag": "opt_out",
+          "pattern": "^end$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_remove",
+          "tag": "opt_out",
+          "pattern": "^remove$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_quiet",
+          "tag": "opt_out",
+          "pattern": "^quiet$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "exact_unsubscribe",
+          "tag": "opt_out",
+          "pattern": "^unsubscribe$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "delete_information",
+          "tag": "opt_out",
+          "pattern": "\\bdelete (?:my )?(?:information|info|data|account)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "pull_from_texts",
+          "tag": "opt_out",
+          "pattern": "\\bpull me from (?:text|texts|messages|group|thread)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "remove_from_ads",
+          "tag": "opt_out",
+          "pattern": "\\bremove me from ads\\b|\\bstop (?:advertising|ads?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "profanity",
+          "tag": "opt_out",
+          "pattern": "\\b(?:go )?fuck(?: off| you| yourself| yall)?\\b|\\bgtfo\\b|\\bstfu\\b",
+          "source": "optout_classifier/classifier.py"
+        }
+      ],
+      "non_opt_out_rules": [
+        {
+          "name": "notification_status_or_focus_mode",
+          "tag": "not_opt_out",
+          "pattern": "^i m not receiving notifications if this is urgent reply urgent to send a notification through with your original message(?: i m driving with focus turned on i ll see your message when i get where i m going)?$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "subscribe_confirmation_prompt",
+          "tag": "not_opt_out",
+          "pattern": "^send this text to subscribe to recurring automated personalized marketing alerts e g cart reminders from darc sport ref f jgm$",
+          "source": "optout_classifier/classifier.py"
+        }
+      ],
+      "tmt_rules": [
+        {
+          "name": "fewer_texts",
+          "tag": "tmt",
+          "pattern": "\\b(?:send )?fewer (?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "less_texts",
+          "tag": "tmt",
+          "pattern": "\\b(?:send )?less (?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "less_often",
+          "tag": "tmt",
+          "pattern": "\\b(?:text|message|contact|send) me less often\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "send_me_less",
+          "tag": "tmt",
+          "pattern": "\\bsend me less\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "reduce_texts",
+          "tag": "tmt",
+          "pattern": "\\breduce (?:the )?(?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "reduce_frequency",
+          "tag": "tmt",
+          "pattern": "\\breduce (?:the )?frequency\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "lower_frequency",
+          "tag": "tmt",
+          "pattern": "\\blower (?:the )?frequency\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "too_many_texts",
+          "tag": "tmt",
+          "pattern": "\\btoo many (?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "so_many_texts",
+          "tag": "tmt",
+          "pattern": "\\bso many (?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "not_as_many_messages",
+          "tag": "tmt",
+          "pattern": "\\bnot as many (?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "stop_texting_so_much",
+          "tag": "tmt",
+          "pattern": "\\bstop (?:texting|messaging|contacting) (?:me )?so much\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "stop_sending_so_many",
+          "tag": "tmt",
+          "pattern": "\\bstop sending (?:me )?so many (?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "slow_down_texts",
+          "tag": "tmt",
+          "pattern": "\\bslow down (?:on )?(?:the )?(?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "text_me_less",
+          "tag": "tmt",
+          "pattern": "\\b(?:text|message|contact) me less\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "message_less",
+          "tag": "tmt",
+          "pattern": "\\bsend (?:me )?(?:texts?|text messages?|messages?|msgs?) less\\b",
+          "source": "optout_classifier/classifier.py"
+        }
+      ],
+      "txt_rules": [
+        {
+          "name": "why_are_you_texting_me",
+          "tag": "txt",
+          "pattern": "\\bwhy (?:are|r) (?:you|u) (?:texting|messaging|msging) me\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_did_you_text_me",
+          "tag": "txt",
+          "pattern": "\\bwhy did (?:you|u) (?:text|message|msg) me\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_do_you_text_me",
+          "tag": "txt",
+          "pattern": "\\bwhy do (?:you|u) (?:text|message|msg) me\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_are_you_contacting_me",
+          "tag": "txt",
+          "pattern": "\\bwhy (?:are|r) (?:you|u) contacting me\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_did_you_contact_me",
+          "tag": "txt",
+          "pattern": "\\bwhy did (?:you|u) contact me\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_am_i_getting_texts",
+          "tag": "txt",
+          "pattern": "\\bwhy (?:am i|do i) (?:getting|get|receive|receiving) (?:these )?(?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_did_i_get_this_text",
+          "tag": "txt",
+          "pattern": "\\bwhy did i get (?:this|these) (?:text|texts|message|messages|msg|msgs)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_are_you_sending_messages",
+          "tag": "txt",
+          "pattern": "\\bwhy (?:are|r) (?:you|u) sending (?:me )?(?:texts?|text messages?|messages?|msgs?)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "why_do_you_keep_texting",
+          "tag": "txt",
+          "pattern": "\\bwhy do (?:you|u) keep (?:texting|messaging|contacting)(?: me)?\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "who_is_this",
+          "tag": "txt",
+          "pattern": "\\bwho (?:is|are) (?:this|you|u)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "how_did_you_get_my_number",
+          "tag": "txt",
+          "pattern": "\\bhow did (?:you|u) get my (?:number|phone number|contact)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "where_did_you_get_my_number",
+          "tag": "txt",
+          "pattern": "\\bwhere did (?:you|u) get my (?:number|phone number|contact)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "who_gave_you_my_number",
+          "tag": "txt",
+          "pattern": "\\bwho gave (?:you|u) my (?:number|phone number|contact)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "i_dont_know_you",
+          "tag": "txt",
+          "pattern": "\\bi (?:dont|do not) know (?:you|u)\\b",
+          "source": "optout_classifier/classifier.py"
+        }
+      ],
+      "fuzzy_rules": [
+        {
+          "name": "not_a_customer_anymore",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bnot a customer anymore\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "never_shop_here_again",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bnever shop here again\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "never_come_back",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bnever come back\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "done_with_you",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bdone with you\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "done_with_brand",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bdone with (?:this )?(?:brand|company|business|store|place)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "generic_done",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bdone\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "stop_lying",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bstop lying\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "quit_playing",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bquit playing\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "stop_wasting_my_time",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bstop wasting my time\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "tired_of",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\btired of (?:you|us|this|these|all this)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "sick_of",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bsick of (?:you|us|this|these|all this)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "dont_want_any",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\b(?:do not|dont) want any\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "dont_want_it",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\b(?:do not|dont) want it\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "no_longer_needed",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bno longer needed\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "no_longer_want_it",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bno longer want it\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "not_interested",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\b(?:im|i am|we are|were)?\\s*not interested\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "not_subscribing",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\bnot subscribing\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "dont_want_this_or_these",
+          "tag": "fuzzy_opt_out",
+          "pattern": "\\b(?:do not|dont) want (?:this|these|anything)\\b",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "finished",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^finished$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "pause",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^pause$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "shush",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^shush$",
+          "source": "optout_classifier/classifier.py"
+        },
+        {
+          "name": "bye",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^bye$",
+          "source": "optout_classifier/classifier.py"
+        }
+      ]
+    },
+    "deterministic": {
+      "not_opt_out": [
+        {
+          "name": "deterministic.not_opt_out.001",
+          "tag": "not_opt_out",
+          "pattern": "cancel (my )?(order|subscription|account)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.002",
+          "tag": "not_opt_out",
+          "pattern": "refund",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.003",
+          "tag": "not_opt_out",
+          "pattern": "where is my (order|package)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.004",
+          "tag": "not_opt_out",
+          "pattern": "(deliver|send me) my package",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.005",
+          "tag": "not_opt_out",
+          "pattern": "ship my order",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.006",
+          "tag": "not_opt_out",
+          "pattern": "coupon code",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.007",
+          "tag": "not_opt_out",
+          "pattern": "(code|discount) did not work",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.008",
+          "tag": "not_opt_out",
+          "pattern": "help",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.009",
+          "tag": "not_opt_out",
+          "pattern": "account|subscription",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.010",
+          "tag": "not_opt_out",
+          "pattern": "order updates",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.011",
+          "tag": "not_opt_out",
+          "pattern": "top",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.012",
+          "tag": "not_opt_out",
+          "pattern": "shop",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.013",
+          "tag": "not_opt_out",
+          "pattern": "start",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.014",
+          "tag": "not_opt_out",
+          "pattern": "subscribe",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.015",
+          "tag": "not_opt_out",
+          "pattern": "unstop",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.016",
+          "tag": "not_opt_out",
+          "pattern": "could you do me a huge favor please accept my invite so that i can get free gifts",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.017",
+          "tag": "not_opt_out",
+          "pattern": "claim 5 free shein products now click the link to help and let's both win big",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.018",
+          "tag": "not_opt_out",
+          "pattern": "check out my bet on fanduel sportsbook",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.019",
+          "tag": "not_opt_out",
+          "pattern": "10 shein freebies and a 50 allowance for the lucky just click and claim-so easy",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.020",
+          "tag": "not_opt_out",
+          "pattern": "i m",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.021",
+          "tag": "not_opt_out",
+          "pattern": "loved an image",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.022",
+          "tag": "not_opt_out",
+          "pattern": "save",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.023",
+          "tag": "not_opt_out",
+          "pattern": "take10",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.024",
+          "tag": "not_opt_out",
+          "pattern": "nice",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.025",
+          "tag": "not_opt_out",
+          "pattern": "michaels michaels",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.026",
+          "tag": "not_opt_out",
+          "pattern": "michaels",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.027",
+          "tag": "not_opt_out",
+          "pattern": "oh",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.028",
+          "tag": "not_opt_out",
+          "pattern": "lol",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.029",
+          "tag": "not_opt_out",
+          "pattern": "sri",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.030",
+          "tag": "not_opt_out",
+          "pattern": "fabulous",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.031",
+          "tag": "not_opt_out",
+          "pattern": "67",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.032",
+          "tag": "not_opt_out",
+          "pattern": "the",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.033",
+          "tag": "not_opt_out",
+          "pattern": "attn hey i need help with something",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.035",
+          "tag": "not_opt_out",
+          "pattern": "support",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.036",
+          "tag": "not_opt_out",
+          "pattern": "where is my order",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.037",
+          "tag": "not_opt_out",
+          "pattern": "where is my package",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.038",
+          "tag": "not_opt_out",
+          "pattern": "free shipping",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.039",
+          "tag": "not_opt_out",
+          "pattern": "cancel order",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.040",
+          "tag": "not_opt_out",
+          "pattern": "where s my order",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.041",
+          "tag": "not_opt_out",
+          "pattern": "too expensive",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.043",
+          "tag": "not_opt_out",
+          "pattern": "discount code",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.044",
+          "tag": "not_opt_out",
+          "pattern": "code",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.045",
+          "tag": "not_opt_out",
+          "pattern": "coupon",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.046",
+          "tag": "not_opt_out",
+          "pattern": "discount",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.047",
+          "tag": "not_opt_out",
+          "pattern": "code doesn t work",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.048",
+          "tag": "not_opt_out",
+          "pattern": "promo code",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.050",
+          "tag": "not_opt_out",
+          "pattern": "code not working",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.051",
+          "tag": "not_opt_out",
+          "pattern": "thank you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.052",
+          "tag": "not_opt_out",
+          "pattern": "thank you so much",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.053",
+          "tag": "not_opt_out",
+          "pattern": "thx",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.054",
+          "tag": "not_opt_out",
+          "pattern": "thanks",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.055",
+          "tag": "not_opt_out",
+          "pattern": "price",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.056",
+          "tag": "not_opt_out",
+          "pattern": "how much is it",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.057",
+          "tag": "not_opt_out",
+          "pattern": "how much",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.058",
+          "tag": "not_opt_out",
+          "pattern": "can i call you later",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.059",
+          "tag": "not_opt_out",
+          "pattern": "hi",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.060",
+          "tag": "not_opt_out",
+          "pattern": "hello",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.061",
+          "tag": "not_opt_out",
+          "pattern": "hey",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.062",
+          "tag": "not_opt_out",
+          "pattern": "yo",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.063",
+          "tag": "not_opt_out",
+          "pattern": "i m driving sent from my car",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.064",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my rogue",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.065",
+          "tag": "not_opt_out",
+          "pattern": "i'm driving with focus turned on i'll see your message when i get where i'm going",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.066",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my altima",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.067",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.068",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my rogue sport",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.069",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my sentra",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.070",
+          "tag": "not_opt_out",
+          "pattern": "i'm driving with do not disturb while driving turned on i'll see your message when i get where i'm going",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.071",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my kicks",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.072",
+          "tag": "not_opt_out",
+          "pattern": "estoy conduciendo sent from my car",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.073",
+          "tag": "not_opt_out",
+          "pattern": "i am driving sent from my altima",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.074",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my titan",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.075",
+          "tag": "not_opt_out",
+          "pattern": "i'm not receiving notifications if this is urgent reply \\\"urgent\\\" to send a notification through with your original message",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.076",
+          "tag": "not_opt_out",
+          "pattern": "thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks sent from text free",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.077",
+          "tag": "not_opt_out",
+          "pattern": "what s the code",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.078",
+          "tag": "not_opt_out",
+          "pattern": "welcome15",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.079",
+          "tag": "not_opt_out",
+          "pattern": "the code doesn t work",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.080",
+          "tag": "not_opt_out",
+          "pattern": "thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.081",
+          "tag": "not_opt_out",
+          "pattern": "thanks so much",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.082",
+          "tag": "not_opt_out",
+          "pattern": "thank u",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.083",
+          "tag": "not_opt_out",
+          "pattern": "test",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.084",
+          "tag": "not_opt_out",
+          "pattern": "liked \\\"no problem feel free to reach out anytime i m always here to help \\\"",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.085",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my car",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.086",
+          "tag": "not_opt_out",
+          "pattern": "driving can t text sent from my murano",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.087",
+          "tag": "not_opt_out",
+          "pattern": "customer service",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.088",
+          "tag": "not_opt_out",
+          "pattern": "coupons",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.089",
+          "tag": "not_opt_out",
+          "pattern": "call me asap",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.not_opt_out.090",
+          "tag": "not_opt_out",
+          "pattern": "any discount codes",
+          "source": "optout_classifier/deterministic_rules.py"
+        }
+      ],
+      "hard_opt_out": [
+        {
+          "name": "deterministic.hard_opt_out.001",
+          "tag": "opt_out",
+          "pattern": "(stop|don't|dont|do not) (texting|text|emailing|email|messaging|message)( me)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.002",
+          "tag": "opt_out",
+          "pattern": "stop (calling|contacting|messaging|emailing)( me)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.003",
+          "tag": "opt_out",
+          "pattern": "stop (texting|emailing|messaging) (me|me now|this number|this email)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.004",
+          "tag": "opt_out",
+          "pattern": "stop (sending|sending me) (texts|messages|emails|email)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.005",
+          "tag": "opt_out",
+          "pattern": "unsubscribe( me)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.006",
+          "tag": "opt_out",
+          "pattern": "unsubscribe (me|my number|my email)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.007",
+          "tag": "opt_out",
+          "pattern": "take me off( the list| your list| this list)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.008",
+          "tag": "opt_out",
+          "pattern": "no more (messages|texts|emails|calls|contact|communications?)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.009",
+          "tag": "opt_out",
+          "pattern": "(don't|dont|do not) (talk|speak|message|email|text) to me",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.010",
+          "tag": "opt_out",
+          "pattern": "(don't|dont|do not) contact( me)?(/?dnc)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.011",
+          "tag": "opt_out",
+          "pattern": "delete my information",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.012",
+          "tag": "opt_out",
+          "pattern": "remove my number",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.013",
+          "tag": "opt_out",
+          "pattern": "wrong number",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.014",
+          "tag": "opt_out",
+          "pattern": "this phone number is no longer in service",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.015",
+          "tag": "opt_out",
+          "pattern": "not accepting (messages|texts|emails)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.016",
+          "tag": "opt_out",
+          "pattern": "you have the wrong person",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.017",
+          "tag": "opt_out",
+          "pattern": "i (didn't|didnt) subscribe",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.018",
+          "tag": "opt_out",
+          "pattern": "this is a kosher talk only device and does not accept text messages",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.019",
+          "tag": "opt_out",
+          "pattern": "this phone can not receive sms/mms messages",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.020",
+          "tag": "opt_out",
+          "pattern": "(how can i|can you help me) unsubscribe",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.021",
+          "tag": "opt_out",
+          "pattern": "how can i stop receiving (texts|emails|messages)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.022",
+          "tag": "opt_out",
+          "pattern": "if you (don't|dont) do this right now, stop texting me",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.023",
+          "tag": "opt_out",
+          "pattern": "once i get my order, i'm going to block you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.024",
+          "tag": "opt_out",
+          "pattern": "don't text until you resolve my issue",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.025",
+          "tag": "opt_out",
+          "pattern": "i don't want to hear from you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.026",
+          "tag": "opt_out",
+          "pattern": "i don't want to be here",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.027",
+          "tag": "opt_out",
+          "pattern": "i'm tired of you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.028",
+          "tag": "opt_out",
+          "pattern": "i'm tired of y'all",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.029",
+          "tag": "opt_out",
+          "pattern": "i'm not trying to fucking be here",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.030",
+          "tag": "opt_out",
+          "pattern": "don't ask again",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.031",
+          "tag": "opt_out",
+          "pattern": "dont ask again",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.032",
+          "tag": "opt_out",
+          "pattern": "^\\s*(?:stop|end|done|remove|cancel|unsubscribe|opt(?:-| )?out|quit|revoke|drop|pause|unfollow|junk|block|rmv|cncl|unsub|unsbscrbe|inscribe me|oot out|qwit|rvke|edn|dne|st0p|sto0p|atop|stp|stip|wtop|dtop|sto|srop|syop|stoo|stops|sto0|stpp|stope|sop|please stop|off|delete|sybau)\\s*$",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.033",
+          "tag": "opt_out",
+          "pattern": "i'm blocking you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.034",
+          "tag": "opt_out",
+          "pattern": "i'm deleting you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.035",
+          "tag": "opt_out",
+          "pattern": "i'm removing your number",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.036",
+          "tag": "opt_out",
+          "pattern": "delete this account",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.037",
+          "tag": "opt_out",
+          "pattern": "fuck off",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.038",
+          "tag": "opt_out",
+          "pattern": "fuck you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.039",
+          "tag": "opt_out",
+          "pattern": "fu",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.040",
+          "tag": "opt_out",
+          "pattern": "fuck yourself",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.041",
+          "tag": "opt_out",
+          "pattern": "i'm reporting you to the bbb",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.042",
+          "tag": "opt_out",
+          "pattern": "i'm going to sue you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.043",
+          "tag": "opt_out",
+          "pattern": "gtfo",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.044",
+          "tag": "opt_out",
+          "pattern": "shut up",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.045",
+          "tag": "opt_out",
+          "pattern": "beat it",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.046",
+          "tag": "opt_out",
+          "pattern": "stfu",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.047",
+          "tag": "opt_out",
+          "pattern": "leave me alone",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.048",
+          "tag": "opt_out",
+          "pattern": "eat shit",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.049",
+          "tag": "opt_out",
+          "pattern": "fuck fashion nova",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.050",
+          "tag": "opt_out",
+          "pattern": "\\u{1F6D1}",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.051",
+          "tag": "opt_out",
+          "pattern": "\\u{270B}",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.052",
+          "tag": "opt_out",
+          "pattern": "\\u{1F595}",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.053",
+          "tag": "opt_out",
+          "pattern": "this phone does not accept text messages please call instead this is an automatic reply",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.hard_opt_out.054",
+          "tag": "opt_out",
+          "pattern": "this is an automatic message this is a kosher talk only device and does not accept text messages please call instead",
+          "source": "optout_classifier/deterministic_rules.py"
+        }
+      ],
+      "direct_expanded": [
+        {
+          "name": "deterministic.direct_expanded.001",
+          "tag": "opt_out",
+          "pattern": "leave me( the fuck)? alone",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.002",
+          "tag": "opt_out",
+          "pattern": "go away",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.003",
+          "tag": "opt_out",
+          "pattern": "stop (bothering|harassing|spamming) me",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.004",
+          "tag": "opt_out",
+          "pattern": "(don't|dont) bother me( anymore)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.005",
+          "tag": "opt_out",
+          "pattern": "stop the spam",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.006",
+          "tag": "opt_out",
+          "pattern": "stop with (the|these) (texts|messages)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.007",
+          "tag": "opt_out",
+          "pattern": "quit (texting me|contacting me)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.008",
+          "tag": "opt_out",
+          "pattern": "quit sending (messages|this text|texts|me texts)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.009",
+          "tag": "opt_out",
+          "pattern": "i (don't|dont) want (texts|text messages|messages)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.010",
+          "tag": "opt_out",
+          "pattern": "i (don't|dont) want to receive (messages|texts)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.011",
+          "tag": "opt_out",
+          "pattern": "i no longer want( to receive)? (messages|texts)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.012",
+          "tag": "opt_out",
+          "pattern": "i (don't|dont) want (this|these) anymore",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.013",
+          "tag": "opt_out",
+          "pattern": "i (don't|dont) want (anything from you|further communication)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.014",
+          "tag": "opt_out",
+          "pattern": "i never (opted in|signed up|subscribed)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.015",
+          "tag": "opt_out",
+          "pattern": "i (didn't|didnt) (opt in|sign up)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.016",
+          "tag": "opt_out",
+          "pattern": "i was not subscribed",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.017",
+          "tag": "opt_out",
+          "pattern": "(i'm|im) not subscribing",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.018",
+          "tag": "opt_out",
+          "pattern": "(not|no longer) interested stop?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.019",
+          "tag": "opt_out",
+          "pattern": "please remove",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.020",
+          "tag": "opt_out",
+          "pattern": "no thanks stop",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.021",
+          "tag": "fuzzy_opt_out",
+          "pattern": "we are not interested",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.022",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i'm|im|i am) not interested",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.023",
+          "tag": "opt_out",
+          "pattern": "no need to text me",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.024",
+          "tag": "opt_out",
+          "pattern": "you (don't|dont) have to text me",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.025",
+          "tag": "opt_out",
+          "pattern": "(don't|dont) send me emails or texts",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.028",
+          "tag": "opt_out",
+          "pattern": "unsubsidized me",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.029",
+          "tag": "opt_out",
+          "pattern": "(i )?only want updates on my order",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.direct_expanded.030",
+          "tag": "opt_out",
+          "pattern": "i (don't|dont) need (anything else|this)",
+          "source": "optout_classifier/deterministic_rules.py"
+        }
+      ],
+      "indirect": [
+        {
+          "name": "deterministic.indirect.001",
+          "tag": "opt_out",
+          "pattern": "block(ed)?( me)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.002",
+          "tag": "opt_out",
+          "pattern": "block (this|the) number",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.003",
+          "tag": "opt_out",
+          "pattern": "(i'm|im) blocking you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.004",
+          "tag": "opt_out",
+          "pattern": "i will block you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.005",
+          "tag": "opt_out",
+          "pattern": "(i'll|ill) block you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.006",
+          "tag": "opt_out",
+          "pattern": "report(ed)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.007",
+          "tag": "opt_out",
+          "pattern": "report(ed as)? spam",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.008",
+          "tag": "opt_out",
+          "pattern": "spam|scam(mer)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.009",
+          "tag": "opt_out",
+          "pattern": "harass(ment|ing)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.010",
+          "tag": "opt_out",
+          "pattern": "do(-| )?not(-| )?call( list)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.011",
+          "tag": "opt_out",
+          "pattern": "sue|lawsuit|legal action|attorney|lawyer|complaint",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.012",
+          "tag": "opt_out",
+          "pattern": "BBB",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.013",
+          "tag": "opt_out",
+          "pattern": "wrong (number|person)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.014",
+          "tag": "opt_out",
+          "pattern": "(not|this (isn't|isnt)) my number",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.015",
+          "tag": "opt_out",
+          "pattern": "you (have|got) the wrong number",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.016",
+          "tag": "opt_out",
+          "pattern": "who (is this|are you|are (y'all|yall))",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.017",
+          "tag": "opt_out",
+          "pattern": "i (don't|dont) know you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.018",
+          "tag": "opt_out",
+          "pattern": "trying to get in touch with",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.019",
+          "tag": "opt_out",
+          "pattern": "delete me as your contact",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.020",
+          "tag": "opt_out",
+          "pattern": "(i'm|im) done",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.021",
+          "tag": "opt_out",
+          "pattern": "finished|pause|shush|stfu",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.022",
+          "tag": "opt_out",
+          "pattern": "shut( the fuck)? up",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.023",
+          "tag": "opt_out",
+          "pattern": "fuck (off|you)",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.indirect.024",
+          "tag": "opt_out",
+          "pattern": "go fuck yourself",
+          "source": "optout_classifier/deterministic_rules.py"
+        }
+      ],
+      "fuzzy_opt_out": [
+        {
+          "name": "deterministic.fuzzy_opt_out.001",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i'm|im|i am) not a customer anymore",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.002",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i'll|ill) never shop here again",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.003",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i'll|ill) never come back",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.004",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i'm|im|i am) done with you",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.005",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i'm|im|i am) done with this brand",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.006",
+          "tag": "fuzzy_opt_out",
+          "pattern": "stop lying",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.007",
+          "tag": "fuzzy_opt_out",
+          "pattern": "quit playing",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.008",
+          "tag": "fuzzy_opt_out",
+          "pattern": "stop wasting my time",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.009",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i don't|i dont|i do not) want( any| it| these| this)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.010",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i don't|i dont|i do not) want it",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.011",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i don't|i dont|i do not) want any",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.012",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(i don't|i dont|i do not) want these",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.013",
+          "tag": "fuzzy_opt_out",
+          "pattern": "no longer needed",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.014",
+          "tag": "fuzzy_opt_out",
+          "pattern": "no longer want( it| this| these)?",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.015",
+          "tag": "fuzzy_opt_out",
+          "pattern": "not interested",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.017",
+          "tag": "fuzzy_opt_out",
+          "pattern": "i'm done",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.018",
+          "tag": "fuzzy_opt_out",
+          "pattern": "i don't want this brand",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.019",
+          "tag": "fuzzy_opt_out",
+          "pattern": "i don't want any more",
+          "source": "optout_classifier/deterministic_rules.py"
+        },
+        {
+          "name": "deterministic.fuzzy_opt_out.020",
+          "tag": "fuzzy_opt_out",
+          "pattern": "i don't want more",
+          "source": "optout_classifier/deterministic_rules.py"
+        }
+      ]
+    },
+    "zapier_code_step": {
+      "opt_out": [
+        {
+          "name": "stop_emoji",
+          "tag": "opt_out",
+          "pattern": "(?:\\u{1F6D1}|\\u{270B}\\u{FE0F}?[\\u{1F3FB}-\\u{1F3FF}]?|\\u{1F645}[\\u{1F3FB}-\\u{1F3FF}]?(?:\\u{200D}[\\u{2640}\\u{2642}]\\u{FE0F}?)?|\\u{1F6AB}|\\u{1F515})",
+          "flags": "u",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "keyword_done",
+          "tag": "opt_out",
+          "pattern": "^\\s*done[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "keyword_shut_up",
+          "tag": "opt_out",
+          "pattern": "(?:shut\\s+(?:the\\s+fuck\\s+)?up|shut\\s+yourself|\\b(?:stfu|stdu)\\b)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "kosher_talk_only_auto_reply",
+          "tag": "opt_out",
+          "pattern": "^this is an automatic message this is a kosher talk only device and does not accept text messages please call instead$",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "phone_does_not_accept_texts_auto_reply",
+          "tag": "opt_out",
+          "pattern": "^this phone does not accept text messages please call instead this is an automatic reply$",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "profanity",
+          "tag": "opt_out",
+          "pattern": "(?:go\\s+)?fuck\\s+(?:off |you |yall |yourself )",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_texting_emailing_messaging",
+          "tag": "opt_out",
+          "pattern": "(?:stop|dont|do not)\\s+(?:texting|text|emailing|email|messaging|message)(?:\\s+me)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_calling_contacting",
+          "tag": "opt_out",
+          "pattern": "stop\\s+(?:calling|contacting|messaging|emailing)(?:\\s+me)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "unsubscribe",
+          "tag": "opt_out",
+          "pattern": "unsubscribe(?:\\s+me)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "take_me_off_list",
+          "tag": "opt_out",
+          "pattern": "take\\s+me\\s+off(?:\\s+the\\s+list|\\s+your\\s+list|\\s+this\\s+list)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "no_more_communications",
+          "tag": "opt_out",
+          "pattern": "no\\s+more\\s+(?:messages?|texts?|emails?|calls?|contact|communications?)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "do_not_talk_to_me",
+          "tag": "opt_out",
+          "pattern": "(?:dont|do not)\\s+(?:(?:talk|speak|message|email|text)\\s+to\\s+me|text\\s+me)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "do_not_contact_me",
+          "tag": "opt_out",
+          "pattern": "(?:dont|do not)\\s+contact(?:\\s+me)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "delete_my_information",
+          "tag": "opt_out",
+          "pattern": "delete\\s+(?:(?:my\\s+)?(?:information|info)|me\\s+as\\s+your\\s+contact)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "remove_my_number",
+          "tag": "opt_out",
+          "pattern": "remove\\s+my\\s+number",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "wrong_number",
+          "tag": "opt_out",
+          "pattern": "(?:wrong\\s+(?:number|person)|(?:not|this\\s+(?:isnt|is not))\\s+my\\s+number|you\\s+(?:have|got)\\s+the\\s+wrong\\s+number)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "number_no_longer_in_service",
+          "tag": "opt_out",
+          "pattern": "this\\s+phone\\s+(?:number\\s+)?is\\s+no\\s+longer\\s+in\\s+service",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_accepting_messages",
+          "tag": "opt_out",
+          "pattern": "not\\s+accepting\\s+(?:messages|texts|emails)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "wrong_person",
+          "tag": "opt_out",
+          "pattern": "you\\s+have\\s+the\\s+wrong\\s+person",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "did_not_subscribe",
+          "tag": "opt_out",
+          "pattern": "didnt\\s+subscribe",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_subscribed",
+          "tag": "opt_out",
+          "pattern": "(?:was\\s+)?not\\s+subscribed",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_opted_in",
+          "tag": "opt_out",
+          "pattern": "(?:never|didnt)?\\s*(?:opted\\s+in|signed\\s+up|subscribed?)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "dont_want_communications",
+          "tag": "opt_out",
+          "pattern": "(?:dont|do not)\\s+want\\s+(?:texts?|text\\s+messages?|messages?|emails?|calls?|further\\s+communication|communication)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "no_longer_want_messages",
+          "tag": "opt_out",
+          "pattern": "no\\s+longer\\s+want(?:\\s+to\\s+receive)?\\s+(?:messages?|texts?|emails?|calls?)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "leave_me_alone",
+          "tag": "opt_out",
+          "pattern": "leave\\s+me(?:\\s+the\\s+fuck)?\\s+alone",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "go_away",
+          "tag": "opt_out",
+          "pattern": "go\\s+away",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_bothering_harassing_spamming",
+          "tag": "opt_out",
+          "pattern": "stop\\s+(?:bothering|harassing|spamming)\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "dont_bother_me",
+          "tag": "opt_out",
+          "pattern": "(?:dont|do not)\\s+bother\\s+me(?:\\s+anymore)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_spam",
+          "tag": "opt_out",
+          "pattern": "stop\\s+(?:the\\s+spam|with\\s+(?:the|these)\\s+(?:texts|messages))",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "quit_texting",
+          "tag": "opt_out",
+          "pattern": "quit\\s+(?:texting|contacting|sending)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "no_thanks_stop",
+          "tag": "opt_out",
+          "pattern": "no\\s+thanks\\s+stop",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "no_need_to_text_me",
+          "tag": "opt_out",
+          "pattern": "no\\s+need\\s+to\\s+text\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "blocking_or_reporting",
+          "tag": "opt_out",
+          "pattern": "^(?:block|report)(?:ed|ing)?(?:\\s+(?:(?:this|the|as|ed\\s+as)\\s*)?(?:number|spam))?$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "will_block_you",
+          "tag": "opt_out",
+          "pattern": "(?:will|ill)\\s+block\\s+you",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "blocking_you",
+          "tag": "opt_out",
+          "pattern": "im\\s+blocking\\s+you",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "reported_as_spam",
+          "tag": "opt_out",
+          "pattern": "report(?:ed\\s+as)?\\s+spam",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "harassment",
+          "tag": "opt_out",
+          "pattern": "harass(?:ment|ing)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "do_not_call",
+          "tag": "opt_out",
+          "pattern": "do\\s*not\\s*call(?:\\s+list)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_dnc",
+          "tag": "opt_out",
+          "pattern": "^\\s*dnc[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "legal_threat",
+          "tag": "opt_out",
+          "pattern": "(?:sue you|legal\\s+action|attorney|lawyer|complaint| bbb | better business bureau )",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_stop",
+          "tag": "opt_out",
+          "pattern": "^\\s*stop[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_quit",
+          "tag": "opt_out",
+          "pattern": "^\\s*quit[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_end",
+          "tag": "opt_out",
+          "pattern": "^\\s*end[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_remove",
+          "tag": "opt_out",
+          "pattern": "^\\s*remove[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_cancel",
+          "tag": "opt_out",
+          "pattern": "^\\s*cancel[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_quiet",
+          "tag": "opt_out",
+          "pattern": "^\\s*quiet[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_unsubscribe",
+          "tag": "opt_out",
+          "pattern": "^\\s*unsubscribe[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_opt_out",
+          "tag": "opt_out",
+          "pattern": "^\\s*opt\\s*-?\\s*out[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_rmv",
+          "tag": "opt_out",
+          "pattern": "^\\s*rmv[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_cncl",
+          "tag": "opt_out",
+          "pattern": "^\\s*cncl[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_unsub",
+          "tag": "opt_out",
+          "pattern": "^\\s*unsub[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_oot",
+          "tag": "opt_out",
+          "pattern": "^\\s*oot[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_stip",
+          "tag": "opt_out",
+          "pattern": "^\\s*stip[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_stp",
+          "tag": "opt_out",
+          "pattern": "^\\s*stp[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_stop_typo",
+          "tag": "opt_out",
+          "pattern": "^\\s*sto0?p[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_dtop",
+          "tag": "opt_out",
+          "pattern": "^\\s*dtop[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_wtop",
+          "tag": "opt_out",
+          "pattern": "^\\s*wtop[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_srop",
+          "tag": "opt_out",
+          "pattern": "^\\s*srop[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_syop",
+          "tag": "opt_out",
+          "pattern": "^\\s*syop[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_sybau",
+          "tag": "opt_out",
+          "pattern": "^\\s*sybau[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_spam",
+          "tag": "opt_out",
+          "pattern": "^\\s*spam[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_bbb",
+          "tag": "opt_out",
+          "pattern": "^\\s*bbb[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        }
+      ],
+      "hot_topic": [
+        {
+          "name": "hot_topic",
+          "tag": "opt_out",
+          "pattern": "^(?:never|4|four|(?:4|four)\\s+never|never\\s+(?:4|four))$",
+          "source": "opt-out-workflow.json node 4 code step"
+        }
+      ],
+      "txt": [
+        {
+          "name": "why_are_you_texting_me",
+          "tag": "txt",
+          "pattern": "why\\s+(?:are|r)\\s+(?:you|u)\\s+(?:texting|messaging|msging)\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_did_you_text_me",
+          "tag": "txt",
+          "pattern": "why\\s+did\\s+(?:you|u)\\s+(?:text|message|msg)\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_do_you_text_me",
+          "tag": "txt",
+          "pattern": "why\\s+do\\s+(?:you|u)\\s+(?:text|message|msg)\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_are_you_contacting_me",
+          "tag": "txt",
+          "pattern": "why\\s+(?:are|r)\\s+(?:you|u)\\s+contacting\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_did_you_contact_me",
+          "tag": "txt",
+          "pattern": "why\\s+did\\s+(?:you|u)\\s+contact\\s+me",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_am_i_getting_texts",
+          "tag": "txt",
+          "pattern": "why\\s+(?:am\\s+i|do\\s+i)\\s+(?:getting|get|receive|receiving)\\s+(?:these\\s+)?(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_did_i_get_this_text",
+          "tag": "txt",
+          "pattern": "why\\s+did\\s+i\\s+get\\s+(?:this|these)\\s+(?:text|texts|message|messages|msg|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_are_you_sending_messages",
+          "tag": "txt",
+          "pattern": "why\\s+(?:are|r)\\s+(?:you|u)\\s+sending\\s+(?:me\\s+)?(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "why_do_you_keep_texting",
+          "tag": "txt",
+          "pattern": "why\\s+do\\s+(?:you|u)\\s+keep\\s+(?:texting|messaging|contacting)(?:\\s+me)?",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "who_is_this",
+          "tag": "txt",
+          "pattern": "who\\s+(?:is|are)\\s+(?:this|you|u)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "how_did_you_get_my_number",
+          "tag": "txt",
+          "pattern": "how\\s+did\\s+(?:you|u)\\s+get\\s+my\\s+(?:number|phone\\s+number|contact)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "where_did_you_get_my_number",
+          "tag": "txt",
+          "pattern": "where\\s+did\\s+(?:you|u)\\s+get\\s+my\\s+(?:number|phone\\s+number|contact)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "who_gave_you_my_number",
+          "tag": "txt",
+          "pattern": "who\\s+gave\\s+(?:you|u)\\s+my\\s+(?:number|phone\\s+number|contact)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "i_dont_know_you",
+          "tag": "txt",
+          "pattern": "i\\s+(?:dont|do not)\\s+know\\s+(?:you|u)",
+          "source": "opt-out-workflow.json node 4 code step"
+        }
+      ],
+      "tmt": [
+        {
+          "name": "fewer_texts",
+          "tag": "tmt",
+          "pattern": "(?:send\\s+)?fewer\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "less_texts",
+          "tag": "tmt",
+          "pattern": "(?:send\\s+)?less\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "less_often",
+          "tag": "tmt",
+          "pattern": "(?:text|message|contact|send)\\s+me\\s+less\\s+often",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "reduce_texts",
+          "tag": "tmt",
+          "pattern": "reduce\\s+(?:the\\s+)?(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "reduce_frequency",
+          "tag": "tmt",
+          "pattern": "reduce\\s+(?:the\\s+)?frequency",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "lower_frequency",
+          "tag": "tmt",
+          "pattern": "lower\\s+(?:the\\s+)?frequency",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "too_many_texts",
+          "tag": "tmt",
+          "pattern": "too\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "so_many_texts",
+          "tag": "tmt",
+          "pattern": "so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_so_many_texts",
+          "tag": "tmt",
+          "pattern": "not\\s+so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "dont_text_so_much",
+          "tag": "tmt",
+          "pattern": "(?:dont|do not)\\s+(?:text|message|contact)\\s+(?:me\\s+)?so\\s+much",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_texting_so_much",
+          "tag": "tmt",
+          "pattern": "stop\\s+(?:texting|messaging|contacting)\\s+(?:me\\s+)?so\\s+much",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_sending_so_many",
+          "tag": "tmt",
+          "pattern": "stop\\s+sending\\s+(?:me\\s+)?so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "slow_down_texts",
+          "tag": "tmt",
+          "pattern": "slow\\s+down\\s+(?:on\\s+)?(?:the\\s+)?(?:texts|text\\s+messages|msgs|messages)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "text_less",
+          "tag": "tmt",
+          "pattern": "(?:text|message|contact)\\s+me\\s+less",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "message_less",
+          "tag": "tmt",
+          "pattern": "send\\s+(?:me\\s+)?(?:texts|text\\s+messages|messages|msgs)\\s+less",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_as_many_messages",
+          "tag": "tmt",
+          "pattern": "not\\s+as\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
+          "source": "opt-out-workflow.json node 4 code step"
+        }
+      ],
+      "fuzzy_opt_out": [
+        {
+          "name": "not_a_customer_anymore",
+          "tag": "fuzzy_opt_out",
+          "pattern": "not\\s+a\\s+customer\\s+anymore",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "never_shop_here_again",
+          "tag": "fuzzy_opt_out",
+          "pattern": "never\\s+shop\\s+here\\s+again",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "never_come_back",
+          "tag": "fuzzy_opt_out",
+          "pattern": "never\\s+come\\s+back",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "done_with_you",
+          "tag": "fuzzy_opt_out",
+          "pattern": "done\\s+with\\s+you",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "done_with_brand",
+          "tag": "fuzzy_opt_out",
+          "pattern": "done\\s+with\\s+(?:this\\s+)?(?:brand|company|business|store|place)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_lying",
+          "tag": "fuzzy_opt_out",
+          "pattern": "stop\\s+lying",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "quit_playing",
+          "tag": "fuzzy_opt_out",
+          "pattern": "quit\\s+playing",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "stop_wasting_my_time",
+          "tag": "fuzzy_opt_out",
+          "pattern": "stop\\s+wasting\\s+my\\s+time",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "dont_want_any",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(?:dont|do not)\\s+want\\s+any",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "dont_want_it",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(?:dont|do not)\\s+want\\s+it",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "no_longer_needed",
+          "tag": "fuzzy_opt_out",
+          "pattern": "no\\s+longer\\s+needed",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "no_longer_want_it",
+          "tag": "fuzzy_opt_out",
+          "pattern": "no\\s+longer\\s+want\\s+it",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_interested",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(?:im|i\\s+am|we\\s+are|were)?\\s*not\\s+interested",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "not_subscribing",
+          "tag": "fuzzy_opt_out",
+          "pattern": "not\\s+subscribing",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "dont_want_this_or_these",
+          "tag": "fuzzy_opt_out",
+          "pattern": "(?:dont|do not)\\s+want\\s+(?:this|these|anything)",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_finished",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^\\s*finished[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_pause",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^\\s*pause[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        },
+        {
+          "name": "exact_shush",
+          "tag": "fuzzy_opt_out",
+          "pattern": "^\\s*shush[.!?,;:]*\\s*$",
+          "flags": "i",
+          "source": "opt-out-workflow.json node 4 code step"
+        }
+      ]
+    }
+  },
+  "stats": {
+    "unique_rule_patterns": 411,
+    "detector_count": 8
+  }
+}

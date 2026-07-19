@@ -1,0 +1,3 @@
+node_modules/
+highlighter/src/logging/config.local.js
+.DS_Store

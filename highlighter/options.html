@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attentive Rule Highlighter Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero card">
+      <div>
+        <p class="eyebrow">Attentive Concierge</p>
+        <h1>Rule Highlighter</h1>
+        <p class="subtle">Highlight inbound messages using <code>consolidated_rules.json</code>. Hover a match to see the exact rule.</p>
+      </div>
+      <label class="switch-row">
+        <span>Enabled</span>
+        <input id="enabled" type="checkbox">
+      </label>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Targeting</h2>
+        <p class="subtle">Runs only on <code>https://ui.attentivemobile.com/concierge/*</code>.</p>
+        <label class="field">
+          <span>Message selector</span>
+          <textarea id="selector" rows="3" spellcheck="false"></textarea>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Display</h2>
+        <label class="switch-row inline">
+          <span>Rule tooltip on hover</span>
+          <input id="showTooltip" type="checkbox">
+        </label>
+        <label class="field">
+          <span>Highlight opacity</span>
+          <input id="opacity" type="range" min="0.08" max="0.85" step="0.01">
+          <output id="opacityValue"></output>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Categories</h2>
+          <p class="subtle">Each tag in the rules file can be enabled independently and assigned a color.</p>
+        </div>
+      </div>
+      <div id="categories" class="categories"></div>
+    </section>
+
+    <footer class="actions">
+      <button id="reset" type="button" class="secondary">Reset defaults</button>
+      <button id="save" type="button" class="primary">Save changes</button>
+      <span id="status" role="status"></span>
+    </footer>
+  </main>
+  <script src="settings.js"></script>
+  <script src="settings-ui.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

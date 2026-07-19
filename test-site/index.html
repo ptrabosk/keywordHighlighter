@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rule Highlighter QA Site</title>
+  <link rel="stylesheet" href="../highlighter/content.css">
+  <link rel="stylesheet" href="test-site.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">VSCode Live Server QA</p>
+        <h1>Rule Highlighter Test Site</h1>
+        <p class="muted">Select one or more conversations, inspect real highlighted DOM output, and mark scenarios as manually verified.</p>
+      </div>
+      <div class="origin-pill" id="originPill">Checking extension...</div>
+    </header>
+
+    <section class="toolbar" aria-label="Conversation controls">
+      <button id="selectAll" type="button">Select all</button>
+      <button id="clearSelection" type="button" class="secondary">Clear</button>
+      <label>
+        <span>Category</span>
+        <select id="categoryFilter"></select>
+      </label>
+      <label>
+        <span>Status</span>
+        <select id="statusFilter">
+          <option value="all">All statuses</option>
+          <option value="pass">Passing</option>
+          <option value="fail">Failing</option>
+          <option value="manual">Manually checked</option>
+          <option value="unchecked">Not manually checked</option>
+        </select>
+      </label>
+      <button id="addDynamicMessage" type="button" class="primary">Add dynamic inbound</button>
+    </section>
+
+    <section class="layout">
+      <aside class="sidebar" aria-label="Conversation list">
+        <div class="sidebar-head">
+          <h2>Conversations</h2>
+          <span id="conversationCount">0 loaded</span>
+        </div>
+        <div id="conversationList" class="conversation-list"></div>
+      </aside>
+
+      <section class="workspace" aria-label="Selected conversations">
+        <section class="qa-panel" aria-label="Automated QA results">
+          <div class="metric">
+            <span id="expectedFound">0</span>
+            <strong>Expected found</strong>
+          </div>
+          <div class="metric">
+            <span id="missingExpected">0</span>
+            <strong>Missing</strong>
+          </div>
+          <div class="metric">
+            <span id="unexpectedHighlights">0</span>
+            <strong>Unexpected</strong>
+          </div>
+          <div class="metric">
+            <span id="highlightedInbound">0</span>
+            <strong>Inbound highlighted</strong>
+          </div>
+          <div class="metric">
+            <span id="loadedRules">0</span>
+            <strong>Loaded rules</strong>
+          </div>
+          <div class="metric">
+            <span id="activeRules">0</span>
+            <strong>Active rules</strong>
+          </div>
+        </section>
+
+        <div id="issueList" class="issue-list" aria-live="polite"></div>
+        <div id="conversationDeck" class="conversation-deck"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="test-site.js"></script>
+</body>
+</html>

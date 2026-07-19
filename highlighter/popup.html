@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attentive Rule Highlighter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <p class="eyebrow">Attentive Concierge</p>
+      <h1>Custom Keywords</h1>
+      <p class="subtle">Add words or phrases to highlight alongside the project rules.</p>
+
+      <form id="keywordForm" class="keyword-form">
+        <label class="field" for="keywordInput">
+          <span>Keyword or phrase</span>
+          <input id="keywordInput" type="text" autocomplete="off" spellcheck="false" placeholder="VIP customer">
+        </label>
+        <button id="addKeyword" type="submit" class="primary">Add keyword</button>
+      </form>
+
+      <div id="keywords" class="keywords" aria-live="polite"></div>
+    </section>
+
+    <footer class="actions">
+      <span id="status" role="status"></span>
+    </footer>
+  </main>
+  <script src="settings.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
