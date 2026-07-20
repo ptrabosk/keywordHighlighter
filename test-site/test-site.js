@@ -21,6 +21,7 @@ const els = {
   categoryFilter: document.querySelector('#categoryFilter'),
   statusFilter: document.querySelector('#statusFilter'),
   addDynamicMessage: document.querySelector('#addDynamicMessage'),
+  copySummary: document.querySelector('#copySummary'),
   conversationCount: document.querySelector('#conversationCount'),
   conversationList: document.querySelector('#conversationList'),
   conversationDeck: document.querySelector('#conversationDeck'),
@@ -75,6 +76,8 @@ function bindControls() {
     render();
     scheduleQaRefresh();
   });
+
+  els.copySummary.addEventListener('click', copyQaSummary);
 }
 
 function seedSelection() {
@@ -290,7 +293,11 @@ function renderIssues(summary) {
   if (summary.extensionError) {
     fragment.appendChild(renderIssue(`Extension initialization failed: ${summary.extensionError}`, 'info'));
   } else if (!summary.extensionStats) {
-    fragment.appendChild(renderIssue('The test site is open, but no extension stats were found. Reload the unpacked extension, then refresh this page.', 'info'));
+    fragment.appendChild(renderIssue('Extension inactive: no content-script stats were found. Load the unpacked extension, then refresh this page.', 'info'));
+  }
+
+  if (summary.missing.some((issue) => issue.tag === 'custom_keywords')) {
+    fragment.appendChild(renderIssue(`Missing custom keyword: add "${CUSTOM_KEYWORD}" in the extension popup, then refresh diagnostics.`, 'info'));
   }
 
   for (const issue of summary.missing.slice(0, 8)) {
@@ -307,6 +314,42 @@ function renderIssues(summary) {
   }
 
   els.issueList.appendChild(fragment);
+}
+
+async function copyQaSummary() {
+  const summary = state.lastSummary || analyzeVisibleOutput(getSelectedConversations());
+  const lines = [
+    'Rule Highlighter QA Summary',
+    `Extension: ${summary.extensionStats ? 'active' : 'inactive'}`,
+    `Expected found: ${summary.expectedFound}`,
+    `Missing: ${summary.missing.length}`,
+    `Unexpected: ${summary.unexpected.length}`,
+    `Highlighted inbound: ${summary.highlightedInbound}`,
+    `Loaded rules: ${summary.extensionStats?.loadedRules ?? 'n/a'}`,
+    `Active rules: ${summary.extensionStats?.activeRules ?? 'n/a'}`
+  ];
+  if (summary.missing.length) {
+    lines.push('', 'Missing expectations:');
+    summary.missing.slice(0, 12).forEach((issue) => {
+      lines.push(`- ${issue.tag} in ${issue.conversationTitle}: "${issue.contains}"`);
+    });
+  }
+  if (summary.unexpected.length) {
+    lines.push('', 'Unexpected highlights:');
+    summary.unexpected.slice(0, 12).forEach((issue) => {
+      lines.push(`- ${issue.tag} in ${issue.conversationId}: "${issue.text}"`);
+    });
+  }
+
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'));
+    els.copySummary.textContent = 'Copied';
+  } catch (_error) {
+    els.copySummary.textContent = 'Copy failed';
+  }
+  window.setTimeout(() => {
+    els.copySummary.textContent = 'Copy QA summary';
+  }, 1800);
 }
 
 function renderIssue(text, kind = 'error') {

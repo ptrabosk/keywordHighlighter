@@ -11,6 +11,17 @@
     return;
   }
 
+  if (!globalThis.AMH_HIGHLIGHT_CORE) {
+    const message = 'highlight core did not load before content.js. Reload the unpacked extension and refresh the page.';
+    document.documentElement.dataset.amhInitError = message;
+    console.error('[Attentive Rule Highlighter] Failed to initialize:', new Error(message));
+    return;
+  }
+
+  const core = globalThis.AMH_HIGHLIGHT_CORE;
+  const RENDER_LOG_INTERVAL_MS = 5 * 60 * 1000;
+  const ESCALATION_HIGHLIGHT_COLOR = '#B9C7FA';
+
   const state = {
     rules: [],
     settings: DEFAULT_SETTINGS,
@@ -18,6 +29,7 @@
     renderTimer: null,
     tooltip: null,
     targetSnapshots: new WeakMap(),
+    escalationTargetSnapshots: new WeakMap(),
     stats: {
       loadedRules: 0,
       activeRules: 0,
@@ -25,7 +37,8 @@
       highlightedElements: 0,
       highlights: 0,
       lastRunAt: null
-    }
+    },
+    lastRenderLogAt: 0
   };
 
   function pageHost() {
@@ -68,7 +81,7 @@
 
   async function init() {
     const startedAt = performance.now();
-    state.settings = mergeSettings(DEFAULT_SETTINGS, await loadSettings());
+    state.settings = core.mergeSettings(DEFAULT_SETTINGS, await loadSettings());
     state.rules = await loadRules();
     state.stats.loadedRules = state.rules.length;
     installTooltipHandlers();
@@ -115,13 +128,10 @@
       throw new Error(`Rules fetch failed for ${url}: ${response.status}. Reload the unpacked extension after manifest changes.`);
     }
     const payload = await response.json();
-    const flattened = [];
-    flattenRules(payload.rules, [], flattened);
-    const rules = flattened.map((rule, index) => ({
-      ...rule,
-      id: `${rule.tag}:${rule.name || 'rule'}:${index}`,
-      regex: compileRegex(rule)
-    }));
+    const rules = core.buildRules(payload.rules);
+    for (const rule of rules.filter((item) => !item.regex)) {
+      console.warn('[Attentive Rule Highlighter] Invalid regex skipped:', rule);
+    }
     logOperationalEvent({
       eventType: 'rules_loaded',
       severity: 'info',
@@ -129,66 +139,6 @@
       ruleSource: 'consolidated_rules'
     });
     return rules;
-  }
-
-  function flattenRules(value, path, output) {
-    if (Array.isArray(value)) {
-      value.forEach((item, index) => flattenRules(item, path.concat(index), output));
-      return;
-    }
-    if (!value || typeof value !== 'object') return;
-    if (typeof value.pattern === 'string' && typeof value.tag === 'string') {
-      output.push({
-        name: value.name || 'unnamed_rule',
-        tag: value.tag,
-        pattern: value.pattern,
-        flags: value.flags || '',
-        source: value.source || '',
-        groupPath: path.filter((part) => typeof part === 'string').join('.')
-      });
-      return;
-    }
-    for (const [key, nested] of Object.entries(value)) {
-      flattenRules(nested, path.concat(key), output);
-    }
-  }
-
-  function compileRegex(rule) {
-    try {
-      const suppliedFlags = rule.flags || 'i';
-      const flags = uniqueRegexFlags(`${suppliedFlags}g`);
-      return new RegExp(rule.pattern, flags);
-    } catch (error) {
-      console.warn('[Attentive Rule Highlighter] Invalid regex skipped:', rule, error);
-      return null;
-    }
-  }
-
-  function uniqueRegexFlags(flags) {
-    return Array.from(new Set(flags.split(''))).filter((flag) => 'dgimsuvy'.includes(flag)).join('');
-  }
-
-  function mergeSettings(base, override) {
-    const merged = { ...base, ...override, categories: {} };
-    const categoryKeys = new Set([
-      ...Object.keys(base.categories || {}),
-      ...Object.keys((override && override.categories) || {})
-    ]);
-    for (const key of categoryKeys) {
-      merged.categories[key] = {
-        ...(base.categories && base.categories[key] ? base.categories[key] : {}),
-        ...(override && override.categories && override.categories[key] ? override.categories[key] : {})
-      };
-    }
-    if (base.categories?.custom_keywords && merged.categories.custom_keywords) {
-      merged.categories.custom_keywords.color = base.categories.custom_keywords.color;
-    }
-    merged.opacity = clamp(Number(merged.opacity ?? base.opacity), 0.08, 0.85);
-    merged.selector = String(merged.selector || base.selector);
-    merged.customKeywords = Array.isArray(override?.customKeywords)
-      ? Array.from(new Set(override.customKeywords.map(normalizeKeyword).filter(Boolean)))
-      : [...(base.customKeywords || [])];
-    return merged;
   }
 
   function installMutationObserver() {
@@ -209,8 +159,9 @@
         return false;
       }
       if (message.type === 'AMH_REFRESH') {
-        state.settings = mergeSettings(DEFAULT_SETTINGS, message.settings || state.settings);
+        state.settings = core.mergeSettings(DEFAULT_SETTINGS, message.settings || state.settings);
         state.targetSnapshots = new WeakMap();
+        state.escalationTargetSnapshots = new WeakMap();
         renderNow(true);
         sendResponse({ stats: state.stats });
         return false;
@@ -220,8 +171,9 @@
 
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName !== 'sync' || !changes[SETTINGS_KEY]) return;
-      state.settings = mergeSettings(DEFAULT_SETTINGS, changes[SETTINGS_KEY].newValue || {});
+      state.settings = core.mergeSettings(DEFAULT_SETTINGS, changes[SETTINGS_KEY].newValue || {});
       state.targetSnapshots = new WeakMap();
+      state.escalationTargetSnapshots = new WeakMap();
       logOperationalEvent({
         eventType: 'settings_saved',
         severity: 'info',
@@ -246,76 +198,56 @@
     window.clearTimeout(state.renderTimer);
     state.renderTimer = null;
 
-    const activeRules = getActiveRules();
-    state.stats.activeRules = activeRules.length;
-    state.stats.invalidRules = state.rules.filter((rule) => !rule.regex).length;
-    state.stats.highlightedElements = 0;
-    state.stats.highlights = 0;
-    state.stats.lastRunAt = new Date().toISOString();
+    try {
+      const activeRules = core.getActiveRules(state.rules, state.settings);
+      state.stats.activeRules = activeRules.length;
+      state.stats.invalidRules = state.rules.filter((rule) => !rule.regex).length;
+      state.stats.highlightedElements = 0;
+      state.stats.highlights = 0;
+      state.stats.lastRunAt = new Date().toISOString();
 
-    if (!state.settings.enabled || !activeRules.length) {
-      persistStats();
-      logOperationalEvent({
-        eventType: 'render_completed',
-        severity: 'info',
-        result: 'success',
-        durationMs: performance.now() - startedAt,
-        ruleSource: 'consolidated_rules',
-        metadata: {
-          operation: 'render',
-          trigger: forceAll ? 'force' : 'scheduled'
+      if (state.settings.enabled) {
+        if (activeRules.length) {
+          const targets = getTargetElements();
+          for (const target of targets) {
+            const snapshot = target.textContent || '';
+            const cached = state.targetSnapshots.get(target);
+            if (!forceAll && cached === snapshot) continue;
+            clearHighlightsWithin(target);
+            highlightTarget(target, activeRules);
+            state.targetSnapshots.set(target, target.textContent || '');
+            state.stats.highlightedElements += 1;
+          }
         }
+
+        const escalationTargets = getEscalationBulletElements();
+        for (const target of escalationTargets) {
+          const snapshot = target.textContent || '';
+          const cached = state.escalationTargetSnapshots.get(target);
+          if (!forceAll && cached === snapshot) continue;
+          clearHighlightsWithin(target);
+          highlightEscalationTarget(target);
+          state.escalationTargetSnapshots.set(target, target.textContent || '');
+          state.stats.highlightedElements += 1;
+        }
+      }
+
+      persistStats();
+      maybeLogRenderCompleted({
+        durationMs: performance.now() - startedAt,
+        forceAll,
+        changedElements: state.stats.highlightedElements,
+        highlights: state.stats.highlights
       });
-      return;
-    }
-
-    const targets = getTargetElements();
-    for (const target of targets) {
-      const snapshot = target.textContent || '';
-      const cached = state.targetSnapshots.get(target);
-      if (!forceAll && cached === snapshot) continue;
-      clearHighlightsWithin(target);
-      highlightTarget(target, activeRules);
-      state.targetSnapshots.set(target, target.textContent || '');
-      state.stats.highlightedElements += 1;
-    }
-
-    persistStats();
-    logOperationalEvent({
-      eventType: 'render_completed',
-      severity: 'info',
-      result: 'success',
-      durationMs: performance.now() - startedAt,
-      ruleSource: 'consolidated_rules',
-      metadata: {
+    } catch (error) {
+      state.targetSnapshots = new WeakMap();
+      persistStats();
+      logOperationalFailure('render_failed', 'RENDER_FAILED', error?.message || 'Render failed', {
         operation: 'render',
         trigger: forceAll ? 'force' : 'scheduled'
-      }
-    });
-  }
-
-  function getActiveRules() {
-    const configuredRules = state.rules
-      .filter((rule) => {
-        const category = state.settings.categories[rule.tag];
-        return rule.regex && category && category.enabled !== false;
-      })
-      .sort((a, b) => (state.settings.categories[a.tag]?.priority ?? 999) - (state.settings.categories[b.tag]?.priority ?? 999));
-    return [...getCustomKeywordRules(), ...configuredRules];
-  }
-
-  function getCustomKeywordRules() {
-    const category = state.settings.categories.custom_keywords;
-    if (!category || category.enabled === false) return [];
-    return (state.settings.customKeywords || []).map((keyword, index) => ({
-      id: `custom_keywords:${index}`,
-      name: 'custom_keyword',
-      tag: 'custom_keywords',
-      pattern: escapeRegex(keyword),
-      source: 'popup custom keyword',
-      groupPath: 'customKeywords',
-      regex: new RegExp(escapeRegex(keyword), 'gi')
-    }));
+      });
+      console.warn('[Attentive Rule Highlighter] Render failed and will retry on the next DOM update:', error);
+    }
   }
 
   function getTargetElements() {
@@ -330,6 +262,27 @@
     return nodes.filter((node) => node instanceof HTMLElement && node.closest('div[class*="type-INBOUND"]') && !node.closest('.amh-tooltip') && isVisible(node));
   }
 
+  function getEscalationBulletElements() {
+    const headings = Array.from(document.querySelectorAll('p[class*="variant-caption"]')).filter((node) => {
+      return node instanceof HTMLElement && isEscalationHeading(node.textContent || '');
+    });
+    const targets = new Set();
+    for (const heading of headings) {
+      const section = heading.parentElement?.parentElement;
+      if (!section) continue;
+      for (const child of Array.from(section.children)) {
+        if (child instanceof HTMLElement && child !== heading && child.matches('p[class*="variant-caption"]') && isVisible(child)) {
+          targets.add(child);
+        }
+      }
+    }
+    return Array.from(targets);
+  }
+
+  function isEscalationHeading(text) {
+    return /\bESCALATE\b/i.test(String(text || ''));
+  }
+
   function isVisible(element) {
     const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);
@@ -342,7 +295,7 @@
         if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
-        if (parent.closest('.amh-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
+        if (parent.closest('.amh-highlight, .amh-escalation-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;
@@ -356,7 +309,7 @@
   }
 
   function clearHighlightsWithin(root) {
-    const highlights = Array.from(root.querySelectorAll('.amh-highlight'));
+    const highlights = Array.from(root.querySelectorAll('.amh-highlight, .amh-escalation-highlight'));
     for (const highlight of highlights) {
       const textNode = document.createTextNode(highlight.textContent || '');
       highlight.replaceWith(textNode);
@@ -366,7 +319,7 @@
 
   function highlightTextNode(node, activeRules) {
     const text = node.nodeValue;
-    const matches = collectMatches(text, activeRules);
+    const matches = core.collectMatches(text, activeRules, state.settings);
     if (!matches.length) return 0;
     const fragment = document.createDocumentFragment();
     let cursor = 0;
@@ -385,35 +338,46 @@
     return matches.length;
   }
 
-  function collectMatches(text, activeRules) {
-    const candidates = [];
-    for (const rule of activeRules) {
-      rule.regex.lastIndex = 0;
-      let match;
-      while ((match = rule.regex.exec(text)) !== null) {
-        const value = match[0];
-        if (!value) {
-          rule.regex.lastIndex += 1;
-          continue;
+  function highlightEscalationTarget(element) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('.amh-highlight, .amh-escalation-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
+          return NodeFilter.FILTER_REJECT;
         }
-        if (rule.tag === 'not_opt_out' && !isOnlyMessageBodyMatch(text, value)) {
-          continue;
-        }
-        candidates.push({ start: match.index, end: match.index + value.length, length: value.length, rule });
+        return NodeFilter.FILTER_ACCEPT;
       }
-    }
-    candidates.sort((a, b) => {
-      if (a.start !== b.start) return a.start - b.start;
-      if (b.length !== a.length) return b.length - a.length;
-      return (state.settings.categories[a.rule.tag]?.priority ?? 999) - (state.settings.categories[b.rule.tag]?.priority ?? 999);
     });
-    const accepted = [];
-    for (const candidate of candidates) {
-      if (!accepted.some((existing) => candidate.start < existing.end && candidate.end > existing.start)) {
-        accepted.push(candidate);
-      }
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    let count = 0;
+    for (const node of textNodes) count += highlightEscalationTextNode(node);
+    state.stats.highlights += count;
+  }
+
+  function highlightEscalationTextNode(node) {
+    const text = node.nodeValue;
+    const matches = core.collectEscalationBulletMatches(text);
+    if (!matches.length) return 0;
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    for (const match of matches) {
+      if (match.start > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, match.start)));
+      const span = document.createElement('span');
+      span.className = 'amh-escalation-highlight';
+      span.textContent = text.slice(match.start, match.end);
+      applyEscalationHighlightStyle(span);
+      span.dataset.amhRuleName = match.rule.name;
+      span.dataset.amhRuleTag = match.rule.tag;
+      span.dataset.amhRuleLabel = match.rule.label;
+      fragment.appendChild(span);
+      cursor = match.end;
     }
-    return accepted.sort((a, b) => a.start - b.start);
+    if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
+    node.parentNode.replaceChild(fragment, node);
+    return matches.length;
   }
 
   function applyHighlightStyle(span, rule) {
@@ -424,6 +388,11 @@
     span.style.boxShadow = `0 0 0 1px ${hexToRgba(color, Math.min(opacity + 0.18, 0.9))}`;
     span.style.textDecoration = `underline ${hexToRgba(color, 0.9)} 2px`;
     span.style.textUnderlineOffset = '0.16em';
+  }
+
+  function applyEscalationHighlightStyle(span) {
+    span.style.backgroundColor = hexToRgba(ESCALATION_HIGHLIGHT_COLOR, 0.78);
+    span.style.boxShadow = `0 0 0 1px ${hexToRgba(ESCALATION_HIGHLIGHT_COLOR, 0.95)}`;
   }
 
   function applyTooltipData(span, rule, matchedText) {
@@ -524,6 +493,24 @@
     chrome.storage.local.set({ amhLastStats: state.stats }).catch(() => {});
   }
 
+  function maybeLogRenderCompleted({ durationMs, forceAll, changedElements, highlights }) {
+    const now = Date.now();
+    const shouldLog = forceAll || changedElements > 0 || highlights > 0 || now - state.lastRenderLogAt >= RENDER_LOG_INTERVAL_MS;
+    if (!shouldLog) return;
+    state.lastRenderLogAt = now;
+    logOperationalEvent({
+      eventType: 'render_completed',
+      severity: 'info',
+      result: 'success',
+      durationMs,
+      ruleSource: 'consolidated_rules',
+      metadata: {
+        operation: 'render',
+        trigger: forceAll ? 'force' : 'scheduled'
+      }
+    });
+  }
+
   function hexToRgba(hex, alpha) {
     const normalized = String(hex || '').trim();
     const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
@@ -533,26 +520,6 @@
 
   function safeClassName(value) {
     return String(value || 'unknown').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
-  }
-
-  function normalizeKeyword(value) {
-    return String(value || '').trim().replace(/\s+/g, ' ');
-  }
-
-  function escapeRegex(value) {
-    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function isOnlyMessageBodyMatch(messageText, matchedText) {
-    return normalizeMessageBody(messageText) === normalizeMessageBody(matchedText);
-  }
-
-  function normalizeMessageBody(value) {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/^[\s"'`.,!?;:()[\]{}<>-]+|[\s"'`.,!?;:()[\]{}<>-]+$/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
   }
 
   function escapeHtml(value) {

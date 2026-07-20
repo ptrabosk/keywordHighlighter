@@ -54,6 +54,10 @@ body {
   padding: 22px;
 }
 
+.card + .card {
+  margin-top: 12px;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: var(--muted);
@@ -67,6 +71,12 @@ h1 {
   margin: 0;
   font-size: 30px;
   line-height: 1.1;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
 }
 
 .subtle {
@@ -136,6 +146,36 @@ input[type="text"] {
 .actions {
   min-height: 20px;
   margin-top: 12px;
+}
+
+.diagnostics {
+  padding: 16px;
+}
+
+.diagnostics__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.diagnostics-list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 12px;
+  margin: 12px 0;
+}
+
+.diagnostics-list dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.diagnostics-list dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
 }
 
 button {

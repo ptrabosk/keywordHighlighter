@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "NODE_ENV=test node --test test/*.test.js"
+    "test": "node --import ./test/setup-test-env.js --test test/*.test.js"
   }
 }

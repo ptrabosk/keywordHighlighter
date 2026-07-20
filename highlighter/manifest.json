@@ -42,6 +42,7 @@
       ],
       "js": [
         "settings.js",
+        "src/highlight/core.js",
         "content.js"
       ],
       "css": [

@@ -232,6 +232,45 @@ input[type="color"] {
   margin-top: 18px;
 }
 
+.diagnostics {
+  margin-top: 18px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.diagnostics-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.diagnostics-list div {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.diagnostics-list dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.diagnostics-list dd {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
 button {
   border: 0;
   border-radius: 14px;

@@ -9,6 +9,49 @@ import { shouldUploadOnStartup, uploadPendingLogs } from "./src/logging/uploader
 
 const UPLOAD_ALARM_NAME = "keywordHighlighterLogUpload";
 
+function summarizeLoggingConfig(config) {
+  const endpointUrl = config.endpointUrl || "";
+  const apiKey = config.apiKey || "";
+  let endpointHost = "";
+  try {
+    endpointHost = endpointUrl ? new URL(endpointUrl).hostname : "";
+  } catch {
+    endpointHost = "";
+  }
+  const configured = Boolean(
+    config.enabled &&
+    endpointUrl &&
+    apiKey &&
+    !endpointUrl.includes("REPLACE_WITH_") &&
+    !endpointUrl.includes("YOUR_DEPLOYMENT_ID") &&
+    !apiKey.includes("REPLACE_WITH_") &&
+    !apiKey.includes("replace-with-")
+  );
+  return {
+    enabled: config.enabled !== false,
+    configured,
+    endpointHost,
+    uploadIntervalMinutes: config.uploadIntervalMinutes,
+    maxBatchEvents: config.maxBatchEvents,
+    maxBatchBytes: config.maxBatchBytes
+  };
+}
+
+async function getDiagnostics() {
+  const [config, queueStats, uploadStatus, statsResult] = await Promise.all([
+    getLoggingConfig(),
+    getQueueStats(),
+    getUploadStatus(),
+    chrome.storage.local.get("amhLastStats")
+  ]);
+  return {
+    loggingConfig: summarizeLoggingConfig(config),
+    queueStats,
+    uploadStatus,
+    lastStats: statsResult.amhLastStats || null
+  };
+}
+
 async function ensureDefaultSettings() {
   try {
     const existing = await chrome.storage.sync.get(globalThis.SETTINGS_KEY);
@@ -106,6 +149,29 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
     runUpload(message.reason || "requested");
     sendResponse?.({ ok: true });
     return false;
+  }
+
+  if (message?.type === "highlighter:getDiagnostics") {
+    void (async () => {
+      try {
+        sendResponse?.({ ok: true, diagnostics: await getDiagnostics() });
+      } catch {
+        sendResponse?.({ ok: false });
+      }
+    })();
+    return true;
+  }
+
+  if (message?.type === "highlighter:runDiagnosticsUpload") {
+    void (async () => {
+      try {
+        await runUpload("diagnostics");
+        sendResponse?.({ ok: true, diagnostics: await getDiagnostics() });
+      } catch {
+        sendResponse?.({ ok: false });
+      }
+    })();
+    return true;
   }
 
   if (message?.type === "highlighter:logEvent") {

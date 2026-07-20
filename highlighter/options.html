@@ -54,6 +54,18 @@
       <div id="categories" class="categories"></div>
     </section>
 
+    <section class="card diagnostics" aria-label="Diagnostics">
+      <div class="section-heading">
+        <div>
+          <h2>Diagnostics</h2>
+          <p class="subtle">Review local runtime status without exposing logging credentials.</p>
+        </div>
+        <button id="refreshDiagnostics" type="button" class="secondary">Refresh</button>
+      </div>
+      <dl id="diagnosticsList" class="diagnostics-list"></dl>
+      <button id="uploadDiagnostics" type="button" class="secondary">Upload diagnostics now</button>
+    </section>
+
     <footer class="actions">
       <button id="reset" type="button" class="secondary">Reset defaults</button>
       <button id="save" type="button" class="primary">Save changes</button>

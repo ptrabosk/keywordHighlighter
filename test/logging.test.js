@@ -22,6 +22,7 @@ import {
   storageSet
 } from "../highlighter/src/logging/storageQueue.js";
 import { uploadPendingLogs } from "../highlighter/src/logging/uploader.js";
+import { LOG_EVENT_TYPES } from "../highlighter/src/logging/types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const originalConfig = { ...LOGGING_CONFIG };
@@ -458,10 +459,35 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /Events_keywordHighlighter/);
   assert.match(source, /Upload_Batches_keywordHighlighter/);
   assert.match(source, /Event_ID_Index_keywordHighlighter/);
+  assert.match(source, /function doGet\(\)/);
+  assert.match(source, /receiverVersion/);
   assert.match(source, /INDEX_HEADERS = \["Event ID", "Status", "Reserved At", "Batch ID", "Written At"\]/);
   assert.match(source, /newIndexRows\.length/);
   assert.match(source, /setValues\(newRows\)/);
   assert.match(source, /markIndexWritten_/);
   assert.match(source, /function sheetSafe_/);
+  assert.doesNotMatch(source, /createTextFinder/);
   assert.doesNotMatch(source, /console\.error/);
+});
+
+test("Apps Script and extension logging event type contracts stay in sync", () => {
+  const source = fs.readFileSync(path.join(__dirname, "../google-apps-script/Code.gs"), "utf8");
+  const match = source.match(/const EVENT_TYPES = \[([\s\S]*?)\];/);
+  assert.ok(match, "Apps Script EVENT_TYPES constant is present");
+
+  const appsScriptEventTypes = Array.from(match[1].matchAll(/"([^"]+)"/g), (item) => item[1]);
+  assert.deepEqual(appsScriptEventTypes, LOG_EVENT_TYPES);
+  assert.ok(appsScriptEventTypes.includes("render_failed"));
+});
+
+test("diagnostics endpoints and reduced render telemetry hooks are present", () => {
+  const backgroundSource = fs.readFileSync(path.join(__dirname, "../highlighter/background.js"), "utf8");
+  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
+
+  assert.match(backgroundSource, /highlighter:getDiagnostics/);
+  assert.match(backgroundSource, /highlighter:runDiagnosticsUpload/);
+  assert.doesNotMatch(backgroundSource, /apiKey:\s*config\.apiKey/);
+  assert.match(contentSource, /RENDER_LOG_INTERVAL_MS/);
+  assert.match(contentSource, /maybeLogRenderCompleted/);
+  assert.match(contentSource, /render_failed/);
 });

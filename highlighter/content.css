@@ -15,6 +15,15 @@
   box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.22), 0 2px 8px rgba(15, 23, 42, 0.16) !important;
 }
 
+.amh-escalation-highlight {
+  border-radius: 0.32rem;
+  padding: 0 0.12rem;
+  margin: 0 -0.02rem;
+  font-weight: 700;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 .amh-tooltip {
   position: fixed;
   z-index: 2147483647;

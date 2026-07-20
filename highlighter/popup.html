@@ -24,6 +24,18 @@
       <div id="keywords" class="keywords" aria-live="polite"></div>
     </section>
 
+    <section class="card diagnostics" aria-label="Diagnostics">
+      <div class="diagnostics__header">
+        <div>
+          <p class="eyebrow">Diagnostics</p>
+          <h2>Runtime Status</h2>
+        </div>
+        <button id="refreshDiagnostics" type="button" class="secondary">Refresh</button>
+      </div>
+      <dl id="diagnosticsList" class="diagnostics-list"></dl>
+      <button id="uploadDiagnostics" type="button" class="secondary">Upload diagnostics now</button>
+    </section>
+
     <footer class="actions">
       <span id="status" role="status"></span>
     </footer>

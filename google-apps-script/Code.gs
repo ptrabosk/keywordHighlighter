@@ -1,6 +1,7 @@
 const EVENTS_SHEET_NAME = "Events_keywordHighlighter";
 const BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
 const INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
+const RECEIVER_VERSION = "1.1.0";
 
 const EVENTS_HEADERS = [
   "Received At",
@@ -50,6 +51,7 @@ const EVENT_TYPES = [
   "settings_save_failed",
   "storage_read_failed",
   "storage_write_failed",
+  "render_failed",
   "unexpected_exception",
   "upload_failed",
   "cache_pruned"
@@ -87,6 +89,30 @@ function setupLoggingSheets() {
   ensureSheet_(spreadsheet, BATCHES_SHEET_NAME, BATCH_HEADERS);
   const indexSheet = ensureSheet_(spreadsheet, INDEX_SHEET_NAME, INDEX_HEADERS);
   indexSheet.hideSheet();
+}
+
+function doGet() {
+  try {
+    const spreadsheet = getSpreadsheet_();
+    const sheetStatus = [
+      sheetHealth_(spreadsheet, EVENTS_SHEET_NAME, EVENTS_HEADERS),
+      sheetHealth_(spreadsheet, BATCHES_SHEET_NAME, BATCH_HEADERS),
+      sheetHealth_(spreadsheet, INDEX_SHEET_NAME, INDEX_HEADERS)
+    ];
+    return jsonResponse_({
+      success: true,
+      receiverVersion: RECEIVER_VERSION,
+      spreadsheetConfigured: true,
+      sheets: sheetStatus
+    });
+  } catch (error) {
+    return jsonResponse_({
+      success: false,
+      receiverVersion: RECEIVER_VERSION,
+      spreadsheetConfigured: false,
+      errorCode: error.publicCode || "SERVER_ERROR"
+    });
+  }
 }
 
 function doPost(e) {
@@ -316,17 +342,16 @@ function ensureSheet_(spreadsheet, name, headers) {
 
 function loadIndexRecords_(indexSheet, eventIds) {
   const records = {};
-  eventIds.forEach(function(eventId) {
-    const cell = indexSheet
-      .createTextFinder(eventId)
-      .matchEntireCell(true)
-      .findNext();
-    if (!cell || cell.getColumn() !== 1) return;
-    const row = cell.getRow();
-    const values = indexSheet.getRange(row, 1, 1, INDEX_HEADERS.length).getValues()[0];
+  const wanted = toSet_(eventIds);
+  const lastRow = indexSheet.getLastRow();
+  if (lastRow < 2 || !wanted.size) return records;
+  const values = indexSheet.getRange(2, 1, lastRow - 1, INDEX_HEADERS.length).getValues();
+  values.forEach(function(rowValues, index) {
+    const eventId = String(rowValues[0] || "");
+    if (!wanted.has(eventId)) return;
     records[eventId] = {
-      row: row,
-      status: values[1] || "written"
+      row: index + 2,
+      status: rowValues[1] || "written"
     };
   });
   return records;
@@ -334,14 +359,43 @@ function loadIndexRecords_(indexSheet, eventIds) {
 
 function findExistingEventRows_(eventsSheet, eventIds) {
   const rows = {};
-  eventIds.forEach(function(eventId) {
-    const cell = eventsSheet
-      .createTextFinder(eventId)
-      .matchEntireCell(true)
-      .findNext();
-    if (cell && cell.getColumn() === 3) rows[eventId] = cell.getRow();
+  const wanted = toSet_(eventIds);
+  const lastRow = eventsSheet.getLastRow();
+  if (lastRow < 2 || !wanted.size) return rows;
+  const values = eventsSheet.getRange(2, 3, lastRow - 1, 1).getValues();
+  values.forEach(function(rowValues, index) {
+    const eventId = String(rowValues[0] || "");
+    if (wanted.has(eventId)) rows[eventId] = index + 2;
   });
   return rows;
+}
+
+function sheetHealth_(spreadsheet, name, headers) {
+  const sheet = spreadsheet.getSheetByName(name);
+  if (!sheet) return { name: name, exists: false, headersReady: false };
+  const actual = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+  const headersReady = headers.every(function(header, index) {
+    return actual[index] === header;
+  });
+  return {
+    name: name,
+    exists: true,
+    headersReady: headersReady,
+    rows: Math.max(0, sheet.getLastRow() - 1)
+  };
+}
+
+function toSet_(values) {
+  const set = Object.create(null);
+  values.forEach(function(value) {
+    if (value) set[value] = true;
+  });
+  return {
+    has: function(value) {
+      return set[value] === true;
+    },
+    size: Object.keys(set).length
+  };
 }
 
 function markIndexWritten_(indexSheet, row, writtenAt) {

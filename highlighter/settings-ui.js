@@ -6,6 +6,9 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     opacityValue: document.querySelector('#opacityValue'),
     selector: document.querySelector('#selector'),
     categories: document.querySelector('#categories'),
+    diagnosticsList: document.querySelector('#diagnosticsList'),
+    refreshDiagnostics: document.querySelector('#refreshDiagnostics'),
+    uploadDiagnostics: document.querySelector('#uploadDiagnostics'),
     save: document.querySelector('#save'),
     reset: document.querySelector('#reset'),
     status: document.querySelector('#status')
@@ -52,12 +55,71 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     els.save.addEventListener('click', save);
     els.reset.addEventListener('click', reset);
     els.opacity.addEventListener('input', updateOpacityLabel);
+    els.refreshDiagnostics?.addEventListener('click', refreshDiagnostics);
+    els.uploadDiagnostics?.addEventListener('click', uploadDiagnostics);
+    await refreshDiagnostics();
     logOperationalEvent({
       eventType: 'options_opened',
       severity: 'info',
       result: 'success',
       durationMs: performance.now() - startedAt
     });
+  }
+
+  async function refreshDiagnostics() {
+    if (!els.diagnosticsList) return;
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'highlighter:getDiagnostics' });
+      if (!response?.ok) throw new Error('Diagnostics unavailable');
+      renderDiagnostics(response.diagnostics);
+    } catch (error) {
+      renderDiagnostics(null);
+      logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Diagnostics could not be loaded', {
+        operation: 'diagnostics'
+      });
+    }
+  }
+
+  async function uploadDiagnostics() {
+    setStatus('Uploading queued diagnostics...');
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'highlighter:runDiagnosticsUpload' });
+      if (!response?.ok) throw new Error('Diagnostics upload unavailable');
+      renderDiagnostics(response.diagnostics);
+      setStatus('Diagnostics upload requested.');
+    } catch (error) {
+      setStatus('Diagnostics upload failed.');
+      logOperationalFailure('upload_failed', 'UPLOAD_NETWORK_FAILED', 'Diagnostics upload could not be requested', {
+        operation: 'diagnostics'
+      });
+    }
+  }
+
+  function renderDiagnostics(diagnostics) {
+    if (!els.diagnosticsList) return;
+    if (!diagnostics) {
+      els.diagnosticsList.innerHTML = '<div><dt>Status</dt><dd>Unavailable</dd></div>';
+      return;
+    }
+    const queue = diagnostics.queueStats || {};
+    const upload = diagnostics.uploadStatus || {};
+    const config = diagnostics.loggingConfig || {};
+    const stats = diagnostics.lastStats || {};
+    els.diagnosticsList.innerHTML = [
+      ['Logging', config.configured ? 'Configured' : 'Not configured'],
+      ['Queue', `${queue.pendingCount || 0} pending`],
+      ['Last upload', formatTime(upload.lastUploadAt || upload.lastSuccessfulUploadAt)],
+      ['Last error', upload.lastErrorCode || 'None'],
+      ['Loaded rules', Number.isFinite(stats.loadedRules) ? String(stats.loadedRules) : 'n/a'],
+      ['Highlights', Number.isFinite(stats.highlights) ? String(stats.highlights) : 'n/a']
+    ].map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('');
+  }
+
+  function formatTime(value) {
+    if (!value) return 'Never';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Unknown';
+    return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
   async function loadSettings() {

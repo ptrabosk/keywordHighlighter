@@ -16,6 +16,7 @@ export const LOG_EVENT_TYPES = Object.freeze([
   "settings_save_failed",
   "storage_read_failed",
   "storage_write_failed",
+  "render_failed",
   "unexpected_exception",
   "upload_failed",
   "cache_pruned"
