@@ -649,6 +649,8 @@ const curatedConversations = [
 ];
 
 const knownSamples = {
+  '\\bdone\\b': 'we are done here',
+  "(not|this (isn't|isnt)) my number": 'not my number',
   '^done$': 'done',
   '^stop$': 'stop',
   '^quit$': 'quit',

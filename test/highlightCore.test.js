@@ -141,6 +141,36 @@ test("normalizes escalation no esc and post purchase bullets", () => {
   ]);
 });
 
+test("consolidated rules resolve QA diagnostic phrases to their intended categories", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/consolidated_rules.json"), "utf8"));
+  const settings = core.mergeSettings(defaults, {});
+  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
+
+  const cases = [
+    ["Please stop texting me and remove me from your list.", [
+      ["opt_out", "stop texting"],
+      ["opt_out", "remove me from your list"]
+    ]],
+    ["who is this", [["txt", "who is this"]]],
+    ["i dont know you", [["txt", "i dont know you"]]],
+    ["we are done here", [["fuzzy_opt_out", "done"]]],
+    ["finished", [["fuzzy_opt_out", "finished"]]],
+    ["pause", [["fuzzy_opt_out", "pause"]]],
+    ["shush", [["fuzzy_opt_out", "shush"]]],
+    ["subscribe", [["not_opt_out", "subscribe"]]]
+  ];
+
+  for (const [text, expected] of cases) {
+    const matches = core.collectMatches(text, activeRules, settings);
+    for (const [tag, contains] of expected) {
+      assert.ok(
+        matches.some((match) => match.rule.tag === tag && text.slice(match.start, match.end).toLowerCase().includes(contains)),
+        `${text} should include ${tag}: ${contains}; got ${matches.map((match) => `${match.rule.tag}:${text.slice(match.start, match.end)}`).join(", ")}`
+      );
+    }
+  }
+});
+
 test("consolidated rules compile and preserve UTF-8-sensitive emoji patterns", () => {
   const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/consolidated_rules.json"), "utf8"));
   const rules = core.buildRules(payload.rules);

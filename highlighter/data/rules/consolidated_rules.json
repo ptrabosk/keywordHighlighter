@@ -159,7 +159,7 @@
         {
           "name": "remove_me_from_comms",
           "tag": "opt_out",
-          "pattern": "\\bremove me from (?:texts?|text messages?|messages?|emails?|calls?|contact)\\b",
+          "pattern": "\\bremove me from (?:texts?|text messages?|messages?|emails?|calls?|contact|(?:the |your |this )?list)\\b",
           "source": "optout_classifier/classifier.py"
         },
         {
@@ -1319,7 +1319,7 @@
         {
           "name": "deterministic.hard_opt_out.032",
           "tag": "opt_out",
-          "pattern": "^\\s*(?:stop|end|done|remove|cancel|unsubscribe|opt(?:-| )?out|quit|revoke|drop|pause|unfollow|junk|block|rmv|cncl|unsub|unsbscrbe|inscribe me|oot out|qwit|rvke|edn|dne|st0p|sto0p|atop|stp|stip|wtop|dtop|sto|srop|syop|stoo|stops|sto0|stpp|stope|sop|please stop|off|delete|sybau)\\s*$",
+          "pattern": "^\\s*(?:stop|end|done|remove|cancel|unsubscribe|opt(?:-| )?out|quit|revoke|drop|unfollow|junk|block|rmv|cncl|unsub|unsbscrbe|inscribe me|oot out|qwit|rvke|edn|dne|st0p|sto0p|atop|stp|stip|wtop|dtop|sto|srop|syop|stoo|stops|sto0|stpp|stope|sop|please stop|off|delete|sybau)\\s*$",
           "source": "optout_classifier/deterministic_rules.py"
         },
         {
@@ -1718,13 +1718,13 @@
         },
         {
           "name": "deterministic.indirect.016",
-          "tag": "opt_out",
+          "tag": "txt",
           "pattern": "who (is this|are you|are (y'all|yall))",
           "source": "optout_classifier/deterministic_rules.py"
         },
         {
           "name": "deterministic.indirect.017",
-          "tag": "opt_out",
+          "tag": "txt",
           "pattern": "i (don't|dont) know you",
           "source": "optout_classifier/deterministic_rules.py"
         },
@@ -1742,13 +1742,13 @@
         },
         {
           "name": "deterministic.indirect.020",
-          "tag": "opt_out",
+          "tag": "fuzzy_opt_out",
           "pattern": "(i'm|im) done",
           "source": "optout_classifier/deterministic_rules.py"
         },
         {
           "name": "deterministic.indirect.021",
-          "tag": "opt_out",
+          "tag": "fuzzy_opt_out",
           "pattern": "finished|pause|shush|stfu",
           "source": "optout_classifier/deterministic_rules.py"
         },
@@ -2021,7 +2021,7 @@
         {
           "name": "not_opted_in",
           "tag": "opt_out",
-          "pattern": "(?:never|didnt)?\\s*(?:opted\\s+in|signed\\s+up|subscribed?)",
+          "pattern": "(?:never|didnt)\\s*(?:opted\\s+in|signed\\s+up|subscribed?)",
           "source": "opt-out-workflow.json node 4 code step"
         },
         {
