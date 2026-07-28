@@ -1,6 +1,6 @@
 # Attentive Rule Highlighter
 
-A Manifest V3 Chrome extension that highlights inbound Attentive Concierge message text using regex rules from `highlighter/data/rules/consolidated_rules.json`.
+A Manifest V3 Chrome extension that highlights inbound Attentive Concierge message text using deterministic action rules from `highlighter/data/rules/opt_out_deterministic_rules.json`.
 
 ## What it does
 
@@ -11,10 +11,11 @@ A Manifest V3 Chrome extension that highlights inbound Attentive Concierge messa
 div[class*="type-INBOUND"] p[class*="variant-caption"]
 ```
 
-- Loads and flattens every rule object that has `pattern` and `tag` in `highlighter/data/rules/consolidated_rules.json`.
-- Highlights matches by tag/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `not_opt_out`, and custom keywords.
-- Shows a hover tooltip with the category guidance and matched text.
-- Lets users add custom keywords from the popup.
+- Loads and flattens every highlightable rule object from `highlighter/data/rules/opt_out_deterministic_rules.json`.
+- Highlights matches by action/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `no_action`, `close`, and user-added patterns.
+- Shows hover tooltips from editable entries in `highlighter/data/rules/rule_hover_text.json`.
+- Lets users add custom patterns and hover text from the popup.
+- Lets users export and import custom keyword backups as JSON.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
 - Provides a focused popup for custom keywords and an options page for advanced settings.
 - Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when `highlighter/src/logging/config.local.js` contains a valid `/exec` URL and API key.
@@ -31,6 +32,17 @@ For local install:
 4. Click **Load unpacked**.
 5. Select the `highlighter` folder inside this project.
 6. Open or refresh `https://ui.attentivemobile.com/concierge/*`.
+
+The manifest includes a stable extension key so the extension ID stays consistent for future local installs and updates. If someone already installed an older no-key build, have them export their custom keywords before switching to this keyed build, then import the backup after the update.
+
+## Custom keyword backups
+
+Custom keywords and their hover text are stored in Chrome sync storage under `amhSettings`.
+
+Use the popup buttons:
+
+- **Export** downloads a JSON backup with `customKeywords` and `customKeywordTextByPattern`.
+- **Import** restores those values from a backup JSON file.
 
 ## Logging setup
 
@@ -100,14 +112,16 @@ keywordHighlighter/
     |-- settings.js
     |-- icons/
     |-- data/rules/
-    |   `-- consolidated_rules.json
+    |   |-- consolidated_rules.json
+    |   |-- opt_out_deterministic_rules.json
+    |   `-- rule_hover_text.json
     `-- src/logging/
 ```
 
 ## Notes
 
 - The root `test.html` redirects to the Live Server QA site.
-- The extension skips invalid JavaScript regex patterns and logs them to the console.
+- The extension skips procedural/non-highlightable deterministic rules and invalid JavaScript regex patterns, then logs skipped regexes to the console.
 - For overlapping matches, it keeps the earliest match, then the longest match, then the category priority.
-- `not_opt_out` rules only highlight when the match is the whole inbound message body, ignoring surrounding whitespace and simple punctuation.
+- `close` and whole-message rules only highlight when the match is the whole inbound message body, ignoring surrounding whitespace and simple punctuation.
 - If Attentive changes its DOM, update the selector in the options page rather than changing code.

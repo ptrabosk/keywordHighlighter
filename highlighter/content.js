@@ -24,6 +24,7 @@
 
   const state = {
     rules: [],
+    hoverText: {},
     settings: DEFAULT_SETTINGS,
     observer: null,
     renderTimer: null,
@@ -82,7 +83,9 @@
   async function init() {
     const startedAt = performance.now();
     state.settings = core.mergeSettings(DEFAULT_SETTINGS, await loadSettings());
-    state.rules = await loadRules();
+    const [rules, hoverText] = await Promise.all([loadRules(), loadHoverText()]);
+    state.rules = rules;
+    state.hoverText = hoverText;
     state.stats.loadedRules = state.rules.length;
     installTooltipHandlers();
     installMutationObserver();
@@ -110,7 +113,7 @@
   }
 
   async function loadRules() {
-    const url = chrome.runtime.getURL('data/rules/consolidated_rules.json');
+    const url = chrome.runtime.getURL('data/rules/opt_out_deterministic_rules.json');
     let response;
     try {
       response = await fetch(url);
@@ -136,9 +139,24 @@
       eventType: 'rules_loaded',
       severity: 'info',
       result: 'success',
-      ruleSource: 'consolidated_rules'
+      ruleSource: 'opt_out_deterministic_rules'
     });
     return rules;
+  }
+
+  async function loadHoverText() {
+    const url = chrome.runtime.getURL('data/rules/rule_hover_text.json');
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      logOperationalFailure('hover_text_load_failed', 'HOVER_TEXT_LOAD_FAILED', 'Hover text could not be loaded', {
+        operation: 'hoverTextFetch'
+      });
+      console.warn('[Attentive Rule Highlighter] Could not load hover text:', error);
+      return {};
+    }
   }
 
   function installMutationObserver() {
@@ -369,10 +387,12 @@
       span.className = 'amh-escalation-highlight';
       span.textContent = text.slice(match.start, match.end);
       applyEscalationHighlightStyle(span);
-      span.dataset.amhRuleName = match.rule.name;
-      span.dataset.amhRuleTag = match.rule.tag;
-      span.dataset.amhRuleLabel = match.rule.label;
-      fragment.appendChild(span);
+    span.dataset.amhRuleName = match.rule.name;
+    span.dataset.amhRuleTag = match.rule.tag;
+    span.dataset.amhRuleLabel = match.rule.label;
+    span.dataset.amhTooltipTitle = match.rule.label;
+    span.dataset.amhTooltipText = match.rule.label;
+    fragment.appendChild(span);
       cursor = match.end;
     }
     if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
@@ -398,13 +418,34 @@
   function applyTooltipData(span, rule, matchedText) {
     const category = state.settings.categories[rule.tag] || {};
     const label = category.label || rule.tag;
-    const guidance = getTooltipGuidance(rule.tag);
+    const hoverText = getRuleHoverText(rule);
     span.dataset.amhRuleName = rule.name;
     span.dataset.amhRuleTag = rule.tag;
     span.dataset.amhRuleLabel = label;
-    span.dataset.amhGuidance = guidance;
+    span.dataset.amhTooltipTitle = hoverText.title || label;
+    span.dataset.amhTooltipText = hoverText.text || 'Review the highlighted message and choose the appropriate response.';
+    span.dataset.amhTooltipName = hoverText.name || rule.name || rule.pattern;
     span.dataset.amhMatchedText = matchedText;
     span.removeAttribute('title');
+  }
+
+  function getRuleHoverText(rule) {
+    if (rule.tag === 'user_added') {
+      return {
+        title: 'user_added',
+        text: rule.conditionSummary || state.hoverText.defaults?.user_added?.text || 'Review this user-added highlighted pattern.',
+        name: rule.pattern || rule.name || 'user_added'
+      };
+    }
+
+    const configured = state.hoverText.by_rule_id?.[rule.id] || state.hoverText.by_rule_name?.[rule.name];
+    if (configured) return configured;
+
+    return {
+      title: rule.action || rule.tag,
+      text: rule.conditionSummary || rule.pattern || 'Review the highlighted message and choose the appropriate response.',
+      name: rule.name || rule.pattern || rule.id
+    };
   }
 
   function installTooltipHandlers() {
@@ -451,28 +492,19 @@
   function renderTooltipHtml(target) {
     const tag = target.dataset.amhRuleTag || '';
     const label = target.dataset.amhRuleLabel || tag;
-    const guidance = target.dataset.amhGuidance || getTooltipGuidance(tag);
+    const title = target.dataset.amhTooltipTitle || label;
+    const guidance = target.dataset.amhTooltipText || 'Review the highlighted message and choose the appropriate response.';
+    const name = target.dataset.amhTooltipName || target.dataset.amhRuleName || '';
     const matched = target.dataset.amhMatchedText || target.textContent || '';
     return `
       <div class="amh-tooltip__top">
-        <div class="amh-tooltip__rule">${escapeHtml(label)}</div>
+        <div class="amh-tooltip__rule">${escapeHtml(title)}</div>
         <div class="amh-tooltip__tag">${escapeHtml(label)}</div>
       </div>
       <div class="amh-tooltip__row amh-tooltip__row--stacked"><div class="amh-tooltip__value">${escapeHtml(guidance)}</div></div>
+      <div class="amh-tooltip__row"><div class="amh-tooltip__label">Rule</div><div class="amh-tooltip__value">${escapeHtml(name)}</div></div>
       <div class="amh-tooltip__row"><div class="amh-tooltip__label">Matched</div><div class="amh-tooltip__value">${escapeHtml(matched)}</div></div>
     `;
-  }
-
-  function getTooltipGuidance(tag) {
-    const guidanceByTag = {
-      opt_out: "This pattern could be an opt out request, please examine the message for the customer's intent.",
-      fuzzy_opt_out: 'This pattern is likely to require the FZZ template being sent, double-check the intent and send the fuzzy template.',
-      txt: "It's possible this requires you to send the TXT template to ensure the subscriber knows who we are and why we are texting them.",
-      tmt: 'If the customer is talking about frequency of texts, use the TMT template to inform them about limitations.',
-      not_opt_out: 'This is a frequent phrase not requiring an opt out; still, if unsure, you can always use the opt out bot.',
-      no_opt_out: 'This is a frequent phrase not requiring an opt out; still, if unsure, you can always use the opt out bot.'
-    };
-    return guidanceByTag[tag] || 'Review the highlighted message and choose the appropriate response.';
   }
 
   function positionTooltip(event) {
@@ -503,7 +535,7 @@
       severity: 'info',
       result: 'success',
       durationMs,
-      ruleSource: 'consolidated_rules',
+      ruleSource: 'opt_out_deterministic_rules',
       metadata: {
         operation: 'render',
         trigger: forceAll ? 'force' : 'scheduled'

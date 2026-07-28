@@ -1,0 +1,434 @@
+[
+  {
+    "id": "rule_235ad34a90c941a4",
+    "name": "optOutClassifier.json.patterns.14",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "lawy...",
+    "sample": "lawyer"
+  },
+  {
+    "id": "rule_96d85e50355029cb",
+    "name": "optOutClassifier.json.patterns.15",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "sue your",
+    "sample": "I'll sue your company."
+  },
+  {
+    "id": "rule_d68cf12285850e44",
+    "name": "optOutClassifier.json.patterns.21",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "sued",
+    "sample": "You are getting sued."
+  },
+  {
+    "id": "rule_05de67d9c6c545f7",
+    "name": "optOutClassifier.json.patterns.41",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "BBB",
+    "sample": "I'm reporting you to the BBB."
+  },
+  {
+    "id": "rule_50d5521d0041cd96",
+    "name": "optOutClassifier.json.patterns.37",
+    "action": "fuzzy_opt_out",
+    "subcategory": "not_interested",
+    "pattern": "I don't / do not want",
+    "sample": "I don't want these texts anymore."
+  },
+  {
+    "id": "rule_9bdc0e31508e72b3",
+    "name": "optOutClassifier.json.patterns.69",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "annoy...",
+    "sample": "annoying"
+  },
+  {
+    "id": "rule_166a66a745f9f965",
+    "name": "optOutClassifier.json.patterns.39",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "attorn...",
+    "sample": "attorney"
+  },
+  {
+    "id": "rule_43211f1e95245113",
+    "name": "optOutClassifier.json.patterns.100",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "bring / file a suit",
+    "sample": "I'll file a suit against you."
+  },
+  {
+    "id": "rule_93ef5a4e4aa9447a",
+    "name": "optOutClassifier.json.patterns.101",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "bring / file suit",
+    "sample": "I'll file suit against you."
+  },
+  {
+    "id": "rule_dc73c33ba0807b16",
+    "name": "optOutClassifier.json.patterns.45",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "de baja",
+    "sample": "De baja."
+  },
+  {
+    "id": "rule_dd738d7e0d48e656",
+    "name": "optOutClassifier.json.patterns.33",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "don't / do not / dont / donot",
+    "sample": "Don't text me."
+  },
+  {
+    "id": "rule_9fab5a743c276ca4",
+    "name": "optOutClassifier.json.patterns.32",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "don't / do not / dont / donot text / send / contact / message / bother / talk / call / write / call or text me any more / anymore / again",
+    "sample": "Don't text me anymore."
+  },
+  {
+    "id": "rule_aaec757169b5d045",
+    "name": "optOutClassifier.json.patterns.53",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "end any / all communication / communications / texts / text messages / messages",
+    "sample": "End all text messages."
+  },
+  {
+    "id": "rule_7b9e2986edf50834",
+    "name": "optOutClassifier.json.patterns.52",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "end communication / communications / texts / text messages / messages / this / contact / contacting",
+    "sample": "End communication with me."
+  },
+  {
+    "id": "rule_71ac117676488f83",
+    "name": "optOutClassifier.json.patterns.54",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "fcc",
+    "sample": "fcc"
+  },
+  {
+    "id": "rule_502f026d6285fa8a",
+    "name": "optOutClassifier.json.patterns.55",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "federal communications commission",
+    "sample": "I'm reporting this to the Federal Communications Commission."
+  },
+  {
+    "id": "rule_f276972f87618609",
+    "name": "optOutClassifier.json.patterns.58",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "florida telephone solicitation act",
+    "sample": "This violates the Florida Telephone Solicitation Act."
+  },
+  {
+    "id": "rule_80d312e4479e09cd",
+    "name": "optOutClassifier.json.patterns.57",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "ftsa",
+    "sample": "ftsa"
+  },
+  {
+    "id": "rule_64a093a40f926905",
+    "name": "optOutClassifier.json.patterns.64",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "lawl...",
+    "sample": "lawyer"
+  },
+  {
+    "id": "rule_afdae30907b92d81",
+    "name": "optOutClassifier.json.patterns.63",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "laws...",
+    "sample": "lawsuit"
+  },
+  {
+    "id": "rule_7a4d206ec76b8cd4",
+    "name": "optOutClassifier.json.patterns.65",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "litigat...",
+    "sample": "litigation"
+  },
+  {
+    "id": "rule_a7188c1cef1b83cf",
+    "name": "optOutClassifier.json.patterns.51",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "please / kindly end",
+    "sample": "Please end these texts."
+  },
+  {
+    "id": "rule_d9dedf14099f4647",
+    "name": "optOutClassifier.json.patterns.81",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "report...",
+    "sample": "reporting"
+  },
+  {
+    "id": "rule_4601bf6a785c5348",
+    "name": "optOutClassifier.json.patterns.99",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "suing",
+    "sample": "suing"
+  },
+  {
+    "id": "rule_1a3cca37b7d755d0",
+    "name": "optOutClassifier.json.patterns.103",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "telephone consumer protection act",
+    "sample": "This violates the Telephone Consumer Protection Act."
+  },
+  {
+    "id": "rule_73ef52e43730404f",
+    "name": "optOutClassifier.json.patterns.104",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "terminat...",
+    "sample": "terminate"
+  },
+  {
+    "id": "rule_0b59bcb3222a7428",
+    "name": "optOutClassifier.json.patterns.10",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "don't / do not / dont / donot send me any more / anymore texts / messages / text messages",
+    "sample": "Don't send me any more texts."
+  },
+  {
+    "id": "rule_05bb1c39f8876a4e",
+    "name": "optOutClassifier.json.patterns.34",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "halt texts / messages / text messages",
+    "sample": "Halt text messages."
+  },
+  {
+    "id": "rule_0fd61a48592c2b2a",
+    "name": "optOutClassifier.json.patterns.19",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "never send / text / contact / message / bother / talk",
+    "sample": "Never text me again."
+  },
+  {
+    "id": "rule_9ae98939ff042262",
+    "name": "optOutClassifier.json.patterns.5",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "take me / this / my number off",
+    "sample": "Take my number off your list."
+  },
+  {
+    "id": "rule_26ffdf2f625bdaf2",
+    "name": "optOutClassifier.json.patterns.61",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\breport\\w*",
+    "sample": "report"
+  },
+  {
+    "id": "rule_4ee373f27aba3ba5",
+    "name": "optOutClassifier.validator.curated.094.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\b(bring|file)\\s+a\\s+suit\\b",
+    "sample": "I'll file a suit against you."
+  },
+  {
+    "id": "rule_5b5fa6c84e118a26",
+    "name": "optOutClassifier.validator.curated.095.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\b(bring|file)\\s+suit\\b",
+    "sample": "I'll file suit against you."
+  },
+  {
+    "id": "rule_d8d671fb7effd4f8",
+    "name": "optOutClassifier.json.patterns.73",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bFCC\\b",
+    "sample": "I'm reporting this to the FCC."
+  },
+  {
+    "id": "rule_43a7ca889fd10d9d",
+    "name": "optOutClassifier.validator.curated.099.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bTCPA\\b",
+    "sample": "This violates the TCPA."
+  },
+  {
+    "id": "rule_0549e54d708b9c7f",
+    "name": "optOutClassifier.validator.curated.029.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bfederal communications commission\\b",
+    "sample": "I'm reporting this to the Federal Communications Commission."
+  },
+  {
+    "id": "rule_8c0194cac8b5116f",
+    "name": "optOutClassifier.validator.curated.032.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bflorida telephone solicitation act\\b",
+    "sample": "This violates the Florida Telephone Solicitation Act."
+  },
+  {
+    "id": "rule_4c848f9e15e5be04",
+    "name": "optOutClassifier.validator.curated.031.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bftsa\\b",
+    "sample": "This violates the FTSA."
+  },
+  {
+    "id": "rule_a1a0188ebd7a9df0",
+    "name": "optOutClassifier.validator.curated.093.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bsuing\\b",
+    "sample": "I'm suing you."
+  },
+  {
+    "id": "rule_640bf0cf57ec123d",
+    "name": "optOutClassifier.validator.curated.100.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\btelephone consumer protection act\\b",
+    "sample": "This violates the Telephone Consumer Protection Act."
+  },
+  {
+    "id": "rule_e5e64512ed1703de",
+    "name": "optOutClassifier.validator.curated.103.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bunlaw\\w*",
+    "sample": "These texts are unlawful."
+  },
+  {
+    "id": "rule_053feff716939daa",
+    "name": "optOutClassifier.validator.curated.107.legal",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "\\bviolat\\w*",
+    "sample": "These texts violate the law."
+  },
+  {
+    "id": "rule_d74d59b5753a5ed3",
+    "name": "zapOptOuts.workflow.node_4.opt_out.legal_threat",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "(?:sue you|legal\\s+action|attorney|lawyer|complaint| bbb | better business bureau )",
+    "sample": "I'll take legal action."
+  },
+  {
+    "id": "rule_1722b814d4484653",
+    "name": "zapOptOuts.deterministic_js.hard_opt_out.024.don_t_text_until_you_resolve_my_issue",
+    "action": "opt_out",
+    "subcategory": "unsubscribe_phrase",
+    "pattern": "dont text until you resolve my issue",
+    "sample": "Please dont text until you resolve my issue."
+  },
+  {
+    "id": "rule_652821f830bc7d4e",
+    "name": "deterministic.hard_opt_out.042",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "im going to sue you",
+    "sample": "I'm going to sue you."
+  },
+  {
+    "id": "rule_55c3cf844326fe2f",
+    "name": "deterministic.hard_opt_out.041",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "im reporting you to the bbb",
+    "sample": "I'm reporting you to the BBB."
+  },
+  {
+    "id": "rule_55d69eabd731a280",
+    "name": "zapOptOuts.deterministic_js.indirect.006.report_ed",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "report(ed)?",
+    "sample": "I'm reporting this."
+  },
+  {
+    "id": "rule_e9bc789ec1b52ceb",
+    "name": "zapOptOuts.deterministic_js.indirect.011.sue_lawsuit_legal_action_attorney_lawyer_complaint",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "sue|lawsuit|legal action|attorney|lawyer|complaint",
+    "sample": "I'll take legal action."
+  },
+  {
+    "id": "rule_c15592ace39cad2a",
+    "name": "optOutClassifier.validator.required.029.federal_communications_commission",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "federal communications commission",
+    "sample": "I'm reporting this to the Federal Communications Commission."
+  },
+  {
+    "id": "rule_7cbb4023388edec3",
+    "name": "optOutClassifier.validator.required.032.florida_telephone_solicitation_act",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "florida telephone solicitation act",
+    "sample": "This violates the Florida Telephone Solicitation Act."
+  },
+  {
+    "id": "rule_5e2385aac4ffe493",
+    "name": "optOutClassifier.validator.required.041.lawl_w",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "lawl\\w*",
+    "sample": "I'm calling my lawyer."
+  },
+  {
+    "id": "rule_5f6259244e99088c",
+    "name": "optOutClassifier.validator.required.040.laws_w",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "laws\\w*",
+    "sample": "I'll start a lawsuit."
+  },
+  {
+    "id": "rule_89cb54259c647ea5",
+    "name": "optOutClassifier.validator.required.044.litigat_w",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "litigat\\w*",
+    "sample": "This is going to litigation."
+  },
+  {
+    "id": "rule_4713232b43ce887d",
+    "name": "optOutClassifier.validator.required.100.telephone_consumer_protection_act",
+    "action": "opt_out",
+    "subcategory": "legal",
+    "pattern": "telephone consumer protection act",
+    "sample": "This violates the Telephone Consumer Protection Act."
+  }
+]

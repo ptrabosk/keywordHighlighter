@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rule Highlighter QA Site</title>
+  <title>Rule Highlighter Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../highlighter/content.css">
   <link rel="stylesheet" href="test-site.css">
 </head>
@@ -11,73 +14,45 @@
   <main class="app-shell">
     <header class="app-header">
       <div>
-        <p class="eyebrow">VSCode Live Server QA</p>
-        <h1>Rule Highlighter Test Site</h1>
-        <p class="muted">Select one or more conversations, inspect real highlighted DOM output, and mark scenarios as manually verified.</p>
+        <p class="eyebrow">Extension demo</p>
+        <h1>Rule Highlighter Demo</h1>
+        <p class="muted">Add a message or browse generated examples. Hover highlighted text to see the rule guidance.</p>
       </div>
-      <div class="origin-pill" id="originPill">Checking extension...</div>
     </header>
 
-    <section class="toolbar" aria-label="Conversation controls">
-      <button id="selectAll" type="button">Select all</button>
-      <button id="clearSelection" type="button" class="secondary">Clear</button>
+    <section class="filters" aria-label="Message filters">
       <label>
         <span>Category</span>
         <select id="categoryFilter"></select>
       </label>
       <label>
-        <span>Status</span>
-        <select id="statusFilter">
-          <option value="all">All statuses</option>
-          <option value="pass">Passing</option>
-          <option value="fail">Failing</option>
-          <option value="manual">Manually checked</option>
-          <option value="unchecked">Not manually checked</option>
-        </select>
+        <span>Subcategory</span>
+        <select id="subcategoryFilter"></select>
       </label>
-      <button id="addDynamicMessage" type="button" class="primary">Add dynamic inbound</button>
-      <button id="copySummary" type="button" class="secondary">Copy QA summary</button>
+      <label>
+        <span>Action</span>
+        <select id="actionFilter"></select>
+      </label>
     </section>
 
     <section class="layout">
-      <aside class="sidebar" aria-label="Conversation list">
+      <aside class="sidebar" aria-label="Custom messages">
         <div class="sidebar-head">
-          <h2>Conversations</h2>
-          <span id="conversationCount">0 loaded</span>
+          <h2>Custom messages</h2>
+          <span id="customCount">0 added</span>
         </div>
-        <div id="conversationList" class="conversation-list"></div>
+        <section class="composer" aria-label="Add a message">
+          <label>
+            <span>Message</span>
+            <textarea id="messageInput" rows="4" placeholder="Type an inbound customer message"></textarea>
+          </label>
+          <button id="addMessage" type="button">Add message</button>
+        </section>
+        <div id="customList" class="custom-list"></div>
       </aside>
 
-      <section class="workspace" aria-label="Selected conversations">
-        <section class="qa-panel" aria-label="Automated QA results">
-          <div class="metric">
-            <span id="expectedFound">0</span>
-            <strong>Expected found</strong>
-          </div>
-          <div class="metric">
-            <span id="missingExpected">0</span>
-            <strong>Missing</strong>
-          </div>
-          <div class="metric">
-            <span id="unexpectedHighlights">0</span>
-            <strong>Unexpected</strong>
-          </div>
-          <div class="metric">
-            <span id="highlightedInbound">0</span>
-            <strong>Inbound highlighted</strong>
-          </div>
-          <div class="metric">
-            <span id="loadedRules">0</span>
-            <strong>Loaded rules</strong>
-          </div>
-          <div class="metric">
-            <span id="activeRules">0</span>
-            <strong>Active rules</strong>
-          </div>
-        </section>
-
-        <div id="issueList" class="issue-list" aria-live="polite"></div>
-        <div id="conversationDeck" class="conversation-deck"></div>
+      <section class="workspace" aria-label="Messages">
+        <div id="messageDeck" class="message-deck"></div>
       </section>
     </section>
   </main>

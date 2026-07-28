@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Attentive Rule Highlighter",
-  "description": "Highlights inbound Attentive Concierge messages using consolidated opt-out classifier rules.",
+  "description": "Highlights inbound Attentive Concierge messages using deterministic opt-out action rules.",
   "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5gYsvEBvl5KZHgGi7o7efwFPR+VxFJ1Y84Jmpj/kA4gXbTAeHpJ51aRM2vGl3c7yXMxNCWlYBi0ziXQs9WmAmtR7VvRz7i9913Ghic6euU7GoPujGRYivz7qwk1XPuv4O6g4Yq0JmH4yCRWPXxz+W2X2lED/gIpuvwRF42HhBpuKAEUr8eP1mLUbpyKIfCMQ1TuStScyC/P6sWUSTRWiMYUvoNhr+Kae89s0Ba5+1HPdVCCbXrvls80UsEC3h5pH2qpFsgddLFxkWnmos+p4PMKkSkHSNuOfuAjESE3sBtQtb2XH3m4lSlsYcilte5KXRkzYaqlUg+0ItvsevOtDNwIDAQAB",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -54,7 +55,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "data/rules/consolidated_rules.json"
+        "data/rules/opt_out_deterministic_rules.json",
+        "data/rules/rule_hover_text.json"
       ],
       "matches": [
         "https://ui.attentivemobile.com/*",

@@ -9,31 +9,28 @@
 <body>
   <main class="shell">
     <section class="card">
-      <p class="eyebrow">Attentive Concierge</p>
+      <p class="eyebrow">Concierge Highlighter</p>
       <h1>Custom Keywords</h1>
-      <p class="subtle">Add words or phrases to highlight alongside the project rules.</p>
+      <p class="subtle">Add words or phrases to highlight alongside Concierge rules.</p>
 
       <form id="keywordForm" class="keyword-form">
         <label class="field" for="keywordInput">
-          <span>Keyword or phrase</span>
-          <input id="keywordInput" type="text" autocomplete="off" spellcheck="false" placeholder="VIP customer">
+          <span>Keyword</span>
+          <input id="keywordInput" type="text" autocomplete="off" spellcheck="false" placeholder="STOP">
         </label>
-        <button id="addKeyword" type="submit" class="primary">Add keyword</button>
+        <label class="field" for="keywordText">
+          <span>Hover text</span>
+          <input id="keywordText" type="text" autocomplete="off" spellcheck="true" placeholder="Reminder text">
+        </label>
+        <button id="addKeyword" type="submit" class="primary">ADD KEYWORD</button>
       </form>
 
       <div id="keywords" class="keywords" aria-live="polite"></div>
-    </section>
-
-    <section class="card diagnostics" aria-label="Diagnostics">
-      <div class="diagnostics__header">
-        <div>
-          <p class="eyebrow">Diagnostics</p>
-          <h2>Runtime Status</h2>
-        </div>
-        <button id="refreshDiagnostics" type="button" class="secondary">Refresh</button>
+      <div class="backup-actions">
+        <button id="exportKeywords" type="button" class="secondary">Export</button>
+        <button id="importKeywords" type="button" class="secondary">Import</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
       </div>
-      <dl id="diagnosticsList" class="diagnostics-list"></dl>
-      <button id="uploadDiagnostics" type="button" class="secondary">Upload diagnostics now</button>
     </section>
 
     <footer class="actions">

@@ -12,7 +12,7 @@
       <div>
         <p class="eyebrow">Attentive Concierge</p>
         <h1>Rule Highlighter</h1>
-        <p class="subtle">Highlight inbound messages using <code>consolidated_rules.json</code>. Hover a match to see the exact rule.</p>
+        <p class="subtle">Highlight inbound messages using <code>opt_out_deterministic_rules.json</code>. Hover a match to see editable rule guidance.</p>
       </div>
       <label class="switch-row">
         <span>Enabled</span>
@@ -48,22 +48,10 @@
       <div class="section-heading">
         <div>
           <h2>Categories</h2>
-          <p class="subtle">Each tag in the rules file can be enabled independently and assigned a color.</p>
+          <p class="subtle">Each action in the rules file can be enabled independently and assigned a color.</p>
         </div>
       </div>
       <div id="categories" class="categories"></div>
-    </section>
-
-    <section class="card diagnostics" aria-label="Diagnostics">
-      <div class="section-heading">
-        <div>
-          <h2>Diagnostics</h2>
-          <p class="subtle">Review local runtime status without exposing logging credentials.</p>
-        </div>
-        <button id="refreshDiagnostics" type="button" class="secondary">Refresh</button>
-      </div>
-      <dl id="diagnosticsList" class="diagnostics-list"></dl>
-      <button id="uploadDiagnostics" type="button" class="secondary">Upload diagnostics now</button>
     </section>
 
     <footer class="actions">

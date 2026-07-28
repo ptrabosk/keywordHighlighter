@@ -1,10 +1,11 @@
 const els = {
   form: document.querySelector('#keywordForm'),
   input: document.querySelector('#keywordInput'),
+  text: document.querySelector('#keywordText'),
   keywords: document.querySelector('#keywords'),
-  diagnosticsList: document.querySelector('#diagnosticsList'),
-  refreshDiagnostics: document.querySelector('#refreshDiagnostics'),
-  uploadDiagnostics: document.querySelector('#uploadDiagnostics'),
+  exportKeywords: document.querySelector('#exportKeywords'),
+  importKeywords: document.querySelector('#importKeywords'),
+  importFile: document.querySelector('#importFile'),
   status: document.querySelector('#status')
 };
 
@@ -47,68 +48,15 @@ async function init() {
   settings = mergeSettings(DEFAULT_SETTINGS, await loadSettings());
   renderKeywords();
   els.form.addEventListener('submit', addKeyword);
-  els.refreshDiagnostics.addEventListener('click', refreshDiagnostics);
-  els.uploadDiagnostics.addEventListener('click', uploadDiagnostics);
-  await refreshDiagnostics();
+  els.exportKeywords.addEventListener('click', exportKeywords);
+  els.importKeywords.addEventListener('click', () => els.importFile.click());
+  els.importFile.addEventListener('change', importKeywords);
   logOperationalEvent({
     eventType: 'popup_opened',
     severity: 'info',
     result: 'success',
     durationMs: performance.now() - startedAt
   });
-}
-
-async function refreshDiagnostics() {
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'highlighter:getDiagnostics' });
-    if (!response?.ok) throw new Error('Diagnostics unavailable');
-    renderDiagnostics(response.diagnostics);
-  } catch (error) {
-    renderDiagnostics(null);
-    logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Diagnostics could not be loaded', {
-      operation: 'diagnostics'
-    });
-  }
-}
-
-async function uploadDiagnostics() {
-  setStatus('Uploading queued diagnostics...');
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'highlighter:runDiagnosticsUpload' });
-    if (!response?.ok) throw new Error('Diagnostics upload unavailable');
-    renderDiagnostics(response.diagnostics);
-    setStatus('Diagnostics upload requested.');
-  } catch (error) {
-    setStatus('Diagnostics upload failed.');
-    logOperationalFailure('upload_failed', 'UPLOAD_NETWORK_FAILED', 'Diagnostics upload could not be requested', {
-      operation: 'diagnostics'
-    });
-  }
-}
-
-function renderDiagnostics(diagnostics) {
-  if (!diagnostics) {
-    els.diagnosticsList.innerHTML = '<dt>Status</dt><dd>Unavailable</dd>';
-    return;
-  }
-  const queue = diagnostics.queueStats || {};
-  const upload = diagnostics.uploadStatus || {};
-  const config = diagnostics.loggingConfig || {};
-  const stats = diagnostics.lastStats || {};
-  els.diagnosticsList.innerHTML = [
-    ['Logging', config.configured ? 'Configured' : 'Not configured'],
-    ['Queue', `${queue.pendingCount || 0} pending`],
-    ['Last upload', formatTime(upload.lastUploadAt || upload.lastSuccessfulUploadAt)],
-    ['Last error', upload.lastErrorCode || 'None'],
-    ['Highlights', Number.isFinite(stats.highlights) ? String(stats.highlights) : 'n/a']
-  ].map(([label, value]) => `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`).join('');
-}
-
-function formatTime(value) {
-  if (!value) return 'Never';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Unknown';
-  return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 async function loadSettings() {
@@ -156,15 +104,80 @@ async function addKeyword(event) {
     return;
   }
   settings.customKeywords = [...settings.customKeywords, keyword].sort((a, b) => a.localeCompare(b));
+  settings.customKeywordTextByPattern = {
+    ...(settings.customKeywordTextByPattern || {}),
+    [keyword]: normalizeHoverText(els.text.value)
+  };
   els.input.value = '';
+  els.text.value = '';
   renderKeywords();
   await saveSettings();
 }
 
 async function removeKeyword(keyword) {
   settings.customKeywords = settings.customKeywords.filter((item) => item !== keyword);
+  if (settings.customKeywordTextByPattern) {
+    delete settings.customKeywordTextByPattern[keyword];
+  }
   renderKeywords();
   await saveSettings();
+}
+
+function exportKeywords() {
+  const payload = {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    extensionName: 'Attentive Rule Highlighter',
+    customKeywords: settings.customKeywords || [],
+    customKeywordTextByPattern: settings.customKeywordTextByPattern || {}
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `attentive-highlighter-keywords-${formatDateForFilename(new Date())}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setStatus('Keyword backup exported.');
+}
+
+async function importKeywords(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+
+  try {
+    const payload = JSON.parse(await file.text());
+    const imported = parseKeywordImport(payload);
+    settings = mergeSettings(DEFAULT_SETTINGS, {
+      ...settings,
+      customKeywords: imported.customKeywords,
+      customKeywordTextByPattern: imported.customKeywordTextByPattern
+    });
+    renderKeywords();
+    await saveSettings();
+    setStatus(`Imported ${settings.customKeywords.length} keyword${settings.customKeywords.length === 1 ? '' : 's'}.`);
+  } catch (error) {
+    logOperationalFailure('settings_save_failed', 'KEYWORD_IMPORT_FAILED', 'Keyword backup could not be imported', {
+      operation: 'customKeywordsImport'
+    });
+    setStatus('Import failed. Choose a valid keyword backup JSON file.');
+  }
+}
+
+function parseKeywordImport(payload) {
+  const source = payload && typeof payload === 'object' && payload.amhSettings ? payload.amhSettings : payload;
+  if (!source || typeof source !== 'object' || !Array.isArray(source.customKeywords)) {
+    throw new Error('Missing customKeywords array');
+  }
+  const customKeywords = Array.from(new Set(source.customKeywords.map(normalizeKeyword).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b));
+  return {
+    customKeywords,
+    customKeywordTextByPattern: normalizeCustomKeywordTextMap(customKeywords, source.customKeywordTextByPattern || {})
+  };
 }
 
 function renderKeywords() {
@@ -195,13 +208,34 @@ function mergeSettings(base, override) {
   const merged = {
     ...base,
     ...override,
-    customKeywords: Array.isArray(override?.customKeywords) ? override.customKeywords.map(normalizeKeyword).filter(Boolean) : base.customKeywords
+    customKeywords: Array.isArray(override?.customKeywords) ? override.customKeywords.map(normalizeKeyword).filter(Boolean) : base.customKeywords,
+    customKeywordTextByPattern: normalizeCustomKeywordTextMap(override?.customKeywords, override?.customKeywordTextByPattern || base.customKeywordTextByPattern || {})
   };
   return merged;
 }
 
 function normalizeKeyword(value) {
+  if (value && typeof value === 'object') return String(value.pattern || value.name || '').trim().replace(/\s+/g, ' ');
   return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+function normalizeHoverText(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+function normalizeCustomKeywordTextMap(customKeywords, existingTextByPattern = {}) {
+  const textByPattern = {};
+  for (const item of customKeywords || []) {
+    if (item && typeof item === 'object') {
+      const pattern = normalizeKeyword(item);
+      if (pattern) textByPattern[pattern] = normalizeHoverText(item.text || existingTextByPattern[pattern] || '');
+    }
+  }
+  for (const [pattern, text] of Object.entries(existingTextByPattern || {})) {
+    const normalized = normalizeKeyword(pattern);
+    if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = normalizeHoverText(text);
+  }
+  return textByPattern;
 }
 
 function setStatus(text) {
@@ -210,6 +244,10 @@ function setStatus(text) {
   setStatus.timer = window.setTimeout(() => {
     els.status.textContent = '';
   }, 3200);
+}
+
+function formatDateForFilename(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 function escapeHtml(value) {

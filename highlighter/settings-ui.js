@@ -6,9 +6,6 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     opacityValue: document.querySelector('#opacityValue'),
     selector: document.querySelector('#selector'),
     categories: document.querySelector('#categories'),
-    diagnosticsList: document.querySelector('#diagnosticsList'),
-    refreshDiagnostics: document.querySelector('#refreshDiagnostics'),
-    uploadDiagnostics: document.querySelector('#uploadDiagnostics'),
     save: document.querySelector('#save'),
     reset: document.querySelector('#reset'),
     status: document.querySelector('#status')
@@ -55,71 +52,12 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     els.save.addEventListener('click', save);
     els.reset.addEventListener('click', reset);
     els.opacity.addEventListener('input', updateOpacityLabel);
-    els.refreshDiagnostics?.addEventListener('click', refreshDiagnostics);
-    els.uploadDiagnostics?.addEventListener('click', uploadDiagnostics);
-    await refreshDiagnostics();
     logOperationalEvent({
       eventType: 'options_opened',
       severity: 'info',
       result: 'success',
       durationMs: performance.now() - startedAt
     });
-  }
-
-  async function refreshDiagnostics() {
-    if (!els.diagnosticsList) return;
-    try {
-      const response = await chrome.runtime.sendMessage({ type: 'highlighter:getDiagnostics' });
-      if (!response?.ok) throw new Error('Diagnostics unavailable');
-      renderDiagnostics(response.diagnostics);
-    } catch (error) {
-      renderDiagnostics(null);
-      logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Diagnostics could not be loaded', {
-        operation: 'diagnostics'
-      });
-    }
-  }
-
-  async function uploadDiagnostics() {
-    setStatus('Uploading queued diagnostics...');
-    try {
-      const response = await chrome.runtime.sendMessage({ type: 'highlighter:runDiagnosticsUpload' });
-      if (!response?.ok) throw new Error('Diagnostics upload unavailable');
-      renderDiagnostics(response.diagnostics);
-      setStatus('Diagnostics upload requested.');
-    } catch (error) {
-      setStatus('Diagnostics upload failed.');
-      logOperationalFailure('upload_failed', 'UPLOAD_NETWORK_FAILED', 'Diagnostics upload could not be requested', {
-        operation: 'diagnostics'
-      });
-    }
-  }
-
-  function renderDiagnostics(diagnostics) {
-    if (!els.diagnosticsList) return;
-    if (!diagnostics) {
-      els.diagnosticsList.innerHTML = '<div><dt>Status</dt><dd>Unavailable</dd></div>';
-      return;
-    }
-    const queue = diagnostics.queueStats || {};
-    const upload = diagnostics.uploadStatus || {};
-    const config = diagnostics.loggingConfig || {};
-    const stats = diagnostics.lastStats || {};
-    els.diagnosticsList.innerHTML = [
-      ['Logging', config.configured ? 'Configured' : 'Not configured'],
-      ['Queue', `${queue.pendingCount || 0} pending`],
-      ['Last upload', formatTime(upload.lastUploadAt || upload.lastSuccessfulUploadAt)],
-      ['Last error', upload.lastErrorCode || 'None'],
-      ['Loaded rules', Number.isFinite(stats.loadedRules) ? String(stats.loadedRules) : 'n/a'],
-      ['Highlights', Number.isFinite(stats.highlights) ? String(stats.highlights) : 'n/a']
-    ].map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`).join('');
-  }
-
-  function formatTime(value) {
-    if (!value) return 'Never';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Unknown';
-    return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
 
   async function loadSettings() {
@@ -143,7 +81,7 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     els.categories.innerHTML = '';
 
     for (const [key, category] of Object.entries(settings.categories)) {
-      const isFixedColor = key === 'custom_keywords';
+      const isFixedColor = key === 'user_added';
       const row = document.createElement('div');
       row.className = 'category';
       row.innerHTML = `
@@ -261,13 +199,40 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
         ...((override.categories && override.categories[key]) || {})
       };
     }
-    if (base.categories.custom_keywords && merged.categories.custom_keywords) {
-      merged.categories.custom_keywords.color = base.categories.custom_keywords.color;
+    if (base.categories.user_added && merged.categories.user_added) {
+      merged.categories.user_added.color = base.categories.user_added.color;
     }
 
     merged.opacity = clamp(Number(merged.opacity ?? base.opacity), 0.08, 0.85);
     merged.selector = String(merged.selector || base.selector);
+    merged.customKeywords = Array.isArray(override?.customKeywords)
+      ? Array.from(new Set(override.customKeywords.map(normalizeKeyword).filter(Boolean)))
+      : [...(base.customKeywords || [])];
+    merged.customKeywordTextByPattern = normalizeCustomKeywordTextMap(
+      override?.customKeywords,
+      override?.customKeywordTextByPattern || base.customKeywordTextByPattern || {}
+    );
     return merged;
+  }
+
+  function normalizeKeyword(value) {
+    if (value && typeof value === 'object') return String(value.pattern || value.name || '').trim().replace(/\s+/g, ' ');
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function normalizeCustomKeywordTextMap(customKeywords, existingTextByPattern = {}) {
+    const textByPattern = {};
+    for (const item of customKeywords || []) {
+      if (item && typeof item === 'object') {
+        const pattern = normalizeKeyword(item);
+        if (pattern) textByPattern[pattern] = String(item.text || existingTextByPattern[pattern] || '').trim().replace(/\s+/g, ' ');
+      }
+    }
+    for (const [pattern, text] of Object.entries(existingTextByPattern || {})) {
+      const normalized = normalizeKeyword(pattern);
+      if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = String(text || '').trim().replace(/\s+/g, ' ');
+    }
+    return textByPattern;
   }
 
   function setStatus(text) {

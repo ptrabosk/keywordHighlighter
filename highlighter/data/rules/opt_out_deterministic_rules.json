@@ -11,7 +11,7 @@
       "match_target": "BRAND_MESSAGE + CUSTOMER_MESSAGE",
       "match_scope": "procedural",
       "condition_summary": "Brand message matches the Hot Topic frequency prompt and normalized customer reply does not contain 4, four, never, or any combination of those opt-out tokens.",
-      "subcategory": "hot_topic",
+      "subcategory": "hot_topic_non_opt_out",
       "opt_out": "non_opt_out",
       "action": "close"
     },
@@ -26,7 +26,7 @@
       "match_target": "BRAND_MESSAGE + CUSTOMER_MESSAGE",
       "match_scope": "procedural",
       "condition_summary": "Brand message matches the Hot Topic frequency prompt and normalized customer reply contains 4, four, never, or any combination of those opt-out tokens.",
-      "subcategory": "hot_topic",
+      "subcategory": "hot_topic_opt_out",
       "opt_out": "opt_out",
       "action": "opt_out"
     },
@@ -176,7 +176,7 @@
     },
     {
       "id": "rule_7f5dea328a22ec3b",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "autoQAMessages.json_array.non_opt_out.auto_reply.003.auto_generated_text_i_ll_call_you_later",
       "category": "non_opt_out",
       "prediction": 0,
@@ -335,18 +335,15 @@
       "id": "rule_8c5cba2f8f1724e9",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.002.fuck_off",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "fuck off",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_b6ca67714384c052",
@@ -394,120 +391,99 @@
       "id": "rule_bc6c993b8fc4823a",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.006.fucking_stop",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "fucking stop",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_a85bea4aebd23b15",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.007.go_fuck_yourself",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "go fuck yourself",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_42f9acffeaa437e0",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.009.shut_the_fuck_up",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "shut the fuck up",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_7de94f161ab433c8",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.010.stfu",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "stfu",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_c13640da933ab27e",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.011.stop_bitch",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "stop bitch",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_8bfec7744b353651",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.012.stop_fucking_texting_me",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "stop fucking texting me",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_d9b38d17ec4f8251",
       "type": "literal_phrase",
       "name": "autoQAMessages.json_array.opt_out_offensive.013.sybau",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "sybau",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "offensive_language_disabled",
-      "action": "no_action",
-      "notes": [
-        "Disabled per offensive_language tightening: only fuck you/fuck u/fuck yall/fu/f u should flag."
-      ]
+      "opt_out": "opt_out",
+      "subcategory": "offensive_language",
+      "action": "opt_out"
     },
     {
       "id": "rule_235ad34a90c941a4",
@@ -515,10 +491,10 @@
       "name": "optOutClassifier.json.patterns.14",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:call(?:ing)?|contact(?:ing)?|speak(?:ing)?\\s+to|talk(?:ing)?\\s+to|get(?:ting)?|hire|hiring)\\s+(?:a|an|my|the)?\\s*lawyer\\b|\\bmy\\s+lawyer\\s+(?:will|is\\s+going\\s+to|is\\s+gonna)\\b",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "pattern": "lawy...",
+      "flags": "",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: medium"
       ],
@@ -637,7 +613,7 @@
       "pattern": "not interested",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: medium"
       ],
@@ -688,7 +664,7 @@
       "pattern": "I don't / do not want",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -705,7 +681,7 @@
       "pattern": "alto",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -715,20 +691,20 @@
     },
     {
       "id": "rule_9bdc0e31508e72b3",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.69",
-      "category": "non_opt_out",
-      "prediction": 0,
-      "pattern": "(?!)",
+      "category": "opt_out",
+      "prediction": 1,
+      "pattern": "annoy...",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
-      "opt_out": "non_opt_out",
-      "subcategory": "legal_disabled",
-      "action": "no_action"
+      "opt_out": "opt_out",
+      "subcategory": "legal",
+      "action": "opt_out"
     },
     {
       "id": "rule_166a66a745f9f965",
@@ -736,10 +712,10 @@
       "name": "optOutClassifier.json.patterns.39",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:call(?:ing)?|contact(?:ing)?|speak(?:ing)?\\s+to|talk(?:ing)?\\s+to|get(?:ting)?|hire|hiring)\\s+(?:a|an|my|the)?\\s*(?:lawyer|attorney)\\b|\\bmy\\s+(?:lawyer|attorney)\\s+(?:will|is\\s+going\\s+to|is\\s+gonna)\\b",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "pattern": "attorn...",
+      "flags": "",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -749,14 +725,14 @@
     },
     {
       "id": "rule_3ec2303b421a17e4",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.68",
       "category": "non_opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:stop\\s+bothering\\s+me|stop\\s+harassing\\s+me|stop\\s+spamming\\s+me)\\b",
+      "pattern": "bother...",
       "flags": "",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -766,7 +742,7 @@
     },
     {
       "id": "rule_43211f1e95245113",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.100",
       "category": "opt_out",
       "prediction": 1,
@@ -953,14 +929,14 @@
     },
     {
       "id": "rule_39b7121564050300",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.56",
       "category": "non_opt_out",
       "prediction": 1,
-      "pattern": "^fraud$",
+      "pattern": "fraud...",
       "flags": "",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1025,10 +1001,10 @@
       "name": "optOutClassifier.json.patterns.63",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:lawsuit|class\\s+action|legal\\s+action)\\b|\\b(?:breaking|broke|violating|violated)\\s+(?:the\\s+)?law\\b|\\b(?:against|under)\\s+(?:the\\s+)?law\\b",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "pattern": "laws...",
+      "flags": "",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1038,7 +1014,7 @@
     },
     {
       "id": "rule_7a4d206ec76b8cd4",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.65",
       "category": "opt_out",
       "prediction": 1,
@@ -1062,7 +1038,7 @@
       "pattern": "no longer",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1113,7 +1089,7 @@
       "pattern": "quit...",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1130,7 +1106,7 @@
       "pattern": "remeuva",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1144,10 +1120,10 @@
       "name": "optOutClassifier.json.patterns.81",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:i\\s+(?:am\\s+)?|im\\s+)?report(?:ing)?\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\b|\\b(?:report|reporting)\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\s+to\\b",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "pattern": "report...",
+      "flags": "",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1157,14 +1133,14 @@
     },
     {
       "id": "rule_4423fa32b736be6f",
-      "type": "regex",
+      "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.82",
       "category": "opt_out",
       "prediction": 1,
       "pattern": "revoke",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1181,7 +1157,7 @@
       "pattern": "s t o p",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1232,7 +1208,7 @@
       "pattern": "stop2cancel",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1249,7 +1225,7 @@
       "pattern": "stop2unsubscribe",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1266,7 +1242,7 @@
       "pattern": "stopannul",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1283,7 +1259,7 @@
       "pattern": "stpo",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1297,10 +1273,10 @@
       "name": "optOutClassifier.json.patterns.99",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:i\\s+(?:am\\s+)?|im\\s+)?suing\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\b|\\b(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\s+(?:are|is|re)?\\s*(?:getting\\s+)?sued\\b",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "pattern": "suing",
+      "flags": "",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1348,16 +1324,16 @@
       "name": "optOutClassifier.json.patterns.104",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "(?!)",
+      "pattern": "terminat...",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
-      "opt_out": "non_opt_out",
-      "subcategory": "legal_disabled",
-      "action": "no_action"
+      "opt_out": "opt_out",
+      "subcategory": "legal",
+      "action": "opt_out"
     },
     {
       "id": "rule_70719634f666cdd5",
@@ -1368,7 +1344,7 @@
       "pattern": "unenroll",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
       ],
@@ -1385,7 +1361,7 @@
       "pattern": "do not text",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "contains_full_normalized_phrase",
       "aliases": [
         "autoQAMessages.json_array.opt_out_phrases.080.do_not_text"
       ],
@@ -1402,7 +1378,7 @@
       "pattern": "do not text me",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "contains_full_normalized_phrase",
       "aliases": [
         "autoQAMessages.json_array.opt_out_phrases.081.do_not_text_me"
       ],
@@ -1419,7 +1395,7 @@
       "pattern": "don t text me",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "contains_full_normalized_phrase",
       "aliases": [
         "autoQAMessages.json_array.opt_out_phrases.082.don_t_text_me"
       ],
@@ -1457,6 +1433,20 @@
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
+    },
+    {
+      "id": "rule_cc5eeb5fc6b88c64",
+      "type": "literal_phrase",
+      "name": "autoQAMessages.json_array.opt_out_phrases.006.i_m_done",
+      "category": "non_opt_out",
+      "prediction": 1,
+      "pattern": "i m done",
+      "flags": "",
+      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_scope": "contains_full_normalized_phrase",
+      "opt_out": "non_opt_out",
+      "subcategory": "done",
+      "action": "fuzzy_opt_out"
     },
     {
       "id": "rule_13c0f6e52d78fa78",
@@ -1512,7 +1502,7 @@
       "pattern": "ended",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: medium"
       ],
@@ -1614,7 +1604,7 @@
       "pattern": "unsuscrib...",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: medium"
       ],
@@ -1665,7 +1655,7 @@
       "pattern": "\\bfraud\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -1682,7 +1672,7 @@
       "pattern": "\\bharass\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -1696,10 +1686,10 @@
       "name": "optOutClassifier.json.patterns.61",
       "category": "opt_out",
       "prediction": null,
-      "pattern": "\\b(?:i\\s+(?:am\\s+)?|im\\s+)?report(?:ing)?\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\b|\\b(?:report|reporting)\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\s+to\\b",
+      "pattern": "\\breport\\w*",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "confidence: low",
         "negative_matches: 4",
@@ -1717,7 +1707,7 @@
       "name": "optOutClassifier.json.patterns.8",
       "category": "non_opt_out",
       "prediction": null,
-      "pattern": "^\\s*spam\\s*$",
+      "pattern": "\\bspam\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -1752,10 +1742,10 @@
       "name": "autoQAMessages.json_array.direct_opt_out_rules.channel_patterns.001.don_t_text_do_not_text_no_text_i_do_not_want_text_i_don_t_want_text_i_",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(don'?t text|do not text|no text|i do not want text|i don'?t want text|i do not want to text|i don'?t want to text|not accepting texts|use voice call|send email|email me instead|i don'?t like to get text|i really don'?t like to get text)\\b",
+      "pattern": "\\b(don'?t text|do not text|no text|i do not want text|i don'?t want text|i do not want to text|i don'?t want to text|not accepting texts|please call|call me instead|use voice call|send email|email me instead|i don'?t like to get text|i really don'?t like to get text)\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -1783,7 +1773,7 @@
       "pattern": "\\b(stop|unsubscribe|unsub|opt out|opt-out|remove me|delete me|don'?t send|do not send|stop texting|stop messaging|no more messages|no more texts|don'?t reach out|ban me)\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -1797,7 +1787,7 @@
       "pattern": "\\b(unsubscribe|unsub|opt out|opt-out|dnc|do not call list|put me on.*do not call)\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -1808,7 +1798,7 @@
       "name": "autoQAMessages.json_array.direct_opt_out_rules.wrong_number_patterns.001.wrong_number_wrong_person_not_me_this_is_not_me_this_is_not_account_ne",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "^(?:not me|this is not me)$|\\b(wrong number|wrong person|this is not .*account|new phone number|new number|change my number|change phone number|change my phone number|change number|change my text subscription number|this phone number is no longer in service|not my number|this is not [a-z]+|i'?ve had this number for years|someone else had this number)\\b",
+      "pattern": "\\b(wrong number|wrong person|not me|this is not me|this is not .*account|new phone number|new number|change my number|change phone number|change my phone number|change number|change my text subscription number|this phone number is no longer in service|not my number|this is not [a-z]+|i'?ve had this number for years|someone else had this number)\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -1822,10 +1812,10 @@
       "name": "autoQAMessages.labels.offensive_word_re",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "\\b(?:fuck|fucking|fu|fuxk|stfu|sybau)\\b",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "match_target": "raw CUSTOMER_MESSAGE",
+      "match_scope": "regex_search_for_offensive_phrase_expansion",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
       "action": "opt_out"
@@ -1836,7 +1826,7 @@
       "name": "autoQAMessages.json_array.offensive.frustration_patterns.001.go_fuck_yourself_shut_the_fuck_up_go_to_hell_fuck_yall_fuck_off_fuck_y",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "\\b(?:go\\ fuck\\ yourself|shut\\ the\\ fuck\\ up|go\\ to\\ hell|fuck\\ yall|fuck\\ off|fuck\\ you|fuck\\ u|sybau|stfu|fu|fuxk\\ you)\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -1853,7 +1843,7 @@
       "pattern": "(?:dont|do not)\\s+want\\s+(?:this|these|anything)",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
       "action": "fuzzy_opt_out"
@@ -1867,7 +1857,7 @@
       "pattern": "(?:dont|do not)\\s+want\\s+any",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
       "action": "fuzzy_opt_out"
@@ -1881,7 +1871,7 @@
       "pattern": "(?:dont|do not)\\s+want\\s+it",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
       "action": "fuzzy_opt_out"
@@ -1963,7 +1953,7 @@
       "pattern": "i dont want any more",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "normalized_keyword": "i dont want any more",
       "keyword_collapse": {
         "normalized_keyword": "i dont want any more",
@@ -1992,7 +1982,7 @@
       "pattern": "i dont want more",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "normalized_keyword": "i dont want more",
       "keyword_collapse": {
         "normalized_keyword": "i dont want more",
@@ -2021,7 +2011,7 @@
       "pattern": "i dont want this brand",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "normalized_keyword": "i dont want this brand",
       "keyword_collapse": {
         "normalized_keyword": "i dont want this brand",
@@ -2037,6 +2027,35 @@
       },
       "notes": [
         "Collapsed 4 normalized keyword rules for 'i dont want this brand'."
+      ],
+      "opt_out": "non_opt_out",
+      "subcategory": "not_interested",
+      "action": "fuzzy_opt_out"
+    },
+    {
+      "id": "rule_9f9f434d2cfc8890",
+      "type": "regex",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.017.i_m_done",
+      "category": "non_opt_out",
+      "prediction": 2,
+      "pattern": "im done",
+      "flags": "i",
+      "match_target": "normalized_customer_message",
+      "match_scope": "regex_search",
+      "normalized_keyword": "im done",
+      "keyword_collapse": {
+        "normalized_keyword": "im done",
+        "collapsed_rule_count": 3,
+        "removed_rule_count": 2,
+        "source_rule_ids": [
+          "rule_53833f630b1b2304",
+          "rule_881da9bf622b5c5b",
+          "rule_9f9f434d2cfc8890"
+        ],
+        "coverage_basis": "same normalized simple keyword/phrase under runner normalization"
+      },
+      "notes": [
+        "Collapsed 3 normalized keyword rules for 'im done'."
       ],
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
@@ -2119,7 +2138,7 @@
       "pattern": "(i don't|i dont|i do not) want( any| it| these| this)?",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
       "action": "fuzzy_opt_out"
@@ -2175,20 +2194,16 @@
     {
       "id": "rule_56a5032d2bfabde1",
       "type": "regex",
-      "name": "zapOptOuts.classifier.FUZZY_RULES.done_or_im_done",
+      "name": "zapOptOuts.classifier.FUZZY_RULES.generic_done",
       "category": "non_opt_out",
       "prediction": 2,
-      "pattern": "^\\s*(?:(?:i\\s*m|im|i\\s+am|i'm)\\s+)?done[.!?,;:]*\\s*$",
+      "pattern": "\\bdone\\b",
       "flags": "i",
-      "match_target": "normalized_customer_message OR normalized CUSTOMER_MESSAGE",
+      "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
-      "action": "fuzzy_opt_out",
-      "notes": [
-        "Collapsed standalone done and im/i m/i am/i'm done variants into one rule.",
-        "Replaces rule_cc5eeb5fc6b88c64, rule_9f9f434d2cfc8890, rule_83b3924cfc4fb214, rule_7a4aabc615457dc9, and rule_157e140013fc23de."
-      ]
+      "action": "fuzzy_opt_out"
     },
     {
       "id": "rule_4b7bdff9be0af7eb",
@@ -2278,7 +2293,7 @@
       "pattern": "^\\s*finished[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: opt-out-workflow.json node 4 code step"
       ],
@@ -2295,7 +2310,7 @@
       "pattern": "^\\s*pause[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: opt-out-workflow.json node 4 code step"
       ],
@@ -2312,7 +2327,7 @@
       "pattern": "^\\s*shush[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -2326,7 +2341,7 @@
       "pattern": "^bye$",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -2353,20 +2368,6 @@
       "prediction": 2,
       "pattern": "not\\s+a\\s+customer\\s+anymore",
       "flags": "",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
-      "opt_out": "non_opt_out",
-      "subcategory": "not_interested",
-      "action": "fuzzy_opt_out"
-    },
-    {
-      "id": "rule_zap_not_doing_business_search",
-      "type": "regex",
-      "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.not_doing_business",
-      "category": "non_opt_out",
-      "prediction": 2,
-      "pattern": "\\bnot\\s+doing\\s+business\\b",
-      "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
       "opt_out": "non_opt_out",
@@ -2447,10 +2448,10 @@
       "name": "autoQAMessages.labels.inferred_opt_out.003.do_not_don_t_text_message_contact_advertise_promote_show_spam_n",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:do\\s+not|don['â€™`]?t)\\s+(?:text|message|contact|advertise|promote|spam)\\b[^\\n.!?]*",
+      "pattern": "\\b(?:do\\s+not|don['’`]?t)\\s+(?:text|message|contact|advertise|promote|show|spam)\\b[^\\n.!?]*",
       "flags": "i",
       "match_target": "raw CUSTOMER_MESSAGE",
-      "match_scope": "full_message_phrase_inference",
+      "match_scope": "regex_search_for_phrase_inference",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -2632,7 +2633,7 @@
       "name": "optOutClassifier.validator.curated.093.legal",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:i\\s+(?:am\\s+)?|im\\s+)?suing\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\b|\\b(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\s+(?:are|is|re)?\\s*(?:getting\\s+)?sued\\b",
+      "pattern": "\\bsuing\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
       "match_scope": "regex_search",
@@ -2785,12 +2786,12 @@
       "name": "opt_outs_ml.regex_rules.087.no_notifications",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "^iâ€™m not receiving notifications if this is urgent reply â€œurgentâ€ to send a notification through with your original message$",
+      "pattern": "^i’m not receiving notifications if this is urgent reply “urgent” to send a notification through with your original message$",
       "flags": "iu",
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
       "notes": [
-        "Raw CSV text: iÃ¢â‚¬â„¢m not receiving notifications if this is urgent reply Ã¢â‚¬Å“urgentÃ¢â‚¬Â to send a notification through with your original message"
+        "Raw CSV text: iâ€™m not receiving notifications if this is urgent reply â€œurgentâ€ to send a notification through with your original message"
       ],
       "opt_out": "non_opt_out",
       "subcategory": "auto_reply",
@@ -3867,10 +3868,10 @@
       "name": "zapOptOuts.deterministic_js.not_opt_out.014.subscribe",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "^subscrib(?:e|es|ed|ing)$",
+      "pattern": "subscribe",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "non_opt_out",
       "subcategory": "opt_in",
       "action": "close"
@@ -3923,7 +3924,7 @@
       "name": "zapOptOuts.deterministic_js.not_opt_out.082.thank_u",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "thank u",
+      "pattern": "^thank u$",
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
@@ -3937,7 +3938,7 @@
       "name": "zapOptOuts.deterministic_js.not_opt_out.054.thanks",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "thanks",
+      "pattern": "^thanks$",
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
@@ -4016,7 +4017,7 @@
       "name": "zapOptOuts.deterministic_js.not_opt_out.053.thx",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "thx",
+      "pattern": "^thx$",
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
@@ -4120,7 +4121,7 @@
       "pattern": "(?:dont|do not)\\s+(?:(?:talk|speak|message|email|text)\\s+to\\s+me|text\\s+me)",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -4143,15 +4144,15 @@
       "id": "rule_317fdbf0a6758d04",
       "type": "regex",
       "name": "zapOptOuts.workflow.node_4.opt_out.not_opted_in",
-      "category": "non_opt_out",
-      "prediction": 0,
-      "pattern": "^subscrib(?:e|es|ed|ing)$",
+      "category": "opt_out",
+      "prediction": 1,
+      "pattern": "(?:never|didnt)?\\s*(?:opted\\s+in|signed\\s+up|subscribed?)",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
-      "opt_out": "non_opt_out",
-      "subcategory": "opt_in",
-      "action": "close"
+      "opt_out": "opt_out",
+      "subcategory": "unsubscribe_phrase",
+      "action": "opt_out"
     },
     {
       "id": "rule_b8c3a6322862acfc",
@@ -4159,9 +4160,9 @@
       "name": "zapOptOuts.classifier.HARD_RULES.keyword_shut_up",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "(?:shut\\s+(?:the\\s+fuck\\s+)?up|shut\\s+yourself|\\b(?:stfu|stdu|gtfo)\\b)",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
@@ -4173,7 +4174,7 @@
       "name": "zapOptOuts.workflow.node_4.opt_out.stop_texting_emailing_messaging",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "stop\\s+(?:texting|text|emailing|email|messaging|message)(?:\\s+me)?",
+      "pattern": "(?:stop|dont|do not)\\s+(?:texting|text|emailing|email|messaging|message)(?:\\s+me)?",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -4187,7 +4188,7 @@
       "name": "zapOptOuts.workflow.node_4.opt_out.legal_threat",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "(?:\\bsue\\s+(?:you|u)\\b|\\blegal\\s+action\\b|\\b(?:call(?:ing)?|contact(?:ing)?|speak(?:ing)?\\s+to|talk(?:ing)?\\s+to|get(?:ting)?|hire|hiring)\\s+(?:a|an|my|the)?\\s*(?:lawyer|attorney)\\b|\\bmy\\s+(?:lawyer|attorney)\\s+(?:will|is\\s+going\\s+to|is\\s+gonna)\\b|\\b(?:file|filed|filing)\\s+(?:a\\s+)?complaint\\b|\\b(?:bbb|better\\s+business\\s+bureau)\\b)",
+      "pattern": "(?:sue you|legal\\s+action|attorney|lawyer|complaint| bbb | better business bureau )",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -4218,7 +4219,7 @@
       "pattern": "(?<![a-z0-9])(?:(don't|dont) send me emails or texts)(?![a-z0-9])",
       "flags": "i",
       "match_target": "normalized_customer_message OR stage1_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "bounded_phrase_regex_search",
       "notes": [
         "Raw deterministic source pattern: (don't|dont) send me emails or texts"
       ],
@@ -4279,9 +4280,9 @@
       "name": "zapOptOuts.deterministic_js.hard_opt_out.048.eat_shit",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "eat shit",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "normalized_keyword": "eat shit",
       "keyword_collapse": {
@@ -4851,10 +4852,24 @@
       "pattern": "(don't|dont) send me emails or texts",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
+    },
+    {
+      "id": "rule_83b3924cfc4fb214",
+      "type": "regex",
+      "name": "zapOptOuts.deterministic_js.indirect.020.i_m_im_done",
+      "category": "non_opt_out",
+      "prediction": 1,
+      "pattern": "(i'm|im) done",
+      "flags": "i",
+      "match_target": "normalized_customer_message",
+      "match_scope": "regex_search",
+      "opt_out": "non_opt_out",
+      "subcategory": "done",
+      "action": "fuzzy_opt_out"
     },
     {
       "id": "rule_a0fc16105db53fd4",
@@ -4882,7 +4897,7 @@
       "pattern": "\\b(?:do not|dont)\\s+(?:contact|text|message|email|call)\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -4893,9 +4908,9 @@
       "name": "zapOptOuts.classifier.HARD_RULES.profanity",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "\\b(?:go )?fuck(?: off| you| yourself| yall)?\\b|\\bgtfo\\b|\\bstfu\\b",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
@@ -4927,7 +4942,7 @@
       "pattern": "\\bopted(\\s*|\\-?)out\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -4941,10 +4956,10 @@
       "name": "optOutClassifier.validator.curated.059.opt_out",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "^\\s*opts\\s*$",
+      "pattern": "\\bopts\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -4975,10 +4990,10 @@
       "name": "optOutClassifier.validator.curated.068.opt_out",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "^\\s*revoke\\s*$",
+      "pattern": "\\brevoke\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -4995,7 +5010,7 @@
       "pattern": "^\\s*cncl[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: opt-out-workflow.json node 4 code step"
       ],
@@ -5012,13 +5027,27 @@
       "pattern": "^\\s*dnc[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: opt-out-workflow.json node 4 code step"
       ],
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
+    },
+    {
+      "id": "rule_7a4aabc615457dc9",
+      "type": "regex",
+      "name": "zapOptOuts.workflow.node_4.opt_out.keyword_done",
+      "category": "non_opt_out",
+      "prediction": 1,
+      "pattern": "^\\s*done[.!?,;:]*\\s*$",
+      "flags": "i",
+      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_scope": "regex_search",
+      "opt_out": "non_opt_out",
+      "subcategory": "done",
+      "action": "fuzzy_opt_out"
     },
     {
       "id": "rule_9fe7dbf6d648b75c",
@@ -5029,7 +5058,7 @@
       "pattern": "^\\s*end[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -5043,7 +5072,7 @@
       "pattern": "^\\s*oot[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -5057,7 +5086,7 @@
       "pattern": "^\\s*quiet[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -5071,7 +5100,7 @@
       "pattern": "^\\s*remove[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -5085,7 +5114,7 @@
       "pattern": "^\\s*rmv[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: opt-out-workflow.json node 4 code step"
       ],
@@ -5102,7 +5131,7 @@
       "pattern": "^\\s*wtop[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: opt-out-workflow.json node 4 code step"
       ],
@@ -5119,7 +5148,7 @@
       "pattern": "^dnc$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/classifier.py"
       ],
@@ -5136,7 +5165,7 @@
       "pattern": "^end$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/classifier.py"
       ],
@@ -5153,7 +5182,7 @@
       "pattern": "^opt$",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -5167,7 +5196,7 @@
       "pattern": "^quit$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/classifier.py"
       ],
@@ -5184,7 +5213,7 @@
       "pattern": "^stop$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/classifier.py"
       ],
@@ -5235,7 +5264,7 @@
       "pattern": "^unsubscribe$",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/classifier.py"
       ],
@@ -5252,7 +5281,7 @@
       "pattern": "finished|pause|shush|stfu",
       "flags": "i",
       "match_target": "inbound DOM message text",
-      "match_scope": "full_normalized_message",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/deterministic_rules.py"
       ],
@@ -5266,10 +5295,10 @@
       "name": "zapOptOuts.deterministic_js.hard_opt_out.039.fu",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "fu",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "match_target": "normalized_customer_message",
+      "match_scope": "full_normalized_message",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
       "action": "opt_out"
@@ -5280,10 +5309,10 @@
       "name": "deterministic.hard_opt_out.043",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "gtfo",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "match_target": "inbound DOM message text",
+      "match_scope": "highlight_regex_search",
       "notes": [
         "source: optout_classifier/deterministic_rules.py"
       ],
@@ -5342,9 +5371,9 @@
       "name": "zapOptOuts.deterministic_js.direct_expanded.001.leave_me_the_fuck_alone",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "leave me( the fuck)? alone",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
@@ -5404,7 +5433,7 @@
       "pattern": "please remove",
       "flags": "i",
       "match_target": "normalized_customer_message",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
@@ -5415,7 +5444,7 @@
       "name": "zapOptOuts.deterministic_js.indirect.006.report_ed",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:i\\s+(?:am\\s+)?|im\\s+)?report(?:ing)?\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\b|\\b(?:report|reporting)\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\s+to\\b",
+      "pattern": "report(ed)?",
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
@@ -5429,9 +5458,9 @@
       "name": "zapOptOuts.deterministic_js.indirect.022.shut_the_fuck_up",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "shut( the fuck)? up",
       "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
@@ -5477,7 +5506,7 @@
       "name": "zapOptOuts.deterministic_js.indirect.011.sue_lawsuit_legal_action_attorney_lawyer_complaint",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:sue\\s+(?:you|u)|suing\\s+(?:you|u|your\\s+company|this\\s+company|the\\s+company)|(?:you|u|your\\s+company|this\\s+company|the\\s+company)\\s+(?:are|is|re)?\\s*(?:getting\\s+)?sued|lawsuit|class\\s+action|legal\\s+action)\\b|\\b(?:call(?:ing)?|contact(?:ing)?|speak(?:ing)?\\s+to|talk(?:ing)?\\s+to|get(?:ting)?|hire|hiring)\\s+(?:a|an|my|the)?\\s*(?:lawyer|attorney)\\b|\\bmy\\s+(?:lawyer|attorney)\\s+(?:will|is\\s+going\\s+to|is\\s+gonna)\\b|\\b(?:file|filed|filing)\\s+(?:a\\s+)?complaint\\b",
+      "pattern": "sue|lawsuit|legal action|attorney|lawyer|complaint",
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
@@ -5745,10 +5774,10 @@
       "name": "optOutClassifier.validator.required.001.don_t_don_t_do_not_dont_donot_text_send_contact_message_bother_talk_ca",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "(don't|donâ€™t|do not|dont|donot) (text|send|contact|message|bother|talk|call|write|call or text)( me)?(any more|anymore|again)?",
+      "pattern": "(don't|don’t|do not|dont|donot) (text|send|contact|message|bother|talk|call|write|call or text)( me)?(any more|anymore|again)?",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -5765,7 +5794,7 @@
       "pattern": "(never) (send|text|contact|message|bother|talk)",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -5833,7 +5862,7 @@
       "pattern": "ceas\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -5850,7 +5879,7 @@
       "pattern": "de baja",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -5867,7 +5896,7 @@
       "pattern": "descontin\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -5932,10 +5961,10 @@
       "name": "optOutClassifier.validator.required.030.fraud_w",
       "category": "non_opt_out",
       "prediction": 1,
-      "pattern": "^fraud$",
+      "pattern": "fraud\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -5983,7 +6012,7 @@
       "name": "optOutClassifier.validator.required.040.laws_w",
       "category": "non_opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:lawsuit|class\\s+action|legal\\s+action)\\b|\\b(?:breaking|broke|violating|violated)\\s+(?:the\\s+)?law\\b|\\b(?:against|under)\\s+(?:the\\s+)?law\\b",
+      "pattern": "laws\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
       "match_scope": "regex_search",
@@ -6020,7 +6049,7 @@
       "pattern": "quit\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6037,7 +6066,7 @@
       "pattern": "remeuva",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6051,10 +6080,10 @@
       "name": "optOutClassifier.validator.required.069.s_r_t_y_op",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "^\\s*(?:stop|stopped|stops|stopping)\\s*$",
+      "pattern": "\\b(?:stop|stopped|stops|stopping)\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6071,7 +6100,7 @@
       "pattern": "s\\s*t\\s*o\\s*p",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6105,7 +6134,7 @@
       "pattern": "st(i|o|p)p",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6139,7 +6168,7 @@
       "pattern": "stop2cancel",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6156,7 +6185,7 @@
       "pattern": "stop2unsubscribe",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6173,7 +6202,7 @@
       "pattern": "stopannul",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6207,7 +6236,7 @@
       "pattern": "terminat\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6224,7 +6253,7 @@
       "pattern": "unsub[scribe]?\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Always added to validator extension-ready output."
       ],
@@ -6238,12 +6267,12 @@
       "name": "opt_outs_ml.regex_rules.009.scam",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "^10 shein freebies and a 50 allowance for the lucky just click and claimâ€”so easy$",
+      "pattern": "^10 shein freebies and a 50 allowance for the lucky just click and claim—so easy$",
       "flags": "iu",
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
       "notes": [
-        "Raw CSV text: 10 shein freebies and a 50 allowance for the lucky just click and claimÃ¢â‚¬â€so easy"
+        "Raw CSV text: 10 shein freebies and a 50 allowance for the lucky just click and claimâ€”so easy"
       ],
       "opt_out": "non_opt_out",
       "subcategory": "spam_texts",
@@ -6255,12 +6284,12 @@
       "name": "opt_outs_ml.regex_rules.007.scam",
       "category": "non_opt_out",
       "prediction": 0,
-      "pattern": "^claim 5 free shein products now click the link to help and letâ€™s both win big$",
+      "pattern": "^claim 5 free shein products now click the link to help and let’s both win big$",
       "flags": "iu",
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
       "notes": [
-        "Raw CSV text: claim 5 free shein products now click the link to help and letÃ¢â‚¬â„¢s both win big"
+        "Raw CSV text: claim 5 free shein products now click the link to help and letâ€™s both win big"
       ],
       "opt_out": "non_opt_out",
       "subcategory": "spam_texts",
@@ -6289,10 +6318,10 @@
       "name": "opt_outs_ml.regex_rules.111.stop_keywords",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(?:fuck\\s+you|fuck\\s+u|fuck\\s+yall|f\\s*u|fu)\\b",
+      "pattern": "^fuck you$",
       "flags": "iu",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
+      "match_target": "CUSTOMER_MESSAGE",
+      "match_scope": "full_normalized_message",
       "notes": [
         "Raw CSV text: fuck you"
       ],
@@ -6309,7 +6338,7 @@
       "pattern": "(don't|don\\u2019t|do not|dont|donot)\\s+(text|send|contact|message|bother|talk|call|write|call or text)(\\s+me)?(\\s+(any more|anymore|again))?",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -6326,7 +6355,7 @@
       "pattern": "\\b(s|a|d)top\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "confidence: low",
         "negative_matches: 35",
@@ -6381,7 +6410,7 @@
       "pattern": "\\bterminat\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -6804,7 +6833,7 @@
       "name": "autoQAMessages.json_array.under_13.rules.explicit_age_patterns.001.i_am_im_my_age_is_im_only_i_am_only_im_just_i_am_just_d_1_2",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(i am|im|my age is|im only|i am only|im just|i am just)\\s*(?:[1-9]|1[0-2])\\b(?!\\s+\\d)",
+      "pattern": "\\b(i am|im|my age is|im only|i am only|im just|i am just)\\s*(\\d{1,2})\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -6818,7 +6847,7 @@
       "name": "autoQAMessages.json_array.under_13.rules.explicit_word_age_patterns.001.i_am_im_my_age_is_im_only_i_am_only_im_just_i_am_just_one_two_three_fo",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "\\b(i am|im|my age is|im only|i am only|im just|i am just)\\s*(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b",
+      "pattern": "\\b(i am|im|my age is|im only|i am only|im just|i am just)\\s*(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -6917,7 +6946,7 @@
       "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.012.i_am_in_grade_d",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "i am in grade [1-6]",
+      "pattern": "i am in grade \\d",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -6948,7 +6977,7 @@
       "name": "autoQAMessages.json_array.under_13_rules.indirect_patterns.013.i_m_in_grade_d",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "i'm in grade [1-6]",
+      "pattern": "i'm in grade \\d",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
       "match_scope": "regex_search",
@@ -7067,7 +7096,7 @@
       "pattern": "\\bde baja\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -7084,7 +7113,7 @@
       "pattern": "\\bstop2cancel\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -7101,7 +7130,7 @@
       "pattern": "\\bstop2unsubscribe\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -7118,7 +7147,7 @@
       "pattern": "\\bstopannul\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -7132,10 +7161,10 @@
       "name": "optOutClassifier.validator.curated.102.unsubscribe",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "^\\s*unenroll\\s*$",
+      "pattern": "\\bunenroll\\b",
       "flags": "i",
       "match_target": "normalized_phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "regex_search",
       "notes": [
         "Hand-curated validation regex."
       ],
@@ -7152,7 +7181,7 @@
       "pattern": "f u",
       "flags": "",
       "match_target": "offensive trigger phrase",
-      "match_scope": "full_normalized_message",
+      "match_scope": "short_trigger_filter",
       "opt_out": "opt_out",
       "subcategory": "offensive_language",
       "action": "opt_out"
@@ -7166,7 +7195,7 @@
       "pattern": "bye",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.012.bye"
       ],
@@ -7183,7 +7212,7 @@
       "pattern": "delete",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.023.delete"
       ],
@@ -7200,13 +7229,30 @@
       "pattern": "detener",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.015.detener"
       ],
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
+    },
+    {
+      "id": "rule_157e140013fc23de",
+      "type": "vocabulary",
+      "name": "autoQAMessages.json_array.keyword.exact.029.done",
+      "category": "non_opt_out",
+      "prediction": 1,
+      "pattern": "done",
+      "flags": "",
+      "match_target": "normalized keyword CUSTOMER_MESSAGE",
+      "match_scope": "keyword_detector_input",
+      "aliases": [
+        "autoQAMessages.json_array.opt_out_keywords.016.done"
+      ],
+      "opt_out": "non_opt_out",
+      "subcategory": "done",
+      "action": "fuzzy_opt_out"
     },
     {
       "id": "rule_c3dc65183282baaf",
@@ -7251,7 +7297,7 @@
       "pattern": "exit",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.017.exit"
       ],
@@ -7285,7 +7331,7 @@
       "pattern": "leave",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.018.leave"
       ],
@@ -7302,7 +7348,7 @@
       "pattern": "mute",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.025.mute"
       ],
@@ -7367,7 +7413,7 @@
       "pattern": "quit",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -7398,7 +7444,7 @@
       "pattern": "terminate",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -7412,7 +7458,7 @@
       "pattern": "unfollow",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.opt_out_keywords.022.unfollow"
       ],
@@ -7429,7 +7475,7 @@
       "pattern": "withdraw",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
@@ -7443,7 +7489,7 @@
       "pattern": "arop",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.001.arop"
       ],
@@ -7460,7 +7506,7 @@
       "pattern": "atop",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.003.atop"
       ],
@@ -7477,7 +7523,7 @@
       "pattern": "banned",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7491,7 +7537,7 @@
       "pattern": "c3rvca",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7505,7 +7551,7 @@
       "pattern": "canceled",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7519,7 +7565,7 @@
       "pattern": "canceling",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7533,7 +7579,7 @@
       "pattern": "cancellation",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7547,7 +7593,7 @@
       "pattern": "cancelled",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7561,7 +7607,7 @@
       "pattern": "cancelling",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7575,7 +7621,7 @@
       "pattern": "cancle",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.004.cancle"
       ],
@@ -7592,7 +7638,7 @@
       "pattern": "dtop",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.005.dtop"
       ],
@@ -7609,7 +7655,7 @@
       "pattern": "op out",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.008.op_out"
       ],
@@ -7626,7 +7672,7 @@
       "pattern": "u1rpua",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.053.u1rpua"
       ],
@@ -7643,7 +7689,7 @@
       "pattern": "u1rpuca",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.054.u1rpuca"
       ],
@@ -7660,7 +7706,7 @@
       "pattern": "u3rvca",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.055.u3rvca"
       ],
@@ -7677,7 +7723,7 @@
       "pattern": "unsiscrube",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.071.unsiscrube",
         "autoQAMessages.json_array.typo_opt_out_keyword.073.unsiscrube"
@@ -7695,7 +7741,7 @@
       "pattern": "unsubscrbe",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7709,7 +7755,7 @@
       "pattern": "unsubscride",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7723,7 +7769,7 @@
       "pattern": "unsubsrcibe",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "opt_out": "opt_out",
       "subcategory": "stop_keyword_typo",
       "action": "opt_out"
@@ -7737,7 +7783,7 @@
       "pattern": "wtop",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.068.wtop"
       ],
@@ -7754,7 +7800,7 @@
       "pattern": "ztop",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
+      "match_scope": "typo_keyword_detector_input",
       "aliases": [
         "autoQAMessages.json_array.typo_opt_out_keyword.069.ztop"
       ],

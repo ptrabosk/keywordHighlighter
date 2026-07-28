@@ -1,0 +1,2274 @@
+{
+  "schema_version": 1,
+  "description": "Editable hover text for deterministic highlighter rules. Match by rule id first, then rule name. User-added rules use the user_added default unless a custom text value is saved with the rule.",
+  "defaults": {
+    "user_added": {
+      "title": "user_added",
+      "text": "Review this user-added highlighted pattern.",
+      "name": "{pattern}"
+    },
+    "fallback": {
+      "title": "{action}",
+      "text": "{condition_summary}",
+      "name": "{name}"
+    }
+  },
+  "by_rule_id": {
+    "rule_451c36fb9b91ee65": {
+      "title": "close",
+      "text": "Brand message matches the Hot Topic frequency prompt and normalized customer reply does not contain 4, four, never, or any combination of those opt-out tokens.",
+      "name": "opt_outs_ml.hot_topic_not_opt_out"
+    },
+    "rule_39802d76d8b46842": {
+      "title": "opt_out",
+      "text": "Brand message matches the Hot Topic frequency prompt and normalized customer reply contains 4, four, never, or any combination of those opt-out tokens.",
+      "name": "opt_outs_ml.hot_topic_opt_out"
+    },
+    "rule_combined_single_letter_only": {
+      "title": "close",
+      "text": "Normalized customer message is exactly one ASCII letter.",
+      "name": "combined.single_letter_only"
+    },
+    "rule_combined_number_only": {
+      "title": "close",
+      "text": "Normalized customer message contains only digits.",
+      "name": "combined.number_only"
+    },
+    "rule_06d01f1a0e0b3885": {
+      "title": "close",
+      "text": "Every whitespace-delimited customer token is a URL-like token.",
+      "name": "zapOptOuts.classifier.is_link"
+    },
+    "rule_14492eac781ac6da": {
+      "title": "fuzzy_opt_out",
+      "text": "Normalized message contains a cancellation/removal keyword and subscription/subscriptions.",
+      "name": "zapOptOuts.workflow.node_4.subscription.subscription_candidate"
+    },
+    "rule_combined_reaction_reply": {
+      "title": "close",
+      "text": "Customer message is an iOS-style reaction/tapback reply, including reacted-to, liked/loved/emphasized/laughed/disliked/questioned image/contact replies, removed reactions, and existing liked/loved auto-reply variants.",
+      "name": "combined.reaction_reply"
+    },
+    "rule_b25458937a65a761": {
+      "title": "opt_out",
+      "text": "Under-13 detector matches configured age phrases/patterns only when the extracted numeric or word age is below 13.",
+      "name": "autoQAMessages.under_13_age_threshold"
+    },
+    "rule_7f5dea328a22ec3b": {
+      "title": "close",
+      "text": "auto generated text i ll call you later",
+      "name": "autoQAMessages.json_array.non_opt_out.auto_reply.003.auto_generated_text_i_ll_call_you_later"
+    },
+    "rule_353dc8a1dffaf9f8": {
+      "title": "close",
+      "text": "auto message your message cannot be sent because the file format is currently not supported",
+      "name": "autoQAMessages.json_array.non_opt_out.auto_reply.004.auto_message_your_message_cannot_be_sent_because_the_file_format_is_cu"
+    },
+    "rule_combined_unavailable_auto_reply": {
+      "title": "close",
+      "text": "Customer message is an unavailable/cannot-chat auto-reply covering currently unavailable, urgent notification, sorry can?t talk, unable to chat, and thanks-for-reaching-out reply variants.",
+      "name": "combined.unavailable_auto_reply"
+    },
+    "rule_5a95f1e7574cd603": {
+      "title": "opt_out",
+      "text": "block...",
+      "name": "optOutClassifier.json.patterns.25"
+    },
+    "rule_fed4cc7912c2263a": {
+      "title": "tmt",
+      "text": "spam",
+      "name": "optOutClassifier.json.patterns.7"
+    },
+    "rule_3a9dc0981448dafb": {
+      "title": "opt_out",
+      "text": "remove me",
+      "name": "optOutClassifier.json.patterns.0"
+    },
+    "rule_combined_device_not_working": {
+      "title": "opt_out",
+      "text": "Customer message says the phone, number, or device cannot receive, accept, or support text messages and asks to call instead, including kosher-talk and automatic-reply variants.",
+      "name": "combined.device_not_working"
+    },
+    "rule_ca0e0ef41f8c2d63": {
+      "title": "opt_out",
+      "text": "this phone number is no longer in service",
+      "name": "autoQAMessages.json_array.direct_opt_out.device_not_working.006.this_phone_number_is_no_longer_in_service"
+    },
+    "rule_8c5cba2f8f1724e9": {
+      "title": "opt_out",
+      "text": "fuck off",
+      "name": "autoQAMessages.json_array.opt_out_offensive.002.fuck_off"
+    },
+    "rule_b6ca67714384c052": {
+      "title": "opt_out",
+      "text": "fuck u",
+      "name": "autoQAMessages.json_array.opt_out_offensive.003.fuck_u"
+    },
+    "rule_039e25269b280d8a": {
+      "title": "opt_out",
+      "text": "fuck yall",
+      "name": "autoQAMessages.json_array.opt_out_offensive.004.fuck_yall"
+    },
+    "rule_5496cf283174a76a": {
+      "title": "opt_out",
+      "text": "fuck you",
+      "name": "autoQAMessages.json_array.opt_out_offensive.005.fuck_you"
+    },
+    "rule_bc6c993b8fc4823a": {
+      "title": "opt_out",
+      "text": "fucking stop",
+      "name": "autoQAMessages.json_array.opt_out_offensive.006.fucking_stop"
+    },
+    "rule_a85bea4aebd23b15": {
+      "title": "opt_out",
+      "text": "go fuck yourself",
+      "name": "autoQAMessages.json_array.opt_out_offensive.007.go_fuck_yourself"
+    },
+    "rule_42f9acffeaa437e0": {
+      "title": "opt_out",
+      "text": "shut the fuck up",
+      "name": "autoQAMessages.json_array.opt_out_offensive.009.shut_the_fuck_up"
+    },
+    "rule_7de94f161ab433c8": {
+      "title": "opt_out",
+      "text": "stfu",
+      "name": "autoQAMessages.json_array.opt_out_offensive.010.stfu"
+    },
+    "rule_c13640da933ab27e": {
+      "title": "opt_out",
+      "text": "stop bitch",
+      "name": "autoQAMessages.json_array.opt_out_offensive.011.stop_bitch"
+    },
+    "rule_8bfec7744b353651": {
+      "title": "opt_out",
+      "text": "stop fucking texting me",
+      "name": "autoQAMessages.json_array.opt_out_offensive.012.stop_fucking_texting_me"
+    },
+    "rule_d9b38d17ec4f8251": {
+      "title": "opt_out",
+      "text": "sybau",
+      "name": "autoQAMessages.json_array.opt_out_offensive.013.sybau"
+    },
+    "rule_235ad34a90c941a4": {
+      "title": "opt_out",
+      "text": "lawy...",
+      "name": "optOutClassifier.json.patterns.14"
+    },
+    "rule_96d85e50355029cb": {
+      "title": "opt_out",
+      "text": "sue your",
+      "name": "optOutClassifier.json.patterns.15"
+    },
+    "rule_d68cf12285850e44": {
+      "title": "opt_out",
+      "text": "sued",
+      "name": "optOutClassifier.json.patterns.21"
+    },
+    "rule_d2cb7cc4fe8a0d76": {
+      "title": "close",
+      "text": "send this text to subscribe to periodic auto texts for exclusive offers cart reminders",
+      "name": "autoQAMessages.json_array.non_opt_out.opt_in_texts.001.send_this_text_to_subscribe_to_periodic_auto_texts_for_exclusive_offer"
+    },
+    "rule_c6f31b380b419166": {
+      "title": "close",
+      "text": "send this text to subscribe to recurring automated personalized marketing alerts",
+      "name": "autoQAMessages.json_array.non_opt_out.opt_in_texts.002.send_this_text_to_subscribe_to_recurring_automated_personalized_market"
+    },
+    "rule_e0e5e0932b6ce1fc": {
+      "title": "close",
+      "text": "send this text to subscribe to recurring automated personalized marketing alerts e g cart reminders",
+      "name": "autoQAMessages.json_array.non_opt_out.opt_in_texts.003.send_this_text_to_subscribe_to_recurring_automated_personalized_market"
+    },
+    "rule_f5546fce3e9284e4": {
+      "title": "close",
+      "text": "send this text to subscribe to recurring automated personalized marketing alerts e g cart reminders from fashion nova ref",
+      "name": "autoQAMessages.json_array.non_opt_out.opt_in_texts.004.send_this_text_to_subscribe_to_recurring_automated_personalized_market"
+    },
+    "rule_bb181be7ab6133ed": {
+      "title": "fuzzy_opt_out",
+      "text": "not interested",
+      "name": "optOutClassifier.json.patterns.28"
+    },
+    "rule_05de67d9c6c545f7": {
+      "title": "opt_out",
+      "text": "BBB",
+      "name": "optOutClassifier.json.patterns.41"
+    },
+    "rule_b3f6c3db48d7542c": {
+      "title": "opt_out",
+      "text": "DNC",
+      "name": "optOutClassifier.json.patterns.36"
+    },
+    "rule_50d5521d0041cd96": {
+      "title": "fuzzy_opt_out",
+      "text": "I don't / do not want",
+      "name": "optOutClassifier.json.patterns.37"
+    },
+    "rule_5ade46233e2f3254": {
+      "title": "opt_out",
+      "text": "alto",
+      "name": "optOutClassifier.json.patterns.38"
+    },
+    "rule_9bdc0e31508e72b3": {
+      "title": "opt_out",
+      "text": "annoy...",
+      "name": "optOutClassifier.json.patterns.69"
+    },
+    "rule_166a66a745f9f965": {
+      "title": "opt_out",
+      "text": "attorn...",
+      "name": "optOutClassifier.json.patterns.39"
+    },
+    "rule_3ec2303b421a17e4": {
+      "title": "fuzzy_opt_out",
+      "text": "bother...",
+      "name": "optOutClassifier.json.patterns.68"
+    },
+    "rule_43211f1e95245113": {
+      "title": "opt_out",
+      "text": "bring / file a suit",
+      "name": "optOutClassifier.json.patterns.100"
+    },
+    "rule_93ef5a4e4aa9447a": {
+      "title": "opt_out",
+      "text": "bring / file suit",
+      "name": "optOutClassifier.json.patterns.101"
+    },
+    "rule_dc73c33ba0807b16": {
+      "title": "opt_out",
+      "text": "de baja",
+      "name": "optOutClassifier.json.patterns.45"
+    },
+    "rule_dd738d7e0d48e656": {
+      "title": "opt_out",
+      "text": "don't / do not / dont / donot",
+      "name": "optOutClassifier.json.patterns.33"
+    },
+    "rule_9fab5a743c276ca4": {
+      "title": "opt_out",
+      "text": "don't / do not / dont / donot text / send / contact / message / bother / talk / call / write / call or text me any more / anymore / again",
+      "name": "optOutClassifier.json.patterns.32"
+    },
+    "rule_aaec757169b5d045": {
+      "title": "opt_out",
+      "text": "end any / all communication / communications / texts / text messages / messages",
+      "name": "optOutClassifier.json.patterns.53"
+    },
+    "rule_7b9e2986edf50834": {
+      "title": "opt_out",
+      "text": "end communication / communications / texts / text messages / messages / this / contact / contacting",
+      "name": "optOutClassifier.json.patterns.52"
+    },
+    "rule_35a64c97cf6b24d5": {
+      "title": "opt_out",
+      "text": "ends",
+      "name": "optOutClassifier.json.patterns.49"
+    },
+    "rule_71ac117676488f83": {
+      "title": "opt_out",
+      "text": "fcc",
+      "name": "optOutClassifier.json.patterns.54"
+    },
+    "rule_502f026d6285fa8a": {
+      "title": "opt_out",
+      "text": "federal communications commission",
+      "name": "optOutClassifier.json.patterns.55"
+    },
+    "rule_f276972f87618609": {
+      "title": "opt_out",
+      "text": "florida telephone solicitation act",
+      "name": "optOutClassifier.json.patterns.58"
+    },
+    "rule_39b7121564050300": {
+      "title": "fuzzy_opt_out",
+      "text": "fraud...",
+      "name": "optOutClassifier.json.patterns.56"
+    },
+    "rule_80d312e4479e09cd": {
+      "title": "opt_out",
+      "text": "ftsa",
+      "name": "optOutClassifier.json.patterns.57"
+    },
+    "rule_2cdab8de3c3418a1": {
+      "title": "fuzzy_opt_out",
+      "text": "harass...",
+      "name": "optOutClassifier.json.patterns.62"
+    },
+    "rule_64a093a40f926905": {
+      "title": "opt_out",
+      "text": "lawl...",
+      "name": "optOutClassifier.json.patterns.64"
+    },
+    "rule_afdae30907b92d81": {
+      "title": "opt_out",
+      "text": "laws...",
+      "name": "optOutClassifier.json.patterns.63"
+    },
+    "rule_7a4d206ec76b8cd4": {
+      "title": "opt_out",
+      "text": "litigat...",
+      "name": "optOutClassifier.json.patterns.65"
+    },
+    "rule_76484f3646544667": {
+      "title": "fuzzy_opt_out",
+      "text": "no longer",
+      "name": "optOutClassifier.json.patterns.66"
+    },
+    "rule_329faf92ed23d82b": {
+      "title": "opt_out",
+      "text": "pare",
+      "name": "optOutClassifier.json.patterns.77"
+    },
+    "rule_a7188c1cef1b83cf": {
+      "title": "opt_out",
+      "text": "please / kindly end",
+      "name": "optOutClassifier.json.patterns.51"
+    },
+    "rule_4d1c5889ecbdaeb1": {
+      "title": "opt_out",
+      "text": "quit...",
+      "name": "optOutClassifier.json.patterns.78"
+    },
+    "rule_c06959191d04b643": {
+      "title": "opt_out",
+      "text": "remeuva",
+      "name": "optOutClassifier.json.patterns.79"
+    },
+    "rule_d9dedf14099f4647": {
+      "title": "opt_out",
+      "text": "report...",
+      "name": "optOutClassifier.json.patterns.81"
+    },
+    "rule_4423fa32b736be6f": {
+      "title": "opt_out",
+      "text": "revoke",
+      "name": "optOutClassifier.json.patterns.82"
+    },
+    "rule_c8bedde12cf67cb9": {
+      "title": "opt_out",
+      "text": "s t o p",
+      "name": "optOutClassifier.json.patterns.109"
+    },
+    "rule_d7170b35c71c9c98": {
+      "title": "fuzzy_opt_out",
+      "text": "scam...",
+      "name": "optOutClassifier.json.patterns.83"
+    },
+    "rule_00b101067274a973": {
+      "title": "opt_out",
+      "text": "sto",
+      "name": "optOutClassifier.json.patterns.86"
+    },
+    "rule_be7d4594dc7b7f65": {
+      "title": "opt_out",
+      "text": "stop2cancel",
+      "name": "optOutClassifier.json.patterns.93"
+    },
+    "rule_9f885ecea5633601": {
+      "title": "opt_out",
+      "text": "stop2unsubscribe",
+      "name": "optOutClassifier.json.patterns.95"
+    },
+    "rule_ebbe1cf7552c40f9": {
+      "title": "opt_out",
+      "text": "stopannul",
+      "name": "optOutClassifier.json.patterns.96"
+    },
+    "rule_bb9800f69ab36a47": {
+      "title": "opt_out",
+      "text": "stpo",
+      "name": "optOutClassifier.json.patterns.97"
+    },
+    "rule_4601bf6a785c5348": {
+      "title": "opt_out",
+      "text": "suing",
+      "name": "optOutClassifier.json.patterns.99"
+    },
+    "rule_344f9c56bb36b31a": {
+      "title": "opt_out",
+      "text": "take me off",
+      "name": "optOutClassifier.json.patterns.3"
+    },
+    "rule_1a3cca37b7d755d0": {
+      "title": "opt_out",
+      "text": "telephone consumer protection act",
+      "name": "optOutClassifier.json.patterns.103"
+    },
+    "rule_73ef52e43730404f": {
+      "title": "opt_out",
+      "text": "terminat...",
+      "name": "optOutClassifier.json.patterns.104"
+    },
+    "rule_70719634f666cdd5": {
+      "title": "opt_out",
+      "text": "unenroll",
+      "name": "optOutClassifier.json.patterns.105"
+    },
+    "rule_816054d0022ec305": {
+      "title": "opt_out",
+      "text": "do not text",
+      "name": "autoQAMessages.json_array.opt_out_phrases.078.do_not_text"
+    },
+    "rule_f8f69147469cd9e4": {
+      "title": "opt_out",
+      "text": "do not text me",
+      "name": "autoQAMessages.json_array.opt_out_phrases.079.do_not_text_me"
+    },
+    "rule_452e876fc786e640": {
+      "title": "opt_out",
+      "text": "don t text me",
+      "name": "autoQAMessages.json_array.opt_out_phrases.080.don_t_text_me"
+    },
+    "rule_09bb37661eef725c": {
+      "title": "fuzzy_opt_out",
+      "text": "don t want your promo",
+      "name": "autoQAMessages.json_array.opt_out_phrases.081.don_t_want_your_promo"
+    },
+    "rule_96bcabf04ce7513f": {
+      "title": "opt_out",
+      "text": "get out",
+      "name": "autoQAMessages.json_array.opt_out_phrases.003.get_out"
+    },
+    "rule_cc5eeb5fc6b88c64": {
+      "title": "fuzzy_opt_out",
+      "text": "i m done",
+      "name": "autoQAMessages.json_array.opt_out_phrases.006.i_m_done"
+    },
+    "rule_13c0f6e52d78fa78": {
+      "title": "opt_out",
+      "text": "leave me alone",
+      "name": "autoQAMessages.json_array.opt_out_phrases.009.leave_me_alone"
+    },
+    "rule_24853d165c05459a": {
+      "title": "opt_out",
+      "text": "stop2end",
+      "name": "autoQAMessages.json_array.opt_out_phrases.071.stop2end"
+    },
+    "rule_0b59bcb3222a7428": {
+      "title": "opt_out",
+      "text": "don't / do not / dont / donot send me any more / anymore texts / messages / text messages",
+      "name": "optOutClassifier.json.patterns.10"
+    },
+    "rule_b3f39b47b0500c61": {
+      "title": "opt_out",
+      "text": "ended",
+      "name": "optOutClassifier.json.patterns.17"
+    },
+    "rule_d9066c64896dc052": {
+      "title": "opt_out",
+      "text": "go away",
+      "name": "optOutClassifier.json.patterns.9"
+    },
+    "rule_05bb1c39f8876a4e": {
+      "title": "opt_out",
+      "text": "halt texts / messages / text messages",
+      "name": "optOutClassifier.json.patterns.34"
+    },
+    "rule_2cee9ccfd5c3206f": {
+      "title": "opt_out",
+      "text": "leave me alone",
+      "name": "optOutClassifier.json.patterns.26"
+    },
+    "rule_0fd61a48592c2b2a": {
+      "title": "opt_out",
+      "text": "never send / text / contact / message / bother / talk",
+      "name": "optOutClassifier.json.patterns.19"
+    },
+    "rule_9ae98939ff042262": {
+      "title": "opt_out",
+      "text": "take me / this / my number off",
+      "name": "optOutClassifier.json.patterns.5"
+    },
+    "rule_a62f1f47bbd3374a": {
+      "title": "opt_out",
+      "text": "unsuscrib...",
+      "name": "optOutClassifier.json.patterns.22"
+    },
+    "rule_dbd530be3a37f3ae": {
+      "title": "opt_out",
+      "text": "wrong number",
+      "name": "optOutClassifier.json.patterns.12"
+    },
+    "rule_d1510d5bea3c0540": {
+      "title": "close",
+      "text": "^price$",
+      "name": "opt_outs_ml.regex_rules.067.auto_message"
+    },
+    "rule_1ff20c8e5b17a76f": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bfraud\\w*",
+      "name": "optOutClassifier.validator.curated.030.complaint"
+    },
+    "rule_42ef498698c85197": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bharass\\w*",
+      "name": "optOutClassifier.validator.curated.038.complaint"
+    },
+    "rule_26ffdf2f625bdaf2": {
+      "title": "opt_out",
+      "text": "\\breport\\w*",
+      "name": "optOutClassifier.json.patterns.61"
+    },
+    "rule_f371059028544466": {
+      "title": "tmt",
+      "text": "\\bspam\\b",
+      "name": "optOutClassifier.json.patterns.8"
+    },
+    "rule_fea0f838570726ef": {
+      "title": "opt_out",
+      "text": "\\b(?:blocking\\ all\\ texts|blocking\\ you|block\\ texts|uninstalled|uninstaller|block\\ you|uninstall|ill\\ block|blocking)\\b",
+      "name": "autoQAMessages.json_array.direct_opt_out.block_patterns.001.blocking_all_texts_blocking_you_block_texts_uninstalled_uninstaller_bl"
+    },
+    "rule_f3e7b6c61c94cb2e": {
+      "title": "opt_out",
+      "text": "\\b(don'?t text|do not text|no text|i do not want text|i don'?t want text|i do not want to text|i don'?t want to text|not accepting texts|please call|call me instead|use voice call|send email|email me instead|i don'?t like to get text|i really don'?t like to get text)\\b",
+      "name": "autoQAMessages.json_array.direct_opt_out_rules.channel_patterns.001.don_t_text_do_not_text_no_text_i_do_not_want_text_i_don_t_want_text_i_"
+    },
+    "rule_4079391bd3958ff2": {
+      "title": "opt_out",
+      "text": "\\b(remove me|delete me|delete my data|delete my information|delete my address|delete my mail|delete all .*mail|erase my data|take me off|don'?t use my data|do not use my data|stop using my data|get rid of it|delete i mean no|delete this message)\\b",
+      "name": "autoQAMessages.json_array.direct_opt_out_rules.removal_patterns.001.remove_me_delete_me_delete_my_data_delete_my_information_delete_my_add"
+    },
+    "rule_bc981d8e383b5305": {
+      "title": "opt_out",
+      "text": "\\b(stop|unsubscribe|unsub|opt out|opt-out|remove me|delete me|don'?t send|do not send|stop texting|stop messaging|no more messages|no more texts|don'?t reach out|ban me)\\b",
+      "name": "autoQAMessages.json_array.direct_opt_out_rules.direct_patterns.001.stop_unsubscribe_unsub_opt_out_opt_out_remove_me_delete_me_don_t_send_"
+    },
+    "rule_85400937d1baad74": {
+      "title": "opt_out",
+      "text": "\\b(unsubscribe|unsub|opt out|opt-out|dnc|do not call list|put me on.*do not call)\\b",
+      "name": "autoQAMessages.json_array.direct_opt_out_rules.unsubscribe_patterns.001.unsubscribe_unsub_opt_out_opt_out_dnc_do_not_call_list_put_me_on_do_no"
+    },
+    "rule_7f6d9b39d69810ec": {
+      "title": "opt_out",
+      "text": "\\b(wrong number|wrong person|not me|this is not me|this is not .*account|new phone number|new number|change my number|change phone number|change my phone number|change number|change my text subscription number|this phone number is no longer in service|not my number|this is not [a-z]+|i'?ve had this number for years|someone else had this number)\\b",
+      "name": "autoQAMessages.json_array.direct_opt_out_rules.wrong_number_patterns.001.wrong_number_wrong_person_not_me_this_is_not_me_this_is_not_account_ne"
+    },
+    "rule_578078b652df9a1c": {
+      "title": "opt_out",
+      "text": "\\b(?:fuck|fucking|fu|fuxk|stfu|sybau)\\b",
+      "name": "autoQAMessages.labels.offensive_word_re"
+    },
+    "rule_e4d305aaf29be5b7": {
+      "title": "opt_out",
+      "text": "\\b(?:go\\ fuck\\ yourself|shut\\ the\\ fuck\\ up|go\\ to\\ hell|fuck\\ yall|fuck\\ off|fuck\\ you|fuck\\ u|sybau|stfu|fu|fuxk\\ you)\\b",
+      "name": "autoQAMessages.json_array.offensive.frustration_patterns.001.go_fuck_yourself_shut_the_fuck_up_go_to_hell_fuck_yall_fuck_off_fuck_y"
+    },
+    "rule_d8e7080a28d0bfeb": {
+      "title": "fuzzy_opt_out",
+      "text": "(?:dont|do not)\\s+want\\s+(?:this|these|anything)",
+      "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.dont_want_this_or_these"
+    },
+    "rule_3db2b26d7abaf580": {
+      "title": "fuzzy_opt_out",
+      "text": "(?:dont|do not)\\s+want\\s+any",
+      "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.dont_want_any"
+    },
+    "rule_e80778fb73334b60": {
+      "title": "fuzzy_opt_out",
+      "text": "(?:dont|do not)\\s+want\\s+it",
+      "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.dont_want_it"
+    },
+    "rule_6c538ccb755ac91b": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:(i'll|ill) never come back)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.fuzzy_opt_out.003.i_ll_ill_never_come_back"
+    },
+    "rule_3ceed1bc635db5d9": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:(i'll|ill) never shop here again)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.fuzzy_opt_out.002.i_ll_ill_never_shop_here_again"
+    },
+    "rule_746a1a0df72b1b64": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:(i'm|im|i am) done with this brand)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.fuzzy_opt_out.005.i_m_im_i_am_done_with_this_brand"
+    },
+    "rule_28560d53e831d018": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:(i'm|im|i am) not a customer anymore)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.fuzzy_opt_out.001.i_m_im_i_am_not_a_customer_anymore"
+    },
+    "rule_6f1fd17bd2ad3c52": {
+      "title": "fuzzy_opt_out",
+      "text": "i dont want any more",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.019.i_don_t_want_any_more"
+    },
+    "rule_50921fa55eb127ef": {
+      "title": "fuzzy_opt_out",
+      "text": "i dont want more",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.020.i_don_t_want_more"
+    },
+    "rule_90a42bf6e5e69343": {
+      "title": "fuzzy_opt_out",
+      "text": "i dont want this brand",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.018.i_don_t_want_this_brand"
+    },
+    "rule_9f9f434d2cfc8890": {
+      "title": "fuzzy_opt_out",
+      "text": "im done",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.017.i_m_done"
+    },
+    "rule_7b679a68a34fd49e": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:no longer needed)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.fuzzy_opt_out.013.no_longer_needed"
+    },
+    "rule_28a16c51871d9e83": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:quit playing)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.fuzzy_opt_out.007.quit_playing"
+    },
+    "rule_cf5d12213cf5b726": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:stop lying)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.fuzzy_opt_out.006.stop_lying"
+    },
+    "rule_391af98fece5f5d2": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:stop wasting my time)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.fuzzy_opt_out.008.stop_wasting_my_time"
+    },
+    "rule_9a0a246dfc518c29": {
+      "title": "fuzzy_opt_out",
+      "text": "(i don't|i dont|i do not) want( any| it| these| this)?",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.009.i_don_t_i_dont_i_do_not_want_any_it_these_this"
+    },
+    "rule_07202e4af69d3de8": {
+      "title": "fuzzy_opt_out",
+      "text": "(i'll|ill) never shop here again",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.002.i_ll_ill_never_shop_here_again"
+    },
+    "rule_b29685bb7bab43f0": {
+      "title": "fuzzy_opt_out",
+      "text": "(i'm|im|i am) done with this brand",
+      "name": "deterministic.fuzzy_opt_out.005"
+    },
+    "rule_3d3e083e709906ab": {
+      "title": "fuzzy_opt_out",
+      "text": "(i'm|im|i am) not a customer anymore",
+      "name": "deterministic.fuzzy_opt_out.001"
+    },
+    "rule_56a5032d2bfabde1": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bdone\\b",
+      "name": "zapOptOuts.classifier.FUZZY_RULES.generic_done"
+    },
+    "rule_4b7bdff9be0af7eb": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bnever come back\\b",
+      "name": "never_come_back"
+    },
+    "rule_0833df7c3765d078": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bnot a customer anymore\\b",
+      "name": "not_a_customer_anymore"
+    },
+    "rule_90891247fb9d25d4": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bnot subscribing\\b",
+      "name": "not_subscribing"
+    },
+    "rule_5cba4051579a4b3f": {
+      "title": "fuzzy_opt_out",
+      "text": "\\bsick of (?:you|us|this|these|all this)\\b",
+      "name": "zapOptOuts.classifier.FUZZY_RULES.sick_of"
+    },
+    "rule_1cf78b407d9cbf68": {
+      "title": "fuzzy_opt_out",
+      "text": "\\btired of (?:you|us|this|these|all this)\\b",
+      "name": "zapOptOuts.classifier.FUZZY_RULES.tired_of"
+    },
+    "rule_5ad2f8fb3c22229d": {
+      "title": "opt_out",
+      "text": "^\\s*finished[.!?,;:]*\\s*$",
+      "name": "exact_finished"
+    },
+    "rule_523de625170a42d4": {
+      "title": "opt_out",
+      "text": "^\\s*pause[.!?,;:]*\\s*$",
+      "name": "exact_pause"
+    },
+    "rule_2f7cf80cc6a34fe6": {
+      "title": "opt_out",
+      "text": "^\\s*shush[.!?,;:]*\\s*$",
+      "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.exact_shush"
+    },
+    "rule_d9581ec41339bc30": {
+      "title": "opt_out",
+      "text": "^bye$",
+      "name": "zapOptOuts.classifier.FUZZY_RULES.bye"
+    },
+    "rule_3d56b72204be6281": {
+      "title": "fuzzy_opt_out",
+      "text": "no longer want( it| this| these)?",
+      "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.014.no_longer_want_it_this_these"
+    },
+    "rule_0c57432ba4c67f44": {
+      "title": "fuzzy_opt_out",
+      "text": "not\\s+a\\s+customer\\s+anymore",
+      "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.not_a_customer_anymore"
+    },
+    "rule_67f055bfa9650bd4": {
+      "title": "reply",
+      "text": "^yo$",
+      "name": "opt_outs_ml.regex_rules.074.greeting"
+    },
+    "rule_b03f2d3d40b2d796": {
+      "title": "reply",
+      "text": "^customer service$",
+      "name": "opt_outs_ml.regex_rules.115.help"
+    },
+    "rule_58b3f0bb94a97bd6": {
+      "title": "reply",
+      "text": "^help$",
+      "name": "opt_outs_ml.regex_rules.024.help"
+    },
+    "rule_2d8563fd20c5b26e": {
+      "title": "reply",
+      "text": "^support$",
+      "name": "opt_outs_ml.regex_rules.025.help"
+    },
+    "rule_fe8eca5e5e5ff867": {
+      "title": "opt_out",
+      "text": "\\b(?:do\\s+not|don['’`]?t)\\s+(?:text|message|contact|advertise|promote|show|spam)\\b[^\\n.!?]*",
+      "name": "autoQAMessages.labels.inferred_opt_out.003.do_not_don_t_text_message_contact_advertise_promote_show_spam_n"
+    },
+    "rule_ed238f1683bfefd7": {
+      "title": "opt_out",
+      "text": "\\bturn\\s+(?:that|this|it)\\s+off\\b",
+      "name": "autoQAMessages.labels.inferred_opt_out.002.turn_that_this_it_off"
+    },
+    "rule_951e4f507c1e0000": {
+      "title": "reply",
+      "text": "^refund$",
+      "name": "opt_outs_ml.regex_rules.032.issue"
+    },
+    "rule_7509cd80be755633": {
+      "title": "reply",
+      "text": "^too expensive$",
+      "name": "opt_outs_ml.regex_rules.031.issue"
+    },
+    "rule_4ee373f27aba3ba5": {
+      "title": "opt_out",
+      "text": "\\b(bring|file)\\s+a\\s+suit\\b",
+      "name": "optOutClassifier.validator.curated.094.legal"
+    },
+    "rule_5b5fa6c84e118a26": {
+      "title": "opt_out",
+      "text": "\\b(bring|file)\\s+suit\\b",
+      "name": "optOutClassifier.validator.curated.095.legal"
+    },
+    "rule_d8d671fb7effd4f8": {
+      "title": "opt_out",
+      "text": "\\bFCC\\b",
+      "name": "optOutClassifier.json.patterns.73"
+    },
+    "rule_43a7ca889fd10d9d": {
+      "title": "opt_out",
+      "text": "\\bTCPA\\b",
+      "name": "optOutClassifier.validator.curated.099.legal"
+    },
+    "rule_0549e54d708b9c7f": {
+      "title": "opt_out",
+      "text": "\\bfederal communications commission\\b",
+      "name": "optOutClassifier.validator.curated.029.legal"
+    },
+    "rule_8c0194cac8b5116f": {
+      "title": "opt_out",
+      "text": "\\bflorida telephone solicitation act\\b",
+      "name": "optOutClassifier.validator.curated.032.legal"
+    },
+    "rule_4c848f9e15e5be04": {
+      "title": "opt_out",
+      "text": "\\bftsa\\b",
+      "name": "optOutClassifier.validator.curated.031.legal"
+    },
+    "rule_a1a0188ebd7a9df0": {
+      "title": "opt_out",
+      "text": "\\bsuing\\b",
+      "name": "optOutClassifier.validator.curated.093.legal"
+    },
+    "rule_640bf0cf57ec123d": {
+      "title": "opt_out",
+      "text": "\\btelephone consumer protection act\\b",
+      "name": "optOutClassifier.validator.curated.100.legal"
+    },
+    "rule_e5e64512ed1703de": {
+      "title": "opt_out",
+      "text": "\\bunlaw\\w*",
+      "name": "optOutClassifier.validator.curated.103.legal"
+    },
+    "rule_053feff716939daa": {
+      "title": "opt_out",
+      "text": "\\bviolat\\w*",
+      "name": "optOutClassifier.validator.curated.107.legal"
+    },
+    "rule_aa28eb133e088f5a": {
+      "title": "close",
+      "text": "^shop$",
+      "name": "opt_outs_ml.regex_rules.002.near_stop"
+    },
+    "rule_60d49da4e20ab6bb": {
+      "title": "close",
+      "text": "^start$",
+      "name": "opt_outs_ml.regex_rules.003.near_stop"
+    },
+    "rule_e8595ca2d300bbec": {
+      "title": "close",
+      "text": "^subscribe$",
+      "name": "opt_outs_ml.regex_rules.004.near_stop"
+    },
+    "rule_a183372a5e01f8a4": {
+      "title": "close",
+      "text": "^top$",
+      "name": "opt_outs_ml.regex_rules.001.near_stop"
+    },
+    "rule_ecf3dd814e471bc4": {
+      "title": "close",
+      "text": "^unstop$",
+      "name": "opt_outs_ml.regex_rules.005.near_stop"
+    },
+    "rule_6da31ef70e2d6310": {
+      "title": "close",
+      "text": "^i’m not receiving notifications if this is urgent reply “urgent” to send a notification through with your original message$",
+      "name": "opt_outs_ml.regex_rules.087.no_notifications"
+    },
+    "rule_b778715a1582d978": {
+      "title": "close",
+      "text": "^thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks sent from text free$",
+      "name": "opt_outs_ml.regex_rules.088.no_notifications"
+    },
+    "rule_d2b8616367c94df5": {
+      "title": "close",
+      "text": "^thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks$",
+      "name": "opt_outs_ml.regex_rules.094.no_notifications"
+    },
+    "rule_093f86528f285ea8": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:10 shein freebies and a 50 allowance for the lucky just click and claim-so easy)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.019.10_shein_freebies_and_a_50_allowance_for_the_lucky_just_click_and_clai"
+    },
+    "rule_99514518796ca4c5": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:attn hey i need help with something)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.033.attn_hey_i_need_help_with_something"
+    },
+    "rule_83b67194520a3506": {
+      "title": "close",
+      "text": "call me asap",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.089.call_me_asap"
+    },
+    "rule_85b4bd776f1a8355": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:can i call you later)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.058.can_i_call_you_later"
+    },
+    "rule_6001b4b8612b880d": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:cancel (my )?(order|subscription|account))(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.001.cancel_my_order_subscription_account"
+    },
+    "rule_69100487ccd3b564": {
+      "title": "close",
+      "text": "check out my bet on fanduel sportsbook",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.018.check_out_my_bet_on_fanduel_sportsbook"
+    },
+    "rule_2598a349be6b6683": {
+      "title": "close",
+      "text": "claim 5 free shein products now click the link to help and lets both win big",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.017.claim_5_free_shein_products_now_click_the_link_to_help_and_let_s_both_"
+    },
+    "rule_45728e189aee9c09": {
+      "title": "reply",
+      "text": "code",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.044.code"
+    },
+    "rule_1ef9d0922a1d5c5f": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:could you do me a huge favor please accept my invite so that i can get free gifts)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.016.could_you_do_me_a_huge_favor_please_accept_my_invite_so_that_i_can_get"
+    },
+    "rule_1489794ce5d5358a": {
+      "title": "reply",
+      "text": "coupon",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.045.coupon"
+    },
+    "rule_45127fd998278b19": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:coupons)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.088.coupons"
+    },
+    "rule_d71b14fc71ed188f": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:customer service)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.087.customer_service"
+    },
+    "rule_fdab0ef51b4fc12f": {
+      "title": "reply",
+      "text": "discount",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.046.discount"
+    },
+    "rule_5e6ddb84a9c161a3": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:free shipping)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.038.free_shipping"
+    },
+    "rule_6ef9acf947414911": {
+      "title": "reply",
+      "text": "hello",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.060.hello"
+    },
+    "rule_7fe56fb52619ffc5": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:help)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.008.help"
+    },
+    "rule_62862936e5cf5ef6": {
+      "title": "reply",
+      "text": "hey",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.061.hey"
+    },
+    "rule_d54cb2ec341811dc": {
+      "title": "reply",
+      "text": "hi",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.059.hi"
+    },
+    "rule_cc320dbc73abe1ee": {
+      "title": "close",
+      "text": "how much",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.057.how_much"
+    },
+    "rule_9501f80f59e3b9fd": {
+      "title": "close",
+      "text": "i m",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.020.i_m"
+    },
+    "rule_47c6c9a212246e84": {
+      "title": "close",
+      "text": "im not receiving notifications if this is urgent reply urgent to send a notification through with your original message",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.075.i_m_not_receiving_notifications_if_this_is_urgent_reply_urgent_to_send"
+    },
+    "rule_5489494c1e6edf50": {
+      "title": "close",
+      "text": "lol",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.028.lol"
+    },
+    "rule_0e91a0403d431f2f": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:michaels michaels)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.025.michaels_michaels"
+    },
+    "rule_7f1696fe487e18ad": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:order updates)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.010.order_updates"
+    },
+    "rule_b551ed2d17f1248b": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks sent from text free)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.076.thanks_for_reaching_out_i_can_t_chat_at_the_moment_but_i_ll_text_you_b"
+    },
+    "rule_c8bfb5f1702cbfb6": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.080.thanks_for_reaching_out_i_can_t_chat_at_the_moment_but_i_ll_text_you_b"
+    },
+    "rule_3ee24b76d721a34f": {
+      "title": "close",
+      "text": "(?<![a-z0-9])(?:the)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.032.the"
+    },
+    "rule_adc0e5ee3815ff7c": {
+      "title": "reply",
+      "text": "(?<![a-z0-9])(?:where is my (order|package))(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.not_opt_out.003.where_is_my_order_package"
+    },
+    "rule_7cf019d0a22423f8": {
+      "title": "reply",
+      "text": "where s my order",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.040.where_s_my_order"
+    },
+    "rule_e5d22849445860b7": {
+      "title": "reply",
+      "text": "(code|discount) did not work",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.007.code_discount_did_not_work"
+    },
+    "rule_0abce60946a3f093": {
+      "title": "reply",
+      "text": "(deliver|send me) my package",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.004.deliver_send_me_my_package"
+    },
+    "rule_ca69915c8aea9988": {
+      "title": "close",
+      "text": "10 shein freebies and a 50 allowance for the lucky just click and claim-so easy",
+      "name": "deterministic.not_opt_out.019"
+    },
+    "rule_f34526c8fa9063a0": {
+      "title": "reply",
+      "text": "\\b(?:size|inventory|availability|color|colour)\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.product_request"
+    },
+    "rule_7cf0b9e707f3dfc7": {
+      "title": "reply",
+      "text": "\\b(?:update|change|reset|fix|review) (?:my )?(?:account|login|password|email|address)\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.account_request"
+    },
+    "rule_364cc39e66f1bf54": {
+      "title": "reply",
+      "text": "\\b(?:where(?: is|'s)? my order|order status|track(?:ing)?(?: my)? order)\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.order_status"
+    },
+    "rule_63da2aff77f3f76e": {
+      "title": "reply",
+      "text": "\\bcancel (?:my )?(?:subscription|sub|plan)\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.cancel_subscription"
+    },
+    "rule_bd182b920b33f0e2": {
+      "title": "reply",
+      "text": "\\bcancel (?:my )?order\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.cancel_order"
+    },
+    "rule_b33e4c824aaacdef": {
+      "title": "reply",
+      "text": "\\brefund\\b|\\breturn\\b|\\bexchange\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.refund_request"
+    },
+    "rule_f6dd2a4884146ae0": {
+      "title": "reply",
+      "text": "\\bshipping\\b|\\bshipment\\b|\\bdelivery\\b",
+      "name": "zapOptOuts.classifier.SPECIFIC_REQUEST_RULES.shipping_request"
+    },
+    "rule_0818cc4a204d72a2": {
+      "title": "close",
+      "text": "^send this text to subscribe to recurring automated personalized marketing alerts e g cart reminders from darc sport ref f jgm$",
+      "name": "zapOptOuts.classifier.NON_OPT_OUT_RULES.subscribe_confirmation_prompt"
+    },
+    "rule_59ac8944eebd47b2": {
+      "title": "reply",
+      "text": "cancel (my )?(order|subscription|account)",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.001.cancel_my_order_subscription_account"
+    },
+    "rule_9d3ca0925c77f798": {
+      "title": "reply",
+      "text": "code doesn t work",
+      "name": "deterministic.not_opt_out.047"
+    },
+    "rule_11df6af6a25a9bdc": {
+      "title": "close",
+      "text": "could you do me a huge favor please accept my invite so that i can get free gifts",
+      "name": "deterministic.not_opt_out.016"
+    },
+    "rule_eed1635466aa92f5": {
+      "title": "reply",
+      "text": "help",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.008.help"
+    },
+    "rule_a42c54827f13c5b5": {
+      "title": "close",
+      "text": "michaels",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.026.michaels"
+    },
+    "rule_5cd69f90161d811c": {
+      "title": "close",
+      "text": "michaels michaels",
+      "name": "deterministic.not_opt_out.025"
+    },
+    "rule_754d2c360b0b43fe": {
+      "title": "close",
+      "text": "nice",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.024.nice"
+    },
+    "rule_72a6fbe032daefab": {
+      "title": "close",
+      "text": "oh",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.027.oh"
+    },
+    "rule_f90b767102b8bf5a": {
+      "title": "close",
+      "text": "price",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.055.price"
+    },
+    "rule_bfd7b75bc7be144c": {
+      "title": "close",
+      "text": "save",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.022.save"
+    },
+    "rule_82cea9c744fe8ca9": {
+      "title": "close",
+      "text": "shop",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.012.shop"
+    },
+    "rule_3afb314b5b77ee65": {
+      "title": "close",
+      "text": "sri",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.029.sri"
+    },
+    "rule_22c88c1c8d3d0f24": {
+      "title": "close",
+      "text": "\\b(?:start|starts|started|starting)\\b",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.013.start"
+    },
+    "rule_8ee5ee7b5a2b0227": {
+      "title": "close",
+      "text": "subscribe",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.014.subscribe"
+    },
+    "rule_a6ab2ce3d328936c": {
+      "title": "reply",
+      "text": "support",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.035.support"
+    },
+    "rule_031255fdb04ab10e": {
+      "title": "close",
+      "text": "take10",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.023.take10"
+    },
+    "rule_c90f505862a5adef": {
+      "title": "close",
+      "text": "test",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.083.test"
+    },
+    "rule_51122d616562849e": {
+      "title": "no_action",
+      "text": "thank u",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.082.thank_u"
+    },
+    "rule_800d066d9f05282c": {
+      "title": "no_action",
+      "text": "thanks",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.054.thanks"
+    },
+    "rule_6c73a32187c47dfb": {
+      "title": "close",
+      "text": "thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks",
+      "name": "deterministic.not_opt_out.080"
+    },
+    "rule_2926d3ae3eb83bd5": {
+      "title": "close",
+      "text": "thanks for reaching out i can t chat at the moment but i ll text you back as soon as i can thanks sent from text free",
+      "name": "deterministic.not_opt_out.076"
+    },
+    "rule_8c8228aae049f69f": {
+      "title": "close",
+      "text": "the",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.032.the"
+    },
+    "rule_f1cf1c3e400ab1d9": {
+      "title": "reply",
+      "text": "the code doesn t work",
+      "name": "deterministic.not_opt_out.079"
+    },
+    "rule_b8bbd9e58a1e6618": {
+      "title": "no_action",
+      "text": "thx",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.053.thx"
+    },
+    "rule_4f95d738def46666": {
+      "title": "reply",
+      "text": "too expensive",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.041.too_expensive"
+    },
+    "rule_55b4c5b6b1e61034": {
+      "title": "close",
+      "text": "top",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.011.top"
+    },
+    "rule_f1ffddb42e82883d": {
+      "title": "close",
+      "text": "welcome15",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.078.welcome15"
+    },
+    "rule_09183ab2ef58af60": {
+      "title": "reply",
+      "text": "what s the code",
+      "name": "deterministic.not_opt_out.077"
+    },
+    "rule_95e1b47217f8d29b": {
+      "title": "reply",
+      "text": "where is my (order|package)",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.003.where_is_my_order_package"
+    },
+    "rule_1decca880e6aab1e": {
+      "title": "reply",
+      "text": "yo",
+      "name": "zapOptOuts.deterministic_js.not_opt_out.062.yo"
+    },
+    "rule_90c2cb708f5e4c5c": {
+      "title": "opt_out",
+      "text": "(?:dont|do not)\\s+(?:(?:talk|speak|message|email|text)\\s+to\\s+me|text\\s+me)",
+      "name": "zapOptOuts.workflow.node_4.opt_out.do_not_talk_to_me"
+    },
+    "rule_fa9887adf3e9cb70": {
+      "title": "opt_out",
+      "text": "(?:dont|do not)\\s+want\\s+(?:texts?|text\\s+messages?|messages?|emails?|calls?|further\\s+communication|communication)",
+      "name": "zapOptOuts.workflow.node_4.opt_out.dont_want_communications"
+    },
+    "rule_317fdbf0a6758d04": {
+      "title": "opt_out",
+      "text": "(?:never|didnt)?\\s*(?:opted\\s+in|signed\\s+up|subscribed?)",
+      "name": "zapOptOuts.workflow.node_4.opt_out.not_opted_in"
+    },
+    "rule_b8c3a6322862acfc": {
+      "title": "opt_out",
+      "text": "(?:shut\\s+(?:the\\s+fuck\\s+)?up|shut\\s+yourself|\\b(?:stfu|stdu|gtfo)\\b)",
+      "name": "zapOptOuts.classifier.HARD_RULES.keyword_shut_up"
+    },
+    "rule_0d3ded1b92b886df": {
+      "title": "opt_out",
+      "text": "(?:stop|dont|do not)\\s+(?:texting|text|emailing|email|messaging|message)(?:\\s+me)?",
+      "name": "zapOptOuts.workflow.node_4.opt_out.stop_texting_emailing_messaging"
+    },
+    "rule_d74d59b5753a5ed3": {
+      "title": "opt_out",
+      "text": "(?:sue you|legal\\s+action|attorney|lawyer|complaint| bbb | better business bureau )",
+      "name": "zapOptOuts.workflow.node_4.opt_out.legal_threat"
+    },
+    "rule_871837ed6b6dab5a": {
+      "title": "opt_out",
+      "text": "(?:wrong\\s+(?:number|person)|(?:not|this\\s+(?:isnt|is not))\\s+my\\s+number|you\\s+(?:have|got)\\s+the\\s+wrong\\s+number)",
+      "name": "zapOptOuts.workflow.node_4.opt_out.wrong_number"
+    },
+    "rule_98e5963db724cf3f": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:(don't|dont) send me emails or texts)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.direct_expanded.025.don_t_dont_send_me_emails_or_texts"
+    },
+    "rule_2b966ebda7523d76": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:beat it)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.hard_opt_out.045.beat_it"
+    },
+    "rule_1722b814d4484653": {
+      "title": "opt_out",
+      "text": "dont text until you resolve my issue",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.024.don_t_text_until_you_resolve_my_issue"
+    },
+    "rule_4eb9ea6e81855f5c": {
+      "title": "opt_out",
+      "text": "eat shit",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.048.eat_shit"
+    },
+    "rule_02e3ab9ef377db44": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:i (didn't|didnt) (opt in|sign up))(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.direct_expanded.015.i_didn_t_didnt_opt_in_sign_up"
+    },
+    "rule_3308e78cc4462817": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:i (don't|dont) want (this|these) anymore)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.direct_expanded.012.i_don_t_dont_want_this_these_anymore"
+    },
+    "rule_6564fd854e68da63": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:i (don't|dont) want to receive (messages|texts))(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.direct_expanded.010.i_don_t_dont_want_to_receive_messages_texts"
+    },
+    "rule_4c63b63c6e5b331e": {
+      "title": "fuzzy_opt_out",
+      "text": "i dont want to be here",
+      "name": "deterministic.hard_opt_out.026"
+    },
+    "rule_84cd22c4776d10ec": {
+      "title": "opt_out",
+      "text": "i dont want to hear from you",
+      "name": "deterministic.hard_opt_out.025"
+    },
+    "rule_f56ce149d8c5826a": {
+      "title": "opt_out",
+      "text": "im blocking you",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.033.i_m_blocking_you"
+    },
+    "rule_994b4cd5c97cedc6": {
+      "title": "opt_out",
+      "text": "im deleting you",
+      "name": "deterministic.hard_opt_out.034"
+    },
+    "rule_652821f830bc7d4e": {
+      "title": "opt_out",
+      "text": "im going to sue you",
+      "name": "deterministic.hard_opt_out.042"
+    },
+    "rule_2e92a19c5f9f0710": {
+      "title": "opt_out",
+      "text": "im removing your number",
+      "name": "deterministic.hard_opt_out.035"
+    },
+    "rule_55c3cf844326fe2f": {
+      "title": "opt_out",
+      "text": "im reporting you to the bbb",
+      "name": "deterministic.hard_opt_out.041"
+    },
+    "rule_c2279f39f1c80a38": {
+      "title": "fuzzy_opt_out",
+      "text": "im tired of yall",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.028.i_m_tired_of_y_all"
+    },
+    "rule_49e838405791d1c1": {
+      "title": "fuzzy_opt_out",
+      "text": "im tired of you",
+      "name": "deterministic.hard_opt_out.027"
+    },
+    "rule_324c508204bec0e9": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:if you (don't|dont) do this right now, stop texting me)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.hard_opt_out.022.if_you_don_t_dont_do_this_right_now_stop_texting_me"
+    },
+    "rule_7d3781e62eaeef8a": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:leave me( the fuck)? alone)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.direct_expanded.001.leave_me_the_fuck_alone"
+    },
+    "rule_29f9727e0bdd18e0": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:no need to text me)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.direct_expanded.023.no_need_to_text_me"
+    },
+    "rule_175c102845844b82": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:not accepting (messages|texts|emails))(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.hard_opt_out.015.not_accepting_messages_texts_emails"
+    },
+    "rule_4c317d3b7687e468": {
+      "title": "opt_out",
+      "text": "once i get my order im going to block you",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.023.once_i_get_my_order_i_m_going_to_block_you"
+    },
+    "rule_13e7568ff15e7823": {
+      "title": "fuzzy_opt_out",
+      "text": "(?<![a-z0-9])(?:stop (bothering|harassing|spamming) me)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.direct_expanded.003.stop_bothering_harassing_spamming_me"
+    },
+    "rule_3d1806f4b6527881": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:this is a kosher talk only device and does not accept text messages)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic_phrase.hard_opt_out.018.this_is_a_kosher_talk_only_device_and_does_not_accept_text_messages"
+    },
+    "rule_50c3382daa5d9ab0": {
+      "title": "opt_out",
+      "text": "this phone can not receive sms mms messages",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.019.this_phone_can_not_receive_sms_mms_messages"
+    },
+    "rule_428fac66e76f039a": {
+      "title": "opt_out",
+      "text": "unsubsidized me",
+      "name": "zapOptOuts.deterministic_js.direct_expanded.028.unsubsidized_me"
+    },
+    "rule_30947965509aae51": {
+      "title": "opt_out",
+      "text": "(?<![a-z0-9])(?:you (don't|dont) have to text me)(?![a-z0-9])",
+      "name": "zapOptOuts.deterministic.direct_expanded.024.you_don_t_dont_have_to_text_me"
+    },
+    "rule_7f326e7555fc5c21": {
+      "title": "opt_out",
+      "text": "(don't|dont) send me emails or texts",
+      "name": "zapOptOuts.deterministic_js.direct_expanded.025.don_t_dont_send_me_emails_or_texts"
+    },
+    "rule_83b3924cfc4fb214": {
+      "title": "fuzzy_opt_out",
+      "text": "(i'm|im) done",
+      "name": "zapOptOuts.deterministic_js.indirect.020.i_m_im_done"
+    },
+    "rule_a0fc16105db53fd4": {
+      "title": "opt_out",
+      "text": "\\b(?:cannot|cant|can not|can't)\\s+receive (?:messages?|texts?|emails?|calls?)\\b",
+      "name": "cannot_receive_messages"
+    },
+    "rule_604d4b7bc5916d8c": {
+      "title": "opt_out",
+      "text": "\\b(?:do not|dont)\\s+(?:contact|text|message|email|call)\\b",
+      "name": "zapOptOuts.classifier.HARD_RULES.do_not_contact"
+    },
+    "rule_8ed4bd2da1210eb9": {
+      "title": "opt_out",
+      "text": "\\b(?:go )?fuck(?: off| you| yourself| yall)?\\b|\\bgtfo\\b|\\bstfu\\b",
+      "name": "zapOptOuts.classifier.HARD_RULES.profanity"
+    },
+    "rule_06305227826122d3": {
+      "title": "opt_out",
+      "text": "\\bnot accepting (?:messages|texts?|emails?)\\b",
+      "name": "not_accepting_messages"
+    },
+    "rule_0a482397319238ca": {
+      "title": "opt_out",
+      "text": "\\bopted(\\s*|\\-?)out\\b",
+      "name": "optOutClassifier.validator.curated.055.opt_out"
+    },
+    "rule_a1ab1819305bad6d": {
+      "title": "opt_out",
+      "text": "\\bopts\\b",
+      "name": "optOutClassifier.validator.curated.059.opt_out"
+    },
+    "rule_93c6c36f75653a37": {
+      "title": "opt_out",
+      "text": "\\bpull me from (?:text|texts|messages|group|thread)\\b",
+      "name": "pull_from_texts"
+    },
+    "rule_b7194fcafb0b37bb": {
+      "title": "opt_out",
+      "text": "\\brevoke\\b",
+      "name": "optOutClassifier.validator.curated.068.opt_out"
+    },
+    "rule_6b96f9cae2fcf010": {
+      "title": "opt_out",
+      "text": "^\\s*cncl[.!?,;:]*\\s*$",
+      "name": "exact_cncl"
+    },
+    "rule_0fc07028c0b71113": {
+      "title": "opt_out",
+      "text": "^\\s*dnc[.!?,;:]*\\s*$",
+      "name": "exact_dnc"
+    },
+    "rule_7a4aabc615457dc9": {
+      "title": "fuzzy_opt_out",
+      "text": "^\\s*done[.!?,;:]*\\s*$",
+      "name": "zapOptOuts.workflow.node_4.opt_out.keyword_done"
+    },
+    "rule_9fe7dbf6d648b75c": {
+      "title": "opt_out",
+      "text": "^\\s*end[.!?,;:]*\\s*$",
+      "name": "zapOptOuts.workflow.node_4.opt_out.exact_end"
+    },
+    "rule_41434a27f4e64824": {
+      "title": "opt_out",
+      "text": "^\\s*oot[.!?,;:]*\\s*$",
+      "name": "zapOptOuts.workflow.node_4.opt_out.exact_oot"
+    },
+    "rule_63845017394d56ea": {
+      "title": "opt_out",
+      "text": "^\\s*quiet[.!?,;:]*\\s*$",
+      "name": "zapOptOuts.workflow.node_4.opt_out.exact_quiet"
+    },
+    "rule_4893243d4ad33c24": {
+      "title": "opt_out",
+      "text": "^\\s*remove[.!?,;:]*\\s*$",
+      "name": "zapOptOuts.workflow.node_4.opt_out.exact_remove"
+    },
+    "rule_8fb0c0ebc0546ac8": {
+      "title": "opt_out",
+      "text": "^\\s*rmv[.!?,;:]*\\s*$",
+      "name": "exact_rmv"
+    },
+    "rule_1cef88e122143e26": {
+      "title": "opt_out",
+      "text": "^\\s*wtop[.!?,;:]*\\s*$",
+      "name": "exact_wtop"
+    },
+    "rule_306d12a5646dc62c": {
+      "title": "opt_out",
+      "text": "^dnc$",
+      "name": "exact_dnc"
+    },
+    "rule_e082b4992f1c6644": {
+      "title": "opt_out",
+      "text": "^end$",
+      "name": "exact_end"
+    },
+    "rule_ff1126fe1ee5a32e": {
+      "title": "opt_out",
+      "text": "^opt$",
+      "name": "zapOptOuts.classifier.HARD_RULES.exact_opt"
+    },
+    "rule_a10c27748f62cfd6": {
+      "title": "opt_out",
+      "text": "^quit$",
+      "name": "exact_quit"
+    },
+    "rule_25871eb5c28b9dcd": {
+      "title": "opt_out",
+      "text": "^stop$",
+      "name": "exact_stop"
+    },
+    "rule_c3c28cfea920ea25": {
+      "title": "opt_out",
+      "text": "^this is an automatic message this is a kosher talk only device and does not accept text messages please call instead$",
+      "name": "kosher_talk_only_auto_reply"
+    },
+    "rule_fad14303a3e2c682": {
+      "title": "opt_out",
+      "text": "^this phone does not accept text messages please call instead this is an automatic reply$",
+      "name": "phone_does_not_accept_texts_auto_reply"
+    },
+    "rule_a4c1c0e387dddfce": {
+      "title": "opt_out",
+      "text": "^unsubscribe$",
+      "name": "exact_unsubscribe"
+    },
+    "rule_65a3f22dd3ce5a39": {
+      "title": "opt_out",
+      "text": "finished|pause|shush|stfu",
+      "name": "deterministic.indirect.021"
+    },
+    "rule_dcf5c0ee0cd11d07": {
+      "title": "opt_out",
+      "text": "fu",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.039.fu"
+    },
+    "rule_2751760f2de0e940": {
+      "title": "opt_out",
+      "text": "gtfo",
+      "name": "deterministic.hard_opt_out.043"
+    },
+    "rule_ba68ddf2ec042ef4": {
+      "title": "txt",
+      "text": "i (don't|dont) know you",
+      "name": "deterministic.indirect.017"
+    },
+    "rule_3da705701498fe7e": {
+      "title": "opt_out",
+      "text": "i (don't|dont) want (anything from you|further communication)",
+      "name": "zapOptOuts.deterministic_js.direct_expanded.013.i_don_t_dont_want_anything_from_you_further_communication"
+    },
+    "rule_851be6224900bc65": {
+      "title": "opt_out",
+      "text": "if you (don't|dont) do this right now, stop texting me",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.022.if_you_don_t_dont_do_this_right_now_stop_texting_me"
+    },
+    "rule_237b598ca9c65e55": {
+      "title": "opt_out",
+      "text": "leave me( the fuck)? alone",
+      "name": "zapOptOuts.deterministic_js.direct_expanded.001.leave_me_the_fuck_alone"
+    },
+    "rule_07c36874cbd6f47c": {
+      "title": "opt_out",
+      "text": "no\\s+longer\\s+want(?:\\s+to\\s+receive)?\\s+(?:messages?|texts?|emails?|calls?)",
+      "name": "zapOptOuts.workflow.node_4.opt_out.no_longer_want_messages"
+    },
+    "rule_6ad0c5ca63cc9d62": {
+      "title": "opt_out",
+      "text": "not accepting (messages|texts|emails)",
+      "name": "zapOptOuts.deterministic_js.hard_opt_out.015.not_accepting_messages_texts_emails"
+    },
+    "rule_1fc84bcaffc4ee00": {
+      "title": "opt_out",
+      "text": "not\\s+accepting\\s+(?:messages|texts|emails)",
+      "name": "not_accepting_messages"
+    },
+    "rule_26cc75d8805d262e": {
+      "title": "opt_out",
+      "text": "please remove",
+      "name": "zapOptOuts.deterministic_js.direct_expanded.019.please_remove"
+    },
+    "rule_55d69eabd731a280": {
+      "title": "opt_out",
+      "text": "report(ed)?",
+      "name": "zapOptOuts.deterministic_js.indirect.006.report_ed"
+    },
+    "rule_df62af01c54d3d99": {
+      "title": "opt_out",
+      "text": "shut( the fuck)? up",
+      "name": "zapOptOuts.deterministic_js.indirect.022.shut_the_fuck_up"
+    },
+    "rule_a44c679167060064": {
+      "title": "opt_out",
+      "text": "stop\\s+(?:bothering|harassing|spamming)\\s+me",
+      "name": "stop_bothering_harassing_spamming"
+    },
+    "rule_591c07c9adc4f2d4": {
+      "title": "opt_out",
+      "text": "stop\\s+(?:the\\s+spam|with\\s+(?:the|these)\\s+(?:texts|messages))",
+      "name": "stop_spam"
+    },
+    "rule_e9bc789ec1b52ceb": {
+      "title": "opt_out",
+      "text": "sue|lawsuit|legal action|attorney|lawyer|complaint",
+      "name": "zapOptOuts.deterministic_js.indirect.011.sue_lawsuit_legal_action_attorney_lawyer_complaint"
+    },
+    "rule_ee28709e226fb55d": {
+      "title": "txt",
+      "text": "who (is this|are you|are (y'all|yall))",
+      "name": "zapOptOuts.deterministic_js.indirect.016.who_is_this_are_you_are_y_all_yall"
+    },
+    "rule_f0e74f42f8079aa9": {
+      "title": "opt_out",
+      "text": "\\b(?:this\\s+)?(?:phone|number|device)\\s+(?:doesn(?:t| t)|does\\s+not|cannot|can\\s+not|cant)\\s+(?:receive|accept|support)\\s+(?:texts?|messages?|sms)\\b",
+      "name": "autoQAMessages.labels.supplemental.opt_out_device_not_working.001.this_phone_number_device_doesn_t_t_does_not_cannot_can_not_cant_receiv"
+    },
+    "rule_4daf1fa5e367112d": {
+      "title": "opt_out",
+      "text": "\\b(?:please\\s+)?(?:remove|take)\\s+my\\s+number\\s+(?:off|from)\\s+(?:your\\s+)?(?:distribution|mailing|text|sms)\\s+list\\b",
+      "name": "autoQAMessages.labels.supplemental.phrases.003.please_remove_take_my_number_off_from_your_distribution_mailing_text_s"
+    },
+    "rule_9b899e453e806196": {
+      "title": "opt_out",
+      "text": "\\b(?:please\\s+)?don(?:t| t)\\s+inundate\\s+me\\s+with\\s+(?:texts?|messages?|sms)\\b",
+      "name": "autoQAMessages.labels.supplemental.phrases.005.please_don_t_t_inundate_me_with_texts_messages_sms"
+    },
+    "rule_55013d49a8cc3a19": {
+      "title": "opt_out",
+      "text": "\\bcan\\s+you\\s+not\\s+message\\s+me\\b[^\\n.!?]*",
+      "name": "autoQAMessages.labels.supplemental.phrases.006.can_you_not_message_me_n"
+    },
+    "rule_8f694afdadacc39d": {
+      "title": "opt_out",
+      "text": "\\bi\\s+don(?:t| t)\\s+want\\s+(?:any\\s+)?(?:more\\s+)?(?:mail|texts?|messages?|sms)\\b",
+      "name": "autoQAMessages.labels.supplemental.phrases.004.i_don_t_t_want_any_more_mail_texts_messages_sms"
+    },
+    "rule_bbcc672b6eefd763": {
+      "title": "close",
+      "text": "^michaels michaels$",
+      "name": "opt_outs_ml.regex_rules.015.random"
+    },
+    "rule_0e8c9173435a3c9c": {
+      "title": "close",
+      "text": "^michaels$",
+      "name": "opt_outs_ml.regex_rules.016.random"
+    },
+    "rule_8556b4efa88e3725": {
+      "title": "close",
+      "text": "^nice$",
+      "name": "opt_outs_ml.regex_rules.014.random"
+    },
+    "rule_926dd5f42a30c361": {
+      "title": "close",
+      "text": "^oh$",
+      "name": "opt_outs_ml.regex_rules.017.random"
+    },
+    "rule_575e274a95cf8ee3": {
+      "title": "close",
+      "text": "^save$",
+      "name": "opt_outs_ml.regex_rules.012.random"
+    },
+    "rule_61d7cb5e4ee5df36": {
+      "title": "close",
+      "text": "^sri$",
+      "name": "opt_outs_ml.regex_rules.019.random"
+    },
+    "rule_d050d9d2e8a45584": {
+      "title": "close",
+      "text": "^take10$",
+      "name": "opt_outs_ml.regex_rules.013.random"
+    },
+    "rule_37b5dc0ba75d0492": {
+      "title": "close",
+      "text": "^test$",
+      "name": "opt_outs_ml.regex_rules.097.random"
+    },
+    "rule_c5f8bf957ac43816": {
+      "title": "close",
+      "text": "^the$",
+      "name": "opt_outs_ml.regex_rules.022.random"
+    },
+    "rule_b5c80261e33ce980": {
+      "title": "close",
+      "text": "^welcome15$",
+      "name": "opt_outs_ml.regex_rules.090.random"
+    },
+    "rule_898d3b22cf673bf4": {
+      "title": "opt_out",
+      "text": "(don't|don’t|do not|dont|donot) (text|send|contact|message|bother|talk|call|write|call or text)( me)?(any more|anymore|again)?",
+      "name": "optOutClassifier.validator.required.001.don_t_don_t_do_not_dont_donot_text_send_contact_message_bother_talk_ca"
+    },
+    "rule_bf7122e55cde3a93": {
+      "title": "opt_out",
+      "text": "(never) (send|text|contact|message|bother|talk)",
+      "name": "optOutClassifier.validator.required.045.never_send_text_contact_message_bother_talk"
+    },
+    "rule_be32f02acb852ec7": {
+      "title": "opt_out",
+      "text": "(please|kindly) end",
+      "name": "optOutClassifier.validator.required.025.please_kindly_end"
+    },
+    "rule_51b43e294d38540e": {
+      "title": "opt_out",
+      "text": "(s|a|d)top",
+      "name": "optOutClassifier.validator.required.005.s_a_d_top"
+    },
+    "rule_e4c95bd4390d3fd0": {
+      "title": "opt_out",
+      "text": "cancel\\w*",
+      "name": "optOutClassifier.validator.required.013.cancel_w"
+    },
+    "rule_3cc8d7ded90066ff": {
+      "title": "opt_out",
+      "text": "ceas\\w*",
+      "name": "optOutClassifier.validator.required.014.ceas_w"
+    },
+    "rule_ee985c7c20c83093": {
+      "title": "opt_out",
+      "text": "de baja",
+      "name": "optOutClassifier.validator.required.017.de_baja"
+    },
+    "rule_78328a8bc856e232": {
+      "title": "opt_out",
+      "text": "descontin\\w*",
+      "name": "optOutClassifier.validator.required.019.descontin_w"
+    },
+    "rule_cc5c367536abc6c5": {
+      "title": "opt_out",
+      "text": "end (any|all) (communication|communications|texts|text messages|messages)",
+      "name": "optOutClassifier.validator.required.027.end_any_all_communication_communications_texts_text_messages_messages"
+    },
+    "rule_c15592ace39cad2a": {
+      "title": "opt_out",
+      "text": "federal communications commission",
+      "name": "optOutClassifier.validator.required.029.federal_communications_commission"
+    },
+    "rule_7cbb4023388edec3": {
+      "title": "opt_out",
+      "text": "florida telephone solicitation act",
+      "name": "optOutClassifier.validator.required.032.florida_telephone_solicitation_act"
+    },
+    "rule_6487a8f2600697d9": {
+      "title": "fuzzy_opt_out",
+      "text": "fraud\\w*",
+      "name": "optOutClassifier.validator.required.030.fraud_w"
+    },
+    "rule_50060364ab53d6de": {
+      "title": "opt_out",
+      "text": "halt (texts|messages|text messages)",
+      "name": "optOutClassifier.validator.required.004.halt_texts_messages_text_messages"
+    },
+    "rule_5e2385aac4ffe493": {
+      "title": "opt_out",
+      "text": "lawl\\w*",
+      "name": "optOutClassifier.validator.required.041.lawl_w"
+    },
+    "rule_5f6259244e99088c": {
+      "title": "opt_out",
+      "text": "laws\\w*",
+      "name": "optOutClassifier.validator.required.040.laws_w"
+    },
+    "rule_89cb54259c647ea5": {
+      "title": "opt_out",
+      "text": "litigat\\w*",
+      "name": "optOutClassifier.validator.required.044.litigat_w"
+    },
+    "rule_0b169105345d23eb": {
+      "title": "opt_out",
+      "text": "quit\\w*",
+      "name": "optOutClassifier.validator.required.062.quit_w"
+    },
+    "rule_4cd3657cc60c4cfe": {
+      "title": "opt_out",
+      "text": "remeuva",
+      "name": "optOutClassifier.validator.required.063.remeuva"
+    },
+    "rule_da47ed02e71f3532": {
+      "title": "opt_out",
+      "text": "\\b(?:stop|stopped|stops|stopping)\\b",
+      "name": "optOutClassifier.validator.required.069.s_r_t_y_op"
+    },
+    "rule_b7bb84dd2fa94f57": {
+      "title": "opt_out",
+      "text": "s\\s*t\\s*o\\s*p",
+      "name": "optOutClassifier.validator.required.109.s_t_o_p"
+    },
+    "rule_bf2f32dcb19c5c5a": {
+      "title": "fuzzy_opt_out",
+      "text": "scam\\w*",
+      "name": "optOutClassifier.validator.required.070.scam_w"
+    },
+    "rule_95ef059f25008673": {
+      "title": "opt_out",
+      "text": "st(i|o|p)p",
+      "name": "optOutClassifier.validator.required.074.st_i_o_p_p"
+    },
+    "rule_1ccc323db57027ee": {
+      "title": "opt_out",
+      "text": "(?:sto|stop)",
+      "name": "optOutClassifier.validator.required.075.st_o_p"
+    },
+    "rule_363878e229a562e1": {
+      "title": "opt_out",
+      "text": "stop2cancel",
+      "name": "optOutClassifier.validator.required.085.stop2cancel"
+    },
+    "rule_bbe2acb99f8bb533": {
+      "title": "opt_out",
+      "text": "stop2unsubscribe",
+      "name": "optOutClassifier.validator.required.087.stop2unsubscribe"
+    },
+    "rule_a1f769e50938e93e": {
+      "title": "opt_out",
+      "text": "stopannul",
+      "name": "optOutClassifier.validator.required.088.stopannul"
+    },
+    "rule_4713232b43ce887d": {
+      "title": "opt_out",
+      "text": "telephone consumer protection act",
+      "name": "optOutClassifier.validator.required.100.telephone_consumer_protection_act"
+    },
+    "rule_2ceb64d4bb6ed08e": {
+      "title": "opt_out",
+      "text": "terminat\\w*",
+      "name": "optOutClassifier.validator.required.101.terminat_w"
+    },
+    "rule_e51dc7d4ebc2632c": {
+      "title": "opt_out",
+      "text": "unsub[scribe]?\\w*",
+      "name": "optOutClassifier.validator.required.105.unsub_scribe_w"
+    },
+    "rule_6bce397042505948": {
+      "title": "close",
+      "text": "^10 shein freebies and a 50 allowance for the lucky just click and claim—so easy$",
+      "name": "opt_outs_ml.regex_rules.009.scam"
+    },
+    "rule_510bd44ff37f855b": {
+      "title": "close",
+      "text": "^claim 5 free shein products now click the link to help and let’s both win big$",
+      "name": "opt_outs_ml.regex_rules.007.scam"
+    },
+    "rule_abc7957d4b3e692a": {
+      "title": "close",
+      "text": "^could you do me a huge favor please accept my invite so that i can get free gifts$",
+      "name": "opt_outs_ml.regex_rules.006.scam"
+    },
+    "rule_f492fe1feda6e716": {
+      "title": "opt_out",
+      "text": "^fuck you$",
+      "name": "opt_outs_ml.regex_rules.111.stop_keywords"
+    },
+    "rule_aafaf0652c3b58e9": {
+      "title": "opt_out",
+      "text": "(don't|don\\u2019t|do not|dont|donot)\\s+(text|send|contact|message|bother|talk|call|write|call or text)(\\s+me)?(\\s+(any more|anymore|again))?",
+      "name": "optOutClassifier.validator.curated.001.stop_processing"
+    },
+    "rule_f96b1e3bc526392a": {
+      "title": "opt_out",
+      "text": "\\b(s|a|d)top\\b",
+      "name": "optOutClassifier.json.patterns.47"
+    },
+    "rule_4b9df51ef76b2274": {
+      "title": "opt_out",
+      "text": "\\bend\\s+(any|all)\\s+(communication|communications|texts|text messages|messages)\\b",
+      "name": "optOutClassifier.validator.curated.027.stop_processing"
+    },
+    "rule_0d2cc297cd7cc1e0": {
+      "title": "opt_out",
+      "text": "\\bno more texts?\\b",
+      "name": "optOutClassifier.validator.curated.046.stop_processing"
+    },
+    "rule_1c3fc1904abb0a16": {
+      "title": "opt_out",
+      "text": "\\bterminat\\w*",
+      "name": "optOutClassifier.validator.curated.101.stop_processing"
+    },
+    "rule_74e38ff94c60de14": {
+      "title": "opt_out",
+      "text": "halt\\s+(texts|messages|text messages)",
+      "name": "optOutClassifier.validator.curated.004.stop_processing"
+    },
+    "rule_362b6d62919ca7c8": {
+      "title": "no_action",
+      "text": "^thank u$",
+      "name": "opt_outs_ml.regex_rules.096.thanks"
+    },
+    "rule_5525e07ed34651a0": {
+      "title": "no_action",
+      "text": "^thank you so much$",
+      "name": "opt_outs_ml.regex_rules.064.thanks"
+    },
+    "rule_5928beb377b3ed31": {
+      "title": "no_action",
+      "text": "^thank you$",
+      "name": "opt_outs_ml.regex_rules.063.thanks"
+    },
+    "rule_71c0b3b7241cc245": {
+      "title": "no_action",
+      "text": "^thanks so much$",
+      "name": "opt_outs_ml.regex_rules.095.thanks"
+    },
+    "rule_25bed44ed111bce6": {
+      "title": "no_action",
+      "text": "^thanks$",
+      "name": "opt_outs_ml.regex_rules.066.thanks"
+    },
+    "rule_6677dac08705e6d9": {
+      "title": "no_action",
+      "text": "^thx$",
+      "name": "opt_outs_ml.regex_rules.065.thanks"
+    },
+    "rule_37e1655b9732de03": {
+      "title": "tmt",
+      "text": "(?:dont|do not)\\s+(?:text|message|contact)\\s+(?:me\\s+)?so\\s+much",
+      "name": "zapOptOuts.workflow.node_4.tmt.dont_text_so_much"
+    },
+    "rule_20dd26ff5b5f8776": {
+      "title": "tmt",
+      "text": "(?:send\\s+)?less\\s+(?:texts|text\\s+messages|messages|msgs)",
+      "name": "less_texts"
+    },
+    "rule_bd029940a2cd155a": {
+      "title": "tmt",
+      "text": "(?:text|message|contact)\\s+me\\s+less",
+      "name": "text_less"
+    },
+    "rule_22234963248bc250": {
+      "title": "tmt",
+      "text": "(?:text|message|contact|send)\\s+me\\s+less\\s+often",
+      "name": "zapOptOuts.workflow.node_4.tmt.less_often"
+    },
+    "rule_b0f803daeb861cce": {
+      "title": "tmt",
+      "text": "\\b(?:send )?fewer (?:texts?|text messages?|messages?|msgs?)\\b",
+      "name": "zapOptOuts.classifier.TMT_RULES.fewer_texts"
+    },
+    "rule_20f538f2564683bc": {
+      "title": "tmt",
+      "text": "\\blower (?:the )?frequency\\b",
+      "name": "lower_frequency"
+    },
+    "rule_8675fccfebc4018f": {
+      "title": "tmt",
+      "text": "\\bnot as many (?:texts?|text messages?|messages?|msgs?)\\b",
+      "name": "zapOptOuts.classifier.TMT_RULES.not_as_many_messages"
+    },
+    "rule_5603c582963939e3": {
+      "title": "tmt",
+      "text": "\\breduce (?:the )?(?:texts?|text messages?|messages?|msgs?)\\b",
+      "name": "zapOptOuts.classifier.TMT_RULES.reduce_texts"
+    },
+    "rule_621cc8d036a8f378": {
+      "title": "tmt",
+      "text": "\\breduce (?:the )?frequency\\b",
+      "name": "reduce_frequency"
+    },
+    "rule_51780d5c0ddb195c": {
+      "title": "tmt",
+      "text": "\\bsend (?:me )?(?:texts?|text messages?|messages?|msgs?) less\\b",
+      "name": "message_less"
+    },
+    "rule_c8cdec0733e820b5": {
+      "title": "tmt",
+      "text": "\\bsend me less\\b",
+      "name": "zapOptOuts.classifier.TMT_RULES.send_me_less"
+    },
+    "rule_5f58a29d47ea660f": {
+      "title": "tmt",
+      "text": "\\bslow down (?:on )?(?:the )?(?:texts?|text messages?|messages?|msgs?)\\b",
+      "name": "zapOptOuts.classifier.TMT_RULES.slow_down_texts"
+    },
+    "rule_acb4a26090a11f39": {
+      "title": "tmt",
+      "text": "\\bso many (?:texts?|text messages?|messages?|msgs?)\\b",
+      "name": "zapOptOuts.classifier.TMT_RULES.so_many_texts"
+    },
+    "rule_cb31523cd784b8ed": {
+      "title": "tmt",
+      "text": "\\bstop (?:texting|messaging|contacting) (?:me )?so much\\b",
+      "name": "stop_texting_so_much"
+    },
+    "rule_4d03052dd816366e": {
+      "title": "tmt",
+      "text": "\\btoo many (?:texts?|text messages?|messages?|msgs?)\\b",
+      "name": "too_many_texts"
+    },
+    "rule_0283959804bb8ff7": {
+      "title": "tmt",
+      "text": "not\\s+so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
+      "name": "zapOptOuts.workflow.node_4.tmt.not_so_many_texts"
+    },
+    "rule_combined_txt_origin_question": {
+      "title": "txt",
+      "text": "Customer asks how/where the sender got their number, who the sender is, who gave out their number, why they are getting texts/messages, why the sender is texting/contacting/sending messages, or says they do not know the sender.",
+      "name": "combined.txt_origin_question"
+    },
+    "rule_fc89e4910657c938": {
+      "title": "opt_out",
+      "text": "\\b(i am|im|my age is|im only|i am only|im just|i am just)\\s*(\\d{1,2})\\b",
+      "name": "autoQAMessages.json_array.under_13.rules.explicit_age_patterns.001.i_am_im_my_age_is_im_only_i_am_only_im_just_i_am_just_d_1_2"
+    },
+    "rule_caab2e50189ee965": {
+      "title": "opt_out",
+      "text": "\\b(i am|im|my age is|im only|i am only|im just|i am just)\\s*(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen)\\b",
+      "name": "autoQAMessages.json_array.under_13.rules.explicit_word_age_patterns.001.i_am_im_my_age_is_im_only_i_am_only_im_just_i_am_just_one_two_three_fo"
+    },
+    "rule_87298d15feba98fa": {
+      "title": "opt_out",
+      "text": "elementary school",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.001.elementary_school"
+    },
+    "rule_2b81f15d4afdbd0b": {
+      "title": "opt_out",
+      "text": "first grader",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.006.first_grader"
+    },
+    "rule_db58d4f1407e1a87": {
+      "title": "opt_out",
+      "text": "grade [1-6]",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.005.grade_1_6"
+    },
+    "rule_4d8a24e418c8ccc0": {
+      "title": "opt_out",
+      "text": "grade school",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.003.grade_school"
+    },
+    "rule_fbc658efd1856775": {
+      "title": "opt_out",
+      "text": "i am in [1-6](?:st|nd|rd|th) grade",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.014.i_am_in_1_6_st_nd_rd_th_grade"
+    },
+    "rule_ee88dd4d38489b87": {
+      "title": "opt_out",
+      "text": "i am in grade \\d",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.012.i_am_in_grade_d"
+    },
+    "rule_cb94613c9b6507b3": {
+      "title": "opt_out",
+      "text": "i'm in [1-6](?:st|nd|rd|th) grade",
+      "name": "autoQAMessages.json_array.under_13_rules.indirect_patterns.015.i_m_in_1_6_st_nd_rd_th_grade"
+    },
+    "rule_55d3e5ee92442178": {
+      "title": "opt_out",
+      "text": "i'm in grade \\d",
+      "name": "autoQAMessages.json_array.under_13_rules.indirect_patterns.013.i_m_in_grade_d"
+    },
+    "rule_930e74db78b8f299": {
+      "title": "opt_out",
+      "text": "primary school",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.002.primary_school"
+    },
+    "rule_e6dfe15a683267ac": {
+      "title": "opt_out",
+      "text": "second grader",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.007.second_grader"
+    },
+    "rule_45d648dd0cc45f61": {
+      "title": "opt_out",
+      "text": "sixth grader",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.011.sixth_grader"
+    },
+    "rule_719b6a949d37ca24": {
+      "title": "opt_out",
+      "text": "third grader",
+      "name": "autoQAMessages.json_array.under_13.rules.indirect_patterns.008.third_grader"
+    },
+    "rule_89b7c821fd57c3ee": {
+      "title": "opt_out",
+      "text": "under 13",
+      "name": "autoQAMessages.json_array.under_13.rules.implicit_patterns.001.under_13"
+    },
+    "rule_ccb279bed5ced46e": {
+      "title": "opt_out",
+      "text": "younger than 13",
+      "name": "autoQAMessages.json_array.under_13.rules.implicit_patterns.002.younger_than_13"
+    },
+    "rule_7bc12d69bc073e29": {
+      "title": "opt_out",
+      "text": "\\bde baja\\b",
+      "name": "optOutClassifier.validator.curated.017.unsubscribe"
+    },
+    "rule_0e9a03f5547077eb": {
+      "title": "opt_out",
+      "text": "\\bstop2cancel\\b",
+      "name": "optOutClassifier.validator.curated.085.unsubscribe"
+    },
+    "rule_6e424fef5f28b435": {
+      "title": "opt_out",
+      "text": "\\bstop2unsubscribe\\b",
+      "name": "optOutClassifier.validator.curated.087.unsubscribe"
+    },
+    "rule_9f63a3de2702df94": {
+      "title": "opt_out",
+      "text": "\\bstopannul\\b",
+      "name": "optOutClassifier.validator.curated.088.unsubscribe"
+    },
+    "rule_75adad750f0e91ec": {
+      "title": "opt_out",
+      "text": "\\bunenroll\\b",
+      "name": "optOutClassifier.validator.curated.102.unsubscribe"
+    },
+    "rule_291378e2af96bb4c": {
+      "title": "opt_out",
+      "text": "f u",
+      "name": "autoQAMessages.labels.short_offensive.f_u"
+    },
+    "rule_439752bdc63861f3": {
+      "title": "opt_out",
+      "text": "bye",
+      "name": "autoQAMessages.json_array.keyword.exact.042.bye"
+    },
+    "rule_7d708b1150714790": {
+      "title": "opt_out",
+      "text": "delete",
+      "name": "autoQAMessages.json_array.keyword.exact.034.delete"
+    },
+    "rule_392fcfaacf118d18": {
+      "title": "opt_out",
+      "text": "detener",
+      "name": "autoQAMessages.json_array.keyword.exact.043.detener"
+    },
+    "rule_157e140013fc23de": {
+      "title": "fuzzy_opt_out",
+      "text": "done",
+      "name": "autoQAMessages.json_array.keyword.exact.029.done"
+    },
+    "rule_c3dc65183282baaf": {
+      "title": "opt_out",
+      "text": "drop",
+      "name": "autoQAMessages.json_array.keyword.exact.019.drop"
+    },
+    "rule_ade7bf36e8de2073": {
+      "title": "opt_out",
+      "text": "end",
+      "name": "autoQAMessages.json_array.keyword.exact.005.end"
+    },
+    "rule_b765bd113a4e315e": {
+      "title": "opt_out",
+      "text": "exit",
+      "name": "autoQAMessages.json_array.keyword.exact.035.exit"
+    },
+    "rule_68bfff39badc29a8": {
+      "title": "tmt",
+      "text": "junk",
+      "name": "autoQAMessages.json_array.keyword.exact.016.junk"
+    },
+    "rule_8f5757a432df1604": {
+      "title": "opt_out",
+      "text": "leave",
+      "name": "autoQAMessages.json_array.keyword.exact.020.leave"
+    },
+    "rule_f09cbbf5c87bf2fc": {
+      "title": "opt_out",
+      "text": "mute",
+      "name": "autoQAMessages.json_array.keyword.exact.036.mute"
+    },
+    "rule_949dbd040d7b98f7": {
+      "title": "opt_out",
+      "text": "off",
+      "name": "autoQAMessages.json_array.keyword.exact.038.off"
+    },
+    "rule_9dad33db918fe279": {
+      "title": "opt_out",
+      "text": "opt",
+      "name": "autoQAMessages.json_array.keyword.exact.022.opt"
+    },
+    "rule_ed3db71ec5a14a9c": {
+      "title": "opt_out",
+      "text": "out",
+      "name": "autoQAMessages.json_array.keyword.exact.023.out"
+    },
+    "rule_cebcde54a00fef2d": {
+      "title": "opt_out",
+      "text": "quit",
+      "name": "autoQAMessages.json_array.keyword.exact.011.quit"
+    },
+    "rule_02b6ffd9d71d2546": {
+      "title": "opt_out",
+      "text": "remove",
+      "name": "autoQAMessages.json_array.keyword.exact.003.remove"
+    },
+    "rule_14c20a491a0ab2ca": {
+      "title": "opt_out",
+      "text": "terminate",
+      "name": "autoQAMessages.json_array.keyword.exact.010.terminate"
+    },
+    "rule_5ef21e9a6120bf81": {
+      "title": "opt_out",
+      "text": "unfollow",
+      "name": "autoQAMessages.json_array.keyword.exact.027.unfollow"
+    },
+    "rule_7e5b3ab6e70f9bf8": {
+      "title": "opt_out",
+      "text": "withdraw",
+      "name": "autoQAMessages.json_array.keyword.exact.012.withdraw"
+    },
+    "rule_26e76065b0de6fdd": {
+      "title": "opt_out",
+      "text": "arop",
+      "name": "autoQAMessages.json_array.keyword.typo.079.arop"
+    },
+    "rule_4b71a1249b131113": {
+      "title": "opt_out",
+      "text": "atop",
+      "name": "autoQAMessages.json_array.keyword.typo.002.atop"
+    },
+    "rule_2fb69424acf606b3": {
+      "title": "opt_out",
+      "text": "banned",
+      "name": "autoQAMessages.json_array.keyword.typo.077.banned"
+    },
+    "rule_f5023ff48590b958": {
+      "title": "opt_out",
+      "text": "c3rvca",
+      "name": "autoQAMessages.json_array.keyword.typo.003.c3rvca"
+    },
+    "rule_7c22400b209cbf13": {
+      "title": "opt_out",
+      "text": "canceled",
+      "name": "autoQAMessages.json_array.keyword.typo.015.canceled"
+    },
+    "rule_fd2dd4dd41d635f8": {
+      "title": "opt_out",
+      "text": "canceling",
+      "name": "autoQAMessages.json_array.keyword.typo.005.canceling"
+    },
+    "rule_330a3e0d60590167": {
+      "title": "opt_out",
+      "text": "cancellation",
+      "name": "autoQAMessages.json_array.keyword.typo.078.cancellation"
+    },
+    "rule_9e9f5148f311716d": {
+      "title": "opt_out",
+      "text": "cancelled",
+      "name": "autoQAMessages.json_array.keyword.typo.016.cancelled"
+    },
+    "rule_2e00f258e138100b": {
+      "title": "opt_out",
+      "text": "cancelling",
+      "name": "autoQAMessages.json_array.keyword.typo.017.cancelling"
+    },
+    "rule_15ebcc5a90376a70": {
+      "title": "opt_out",
+      "text": "cancle",
+      "name": "autoQAMessages.json_array.keyword.typo.004.cancle"
+    },
+    "rule_0e088d5ce0de842f": {
+      "title": "opt_out",
+      "text": "dtop",
+      "name": "autoQAMessages.json_array.keyword.typo.006.dtop"
+    },
+    "rule_e96a3cf40c5f4c9e": {
+      "title": "opt_out",
+      "text": "op out",
+      "name": "autoQAMessages.json_array.keyword.typo.080.op_out"
+    },
+    "rule_57969ae007bf1c57": {
+      "title": "opt_out",
+      "text": "u1rpua",
+      "name": "autoQAMessages.json_array.keyword.typo.052.u1rpua"
+    },
+    "rule_1f2c349ccafe94c8": {
+      "title": "opt_out",
+      "text": "u1rpuca",
+      "name": "autoQAMessages.json_array.keyword.typo.053.u1rpuca"
+    },
+    "rule_f17b74b4dd80595e": {
+      "title": "opt_out",
+      "text": "u3rvca",
+      "name": "autoQAMessages.json_array.keyword.typo.054.u3rvca"
+    },
+    "rule_17dfbb2610056423": {
+      "title": "opt_out",
+      "text": "unsiscrube",
+      "name": "autoQAMessages.json_array.keyword.typo.103.unsiscrube"
+    },
+    "rule_a38aefc71be39c34": {
+      "title": "opt_out",
+      "text": "unsubscrbe",
+      "name": "autoQAMessages.json_array.keyword.typo.063.unsubscrbe"
+    },
+    "rule_60d2356d6a5efb1a": {
+      "title": "opt_out",
+      "text": "unsubscride",
+      "name": "autoQAMessages.json_array.keyword.typo.066.unsubscride"
+    },
+    "rule_54097b797df6f1d5": {
+      "title": "opt_out",
+      "text": "unsubsrcibe",
+      "name": "autoQAMessages.json_array.keyword.typo.072.unsubsrcibe"
+    },
+    "rule_dfaac678e54f33d9": {
+      "title": "opt_out",
+      "text": "wtop",
+      "name": "autoQAMessages.json_array.keyword.typo.101.wtop"
+    },
+    "rule_19f8d30e9b010ed4": {
+      "title": "opt_out",
+      "text": "ztop",
+      "name": "autoQAMessages.json_array.keyword.typo.076.ztop"
+    }
+  },
+  "by_rule_name": {}
+}
