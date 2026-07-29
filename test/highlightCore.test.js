@@ -249,7 +249,7 @@ test("ambiguous slash patterns do not compile to unintended standalone words", (
   const exactCases = [
     ["please end", "rule_a7188c1cef1b83cf", "please end"],
     ["kindly end", "rule_a7188c1cef1b83cf", "kindly end"],
-    ["end", "rule_a7188c1cef1b83cf", "end"],
+    ["end", "rule_35a64c97cf6b24d5", "end"],
     ["bring suit", "rule_5b5fa6c84e118a26", "bring suit"],
     ["file suit", "rule_5b5fa6c84e118a26", "file suit"],
     ["bring a suit", "rule_4ee373f27aba3ba5", "bring a suit"],
@@ -369,6 +369,53 @@ test("deterministic rules resolve QA diagnostic phrases to their intended action
   }
 });
 
+test("deterministic cleanup rules cover requested variants and exclusions", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+  const settings = core.mergeSettings(defaults, {});
+  const rules = core.buildRules(payload.rules);
+  const rulesById = new Map(rules.map((item) => [item.id, item]));
+  const activeRules = core.getActiveRules(rules, settings);
+
+  for (const text of ["spam", "spams", "spammer", "spamming"]) {
+    const matches = core.collectMatches(text, [rulesById.get("rule_fed4cc7912c2263a")], settings);
+    assert.equal(matches.length, 1, `${text} should match spam variants`);
+  }
+  assert.equal(core.collectMatches("spamalot", [rulesById.get("rule_fed4cc7912c2263a")], settings).length, 0);
+
+  for (const text of ["end", "ends", "ending.", "ended!"]) {
+    assert.equal(core.collectMatches(text, [rulesById.get("rule_35a64c97cf6b24d5")], settings).length, 1);
+  }
+  assert.equal(core.collectMatches("the movie ending was good", [rulesById.get("rule_35a64c97cf6b24d5")], settings).length, 0);
+
+  assert.equal(core.collectMatches("take my number off", [rulesById.get("rule_9ae98939ff042262")], settings).length, 1);
+  for (const text of ["take me", "take this", "take this anymore"]) {
+    assert.equal(core.collectMatches(text, activeRules, settings).some((match) => match.rule.id === "rule_9ae98939ff042262"), false);
+  }
+
+  assert.equal(core.collectMatches("This seems fraudulent.", [rulesById.get("rule_1ff20c8e5b17a76f")], settings).length, 1);
+
+  for (const text of ["quit playing", "stop playing", "quit lying", "stop lying"]) {
+    assert.equal(core.collectMatches(text, [rulesById.get("rule_28a16c51871d9e83")], settings).length, 1);
+  }
+
+  for (const text of ["finish", "finished", "finishes", "finishing"]) {
+    assert.equal(core.collectMatches(text, [rulesById.get("rule_5ad2f8fb3c22229d")], settings).length, 1);
+  }
+  assert.equal(core.collectMatches("please finish this order", activeRules, settings).some((match) => match.rule.id === "rule_5ad2f8fb3c22229d"), false);
+
+  for (const text of ["pause", "paused", "pausing"]) {
+    assert.equal(core.collectMatches(text, [rulesById.get("rule_523de625170a42d4")], settings).length, 1);
+  }
+  assert.equal(core.collectMatches("pause my subscription", activeRules, settings).some((match) => match.rule.id === "rule_523de625170a42d4"), false);
+
+  assert.equal(core.collectMatches("Customer support?", activeRules, settings).some((match) => match.rule.id === "rule_d71b14fc71ed188f"), true);
+  assert.equal(core.collectMatches("do not spam", [rulesById.get("rule_fe8eca5e5e5ff867")], settings).length, 0);
+
+  for (const removedId of ["rule_aaec757169b5d045", "rule_cf5d12213cf5b726", "rule_754d2c360b0b43fe", "rule_41434a27f4e64824"]) {
+    assert.equal(rulesById.has(removedId), false);
+  }
+});
+
 test("explicit done rules are tagged with the test action", () => {
   const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
   const rulesById = new Map(core.buildRules(payload.rules).map((item) => [item.id, item]));
@@ -417,7 +464,7 @@ test("deterministic rules compile highlightable entries and skip procedural dete
   const optionalGroupRule = rules.find((item) => item.id === "rule_9a0a246dfc518c29");
   const curlyQuoteRule = rules.find((item) => item.id === "rule_6da31ef70e2d6310");
 
-  assert.equal(rules.length, 391);
+  assert.equal(rules.length, 387);
   assert.equal(procedural.regex, null);
   assert.equal(optOutPhrase.tag, "opt_out");
   assert.match("please remove me", optOutPhrase.regex);
