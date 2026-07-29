@@ -29,7 +29,7 @@ init().catch((error) => {
 async function init() {
   const rules = await loadRules();
   state.messages = [
-    ...rules.map(createRuleMessage),
+    ...uniqueMessagesByText(rules.filter(isDemoRule).map(createRuleMessage)),
     ...excludedMessages.map(createExcludedMessage)
   ];
   renderFilters();
@@ -103,6 +103,20 @@ function uniqueRuleValues(key) {
   )).sort();
 }
 
+function isDemoRule(rule) {
+  return (rule.action || rule.tag) !== 'no_action';
+}
+
+function uniqueMessagesByText(messages) {
+  const seen = new Set();
+  return messages.filter((message) => {
+    const key = `${message.brandText || ''}\n${message.text}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function renderCustomList() {
   els.customCount.textContent = `${state.customMessages.length} added`;
   if (!state.customMessages.length) {
@@ -148,9 +162,10 @@ function renderMessage(message) {
 
   article.innerHTML = `
     <div class="messages">
+      ${renderBrandMessage(message)}
       <div class="message type-INBOUND" data-message-id="${escapeHtml(message.id)}">
         <div class="bubble">
-          <p class="variant-caption">${escapeHtml(message.text)}</p>
+          <p class="variant-caption">${renderInboundMessageText(message)}</p>
         </div>
       </div>
     </div>
@@ -161,6 +176,22 @@ function renderMessage(message) {
   return article;
 }
 
+function renderInboundMessageText(message) {
+  return escapeHtml(message.text);
+}
+
+function renderBrandMessage(message) {
+  if (!message.brandText) return '';
+  return `
+    <div class="picnic--c-PJLV picnic--c-kgzfnN brand-message" data-speaker="Brand">
+      <div class="picnic--c-PJLV picnic--c-PJLV-iciKXky-css brand-message__meta">
+        <p class="picnic--c-cyRcZm picnic--c-cyRcZm-XTsru-variant-micro picnic--c-cyRcZm-itysWP-color-subdued">Jul 28, 2026, 2:49 pm</p>
+      </div>
+      <p class="picnic--c-cyRcZm picnic--c-cyRcZm-YfiYb-variant-caption picnic--c-cyRcZm-icbTBNv-css brand-message__text">${escapeHtml(message.brandText)}</p>
+    </div>
+  `;
+}
+
 function renderRuleLine(message) {
   if (message.kind === 'custom') return '<span class="tag tag-muted">No highlighted rules yet</span>';
   if (message.kind === 'excluded') return '<span class="tag tag-muted">Excluded pattern</span>';
@@ -169,11 +200,9 @@ function renderRuleLine(message) {
 
 function renderRuleImplication(rule, matchedTags = []) {
   return `
-    <div class="rule-detail rule-implication">${escapeHtml(describeRuleImplication(rule))}</div>
     <div class="rule-tags">
       ${renderRuleChips(rule, matchedTags)}
     </div>
-    <div class="rule-detail rule-condition">${escapeHtml(describeRuleCondition(rule))}</div>
   `;
 }
 
@@ -181,15 +210,10 @@ function renderRuleChips(rule, matchedTags = []) {
   const chips = [
     ['action', rule.action],
     ['category', rule.category],
-    ['subcategory', rule.subcategory],
-    ['scope', rule.matchScope]
+    ['subcategory', rule.subcategory]
   ]
     .filter(([_label, value]) => Boolean(value))
     .map(([label, value]) => `<span class="tag">${escapeHtml(`${label}: ${value}`)}</span>`);
-
-  if (matchedTags.length) {
-    chips.push(`<span class="tag tag-muted">${escapeHtml(`matched: ${matchedTags.join(', ')}`)}</span>`);
-  }
 
   return chips.join('');
 }
@@ -293,6 +317,7 @@ function createRuleMessage(rule, index) {
     id: `rule-message-${index + 1}`,
     kind: 'rule',
     text: sampleForRule(rule),
+    brandText: brandSampleForRule(rule),
     rule: {
       id: rule.id || `rule-${index + 1}`,
       name: rule.name || 'unnamed_rule',
@@ -303,6 +328,19 @@ function createRuleMessage(rule, index) {
       conditionSummary: rule.condition_summary || rule.pattern || ''
     }
   };
+}
+
+function brandSampleForRule(rule) {
+  if (!isHotTopicRule(rule)) return '';
+  return "Hot Topic: So, how often do you want to see our texts? They're full of deals & the latest drops. Reply with a number:\n\n1. Same\n2. Weekly\n3. Monthly\n4. Never";
+}
+
+function isHotTopicRule(rule) {
+  return rule.category === 'hot_topic' || String(rule.name || '').startsWith('opt_outs_ml.hot_topic_');
+}
+
+function isHotTopicMessage(message) {
+  return message.kind === 'rule' && message.rule?.category === 'hot_topic';
 }
 
 function createExcludedMessage(text, index) {
@@ -366,7 +404,7 @@ function isSingleWordSample(value) {
 
 function fallbackSampleForRule(rule) {
   const subcategory = String(rule.subcategory || rule.category || '').toLowerCase();
-  if (subcategory.includes('customer_support')) return 'Can I get help with my order?';
+  if (subcategory.includes('customer_support')) return 'Help.';
   if (subcategory.includes('wrong_number')) return 'This is the wrong number.';
   if (subcategory.includes('not_interested')) return "I'm not interested anymore.";
   if (subcategory.includes('subscription')) return 'Please cancel my subscription.';

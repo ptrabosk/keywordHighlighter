@@ -491,3 +491,45 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /maybeLogRenderCompleted/);
   assert.match(contentSource, /render_failed/);
 });
+
+test("content highlighter matches full message elements before wrapping text nodes", () => {
+  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
+
+  assert.match(contentSource, /function collectTextNodeSegments\(element\)/);
+  assert.match(contentSource, /segments\.map\(\(segment\) => segment\.text\)\.join\(''\)/);
+  assert.match(contentSource, /core\.collectMatches\(text, activeRules, state\.settings\)/);
+  assert.match(contentSource, /function mapMatchesToTextNodeSegments\(segments, matches, fullText\)/);
+  assert.match(contentSource, /matchedText: fullText\.slice\(match\.start, match\.end\)/);
+  assert.match(contentSource, /applyTooltipData\(span, match\.rule, match\.matchedText\)/);
+  assert.doesNotMatch(contentSource, /function highlightTextNode\(node, activeRules\)/);
+});
+
+test("content highlighter includes conservative brand message targets", () => {
+  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
+
+  assert.match(contentSource, /\.brand-message__text/);
+  assert.match(contentSource, /\[class\*="brand-message"\] p\[class\*="variant-caption"\]/);
+  assert.match(contentSource, /node\.closest\('div\[class\*="type-INBOUND"\], \[class\*="brand-message"\]'\)/);
+  assert.doesNotMatch(contentSource, /querySelectorAll\('p\[class\*="variant-caption"\]'\)\.filter\(\(node\) => node instanceof HTMLElement && isVisible\(node\)\)/);
+});
+
+test("content highlighter treats Hot Topic brand/customer context as one message match", () => {
+  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
+
+  assert.match(contentSource, /function collectContextualMessageMatches\(element, text\)/);
+  assert.match(contentSource, /function getHotTopicContextualRule\(element, text\)/);
+  assert.match(contentSource, /opt_outs_ml\.hot_topic_opt_out/);
+  assert.match(contentSource, /opt_outs_ml\.hot_topic_not_opt_out/);
+  assert.match(contentSource, /createHotTopicFallbackRule/);
+  assert.match(contentSource, /hasHotTopicRuleMetadata/);
+  assert.match(contentSource, /\[data-speaker="Brand"\] p\[class\*="variant-caption"\]/);
+  assert.match(contentSource, /start: 0,\s*end: text\.length,\s*length: text\.length/s);
+  assert.match(contentSource, /mergeContextualMatches/);
+});
+
+test("demo Hot Topic messages are not pre-split into context highlights", () => {
+  const demoSource = fs.readFileSync(path.join(__dirname, "../test-site/test-site.js"), "utf8");
+
+  assert.match(demoSource, /function renderInboundMessageText\(message\) {\s*return escapeHtml\(message\.text\);\s*}/);
+  assert.doesNotMatch(demoSource, /replace\(\/\\b\(4\|four\|never\)\\b\/gi/);
+});

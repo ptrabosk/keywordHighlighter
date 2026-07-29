@@ -587,7 +587,6 @@ rule_fa9887adf3e9cb70,zapOptOuts.workflow.node_4.opt_out.dont_want_communication
 rule_bff07b2ecdb1f07a,zapOptOuts.workflow.node_4.opt_out.profanity,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:unsubsidized me)(?![a-z0-9]),unsubscribe_phrase,opt_out
 rule_b50af28125ebaaad,not_opted_in,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:we are not interested)(?![a-z0-9]),not_interested,fuzzy_opt_out
 rule_9236f1b1c321c7c1,zapOptOuts.workflow.node_4.opt_out.keyword_shut_up,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:who (is this|are you|are (y'all|yall)))(?![a-z0-9]),txt,txt
-rule_b8c3a6322862acfc,zapOptOuts.classifier.HARD_RULES.keyword_shut_up,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:wrong (number|person))(?![a-z0-9]),wrong_number,opt_out
 rule_7d2c3776748772a7,stop_texting_emailing_messaging,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:wrong number)(?![a-z0-9]),wrong_number,opt_out
 rule_d74d59b5753a5ed3,zapOptOuts.workflow.node_4.opt_out.legal_threat,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:you (don't|dont) have to text me)(?![a-z0-9]),unsubscribe_phrase,opt_out
 rule_a00fdb668ebfa439,zapOptOuts.workflow.node_4.opt_out.not_subscribed,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,(?<![a-z0-9])(?:you (have|got) the wrong number)(?![a-z0-9]),wrong_number,opt_out
@@ -714,7 +713,6 @@ rule_2fc66f92763ec43e,deterministic.indirect.012,regex,opt_out,1,runnable regex,
 rule_1d4a3cc355d173cd,zapOptOuts.classifier.RAW_HARD_RULES.stop_emoji,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i don't want to hear from you,unsubscribe_phrase,opt_out
 rule_a0fc16105db53fd4,cannot_receive_messages,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i never (opted in|signed up|subscribed),unsubscribe_phrase,opt_out
 rule_604d4b7bc5916d8c,zapOptOuts.classifier.HARD_RULES.do_not_contact,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i no longer want( to receive)? (messages|texts),unsubscribe_phrase,opt_out
-rule_8ed4bd2da1210eb9,zapOptOuts.classifier.HARD_RULES.profanity,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i was not subscribed,unsubscribe_phrase,opt_out
 rule_22242dc3b727e981,optOutClassifier.validator.curated.007.opt_out,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i will block you,block,opt_out
 rule_8c04906ceae61e82,zapOptOuts.classifier.HARD_RULES.delete_information,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i'm blocking you,block,opt_out
 rule_6cdd26b908d62070,do_not_call,regex,opt_out,1,runnable regex,CUSTOMER_MESSAGE,i'm deleting you,unsubscribe_phrase,opt_out
@@ -808,7 +806,6 @@ rule_2d70fe3be24e4147,zapOptOuts.deterministic_js.indirect.024.go_fuck_yourself,
 rule_fe79c67011b03d20,deterministic.indirect.024,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,discontinue,keywords,opt_out
 rule_04378c2b5f8e50a1,go_away,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,discontinued,keywords,opt_out
 rule_f8ccc5ef2e040a8f,zapOptOuts.workflow.node_4.opt_out.go_away,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,disregard,remove,
-rule_2751760f2de0e940,deterministic.hard_opt_out.043,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,dnc,keywords,opt_out
 rule_df51e1f60952094e,zapOptOuts.deterministic_js.hard_opt_out.043.gtfo,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,do not contact,keywords,opt_out
 rule_08247607521b3996,harassment,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,done,keywords,opt_out
 rule_1377b88e5e0ab0fb,zapOptOuts.workflow.node_4.opt_out.harassment,regex,opt_out_keywords,1,runnable vocabulary,CUSTOMER_MESSAGE,drop,keywords,opt_out
@@ -877,7 +874,6 @@ rule_fb1ddb5e1670f6ed,deterministic.indirect.006,regex,other_opt_out,1,runnable 
 rule_6ab83d82398dee31,deterministic.hard_opt_out.044,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,florida telephone solicitation act,remove,
 rule_e1655a605f9f79ce,zapOptOuts.deterministic_js.hard_opt_out.044.shut_up,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,fraud,remove,
 rule_94eaeff1344ede41,deterministic.indirect.022,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,ftsa,remove,
-rule_df62af01c54d3d99,zapOptOuts.deterministic_js.indirect.022.shut_the_fuck_up,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,fuc,remove,
 rule_d9aee2b59201b866,deterministic.indirect.008,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,fuck off you,remove,
 rule_732ea7134e7a22f6,deterministic.hard_opt_out.046,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,harass,remove,
 rule_a66092e0232b7e96,zapOptOuts.deterministic_js.hard_opt_out.046.stfu,regex,other_opt_out,1,runnable literal_phrase,CUSTOMER_MESSAGE,lawl,remove,

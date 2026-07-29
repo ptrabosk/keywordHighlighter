@@ -6,8 +6,10 @@
   --text: #172033;
   --muted: #64748b;
   --line: #d9dee8;
-  --accent: #1f2937;
-  --accent-text: #ffffff;
+  --accent: #f0b368;
+  --accent-text: #172033;
+  --brand-message: #FAECB9;
+  --customer-message: #E6E6E5;
   --pass: #15803d;
   --fail: #b91c1c;
 }
@@ -213,7 +215,7 @@ h2 {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  background: #eef2f7;
+  background: #F2F2F2;
 }
 
 .message-deck {
@@ -255,9 +257,23 @@ h2 {
   align-self: flex-start;
 }
 
+.brand-message {
+  align-self: flex-end;
+  max-width: 74%;
+}
+
 .bubble {
   border: 1px solid #dce2ec;
-  background: #ffffff;
+  background: var(--customer-message);
+  padding: 11px 13px;
+  box-shadow: 0 5px 14px rgba(23, 32, 51, 0.08);
+}
+
+.brand-message__text {
+  margin: 0;
+  border-color: #dce2ec;
+  background: var(--brand-message);
+  border: 1px solid #dce2ec;
   padding: 11px 13px;
   box-shadow: 0 5px 14px rgba(23, 32, 51, 0.08);
 }
@@ -268,6 +284,32 @@ h2 {
   font-size: 15px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.brand-message__meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.brand-message__meta p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.brand-message__text {
+  color: #1f2937;
+  font-size: 15px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.demo-context-highlight {
+  border-radius: 3px;
+  background: rgba(240, 179, 104, 0.45);
+  box-shadow: 0 0 0 1px rgba(240, 179, 104, 0.8);
+  padding: 0 2px;
 }
 
 .rule-line {
@@ -334,6 +376,10 @@ h2 {
 
 @media (max-width: 640px) {
   .message {
+    max-width: 94%;
+  }
+
+  .brand-message {
     max-width: 94%;
   }
 }

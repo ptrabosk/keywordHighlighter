@@ -277,7 +277,15 @@
       console.warn('[Attentive Rule Highlighter] Invalid selector, using default:', selector, error);
       nodes = Array.from(document.querySelectorAll(DEFAULT_SETTINGS.selector));
     }
-    return nodes.filter((node) => node instanceof HTMLElement && node.closest('div[class*="type-INBOUND"]') && !node.closest('.amh-tooltip') && isVisible(node));
+    const brandNodes = Array.from(document.querySelectorAll('.brand-message__text, [class*="brand-message"] p[class*="variant-caption"]'));
+    return uniqueElements([...nodes, ...brandNodes]).filter((node) => {
+      if (!(node instanceof HTMLElement) || node.closest('.amh-tooltip') || !isVisible(node)) return false;
+      return node.closest('div[class*="type-INBOUND"], [class*="brand-message"]');
+    });
+  }
+
+  function uniqueElements(nodes) {
+    return Array.from(new Set(nodes));
   }
 
   function getEscalationBulletElements() {
@@ -308,9 +316,122 @@
   }
 
   function highlightTarget(element, activeRules) {
+    const segments = collectTextNodeSegments(element);
+    const text = segments.map((segment) => segment.text).join('');
+    if (!text.trim()) return;
+
+    const matches = mergeContextualMatches([
+      ...collectContextualMessageMatches(element, text),
+      ...core.collectMatches(text, activeRules, state.settings)
+    ]);
+    if (!matches.length) return;
+
+    const segmentsByNode = mapMatchesToTextNodeSegments(segments, matches, text);
+    for (const [node, nodeMatches] of segmentsByNode) {
+      wrapTextNodeMatches(node, nodeMatches);
+    }
+    state.stats.highlights += matches.length;
+  }
+
+  function collectContextualMessageMatches(element, text) {
+    const hotTopicRule = getHotTopicContextualRule(element, text);
+    if (!hotTopicRule) return [];
+    return [{
+      start: 0,
+      end: text.length,
+      length: text.length,
+      rule: hotTopicRule
+    }];
+  }
+
+  function getHotTopicContextualRule(element, text) {
+    if (!element.closest('div[class*="type-INBOUND"]')) return null;
+    const brandText = getPairedBrandMessageText(element);
+    if (!isHotTopicBrandPrompt(brandText) && !hasHotTopicRuleMetadata(element)) return null;
+
+    const isOptOut = /\b(?:4|four|never)\b/i.test(core.normalizeMessageBody(text));
+    const ruleName = isOptOut ? 'opt_outs_ml.hot_topic_opt_out' : 'opt_outs_ml.hot_topic_not_opt_out';
+    const rule = state.rules.find((item) => item.name === ruleName) || createHotTopicFallbackRule(isOptOut);
+    if (!rule || !isRuleCategoryEnabled(rule)) return null;
+    return rule;
+  }
+
+  function getPairedBrandMessageText(element) {
+    const brandSelector = '.brand-message__text, [class*="brand-message"] p[class*="variant-caption"], [data-speaker="Brand"] p[class*="variant-caption"]';
+    const scopedContainers = [
+      element.closest('article, [class*="message-card"]'),
+      element.closest('[data-message-id]')?.parentElement,
+      element.closest('[class*="messages"]')
+    ].filter(Boolean);
+
+    for (const container of scopedContainers) {
+      const brand = container.querySelector?.(brandSelector);
+      if (brand?.textContent) return brand.textContent;
+    }
+
+    let ancestor = element.parentElement;
+    for (let depth = 0; ancestor && depth < 6; depth += 1, ancestor = ancestor.parentElement) {
+      const brand = ancestor.querySelector?.(brandSelector);
+      if (brand?.textContent && brand !== element) return brand.textContent;
+    }
+
+    return '';
+  }
+
+  function isHotTopicBrandPrompt(text) {
+    const normalized = core.normalizeMessageBody(text);
+    return normalized.startsWith('hot topic') &&
+      /\b1\s+same\b/.test(normalized) &&
+      /\b2\s+weekly\b/.test(normalized) &&
+      /\b3\s+monthly\b/.test(normalized) &&
+      /\b4\s+never\b/.test(normalized);
+  }
+
+  function hasHotTopicRuleMetadata(element) {
+    const card = element.closest('article, [class*="message-card"]');
+    return /\bhot_topic\b/i.test(card?.textContent || '');
+  }
+
+  function createHotTopicFallbackRule(isOptOut) {
+    const action = isOptOut ? 'opt_out' : 'close';
+    return {
+      id: isOptOut ? 'contextual_hot_topic_opt_out' : 'contextual_hot_topic_not_opt_out',
+      name: isOptOut ? 'opt_outs_ml.hot_topic_opt_out' : 'opt_outs_ml.hot_topic_not_opt_out',
+      tag: action,
+      action,
+      pattern: isOptOut ? 'Hot Topic customer reply contains 4, four, or never.' : 'Hot Topic customer reply does not contain 4, four, or never.',
+      conditionSummary: isOptOut
+        ? 'Brand message is a Hot Topic frequency prompt and the customer reply contains 4, four, or never.'
+        : 'Brand message is a Hot Topic frequency prompt and the customer reply does not contain 4, four, or never.'
+    };
+  }
+
+  function isRuleCategoryEnabled(rule) {
+    const category = state.settings.categories[rule.tag];
+    return category && category.enabled !== false;
+  }
+
+  function mergeContextualMatches(matches) {
+    const candidates = matches
+      .filter((match) => match && match.start < match.end)
+      .sort((a, b) => {
+        if (a.start !== b.start) return a.start - b.start;
+        if (b.length !== a.length) return b.length - a.length;
+        return (state.settings.categories[a.rule.tag]?.priority ?? 999) - (state.settings.categories[b.rule.tag]?.priority ?? 999);
+      });
+    const accepted = [];
+    for (const candidate of candidates) {
+      if (!accepted.some((existing) => candidate.start < existing.end && candidate.end > existing.start)) {
+        accepted.push(candidate);
+      }
+    }
+    return accepted.sort((a, b) => a.start - b.start);
+  }
+
+  function collectTextNodeSegments(element) {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if (!node.nodeValue) return NodeFilter.FILTER_REJECT;
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
         if (parent.closest('.amh-highlight, .amh-escalation-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
@@ -319,11 +440,64 @@
         return NodeFilter.FILTER_ACCEPT;
       }
     });
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
-    let count = 0;
-    for (const node of textNodes) count += highlightTextNode(node, activeRules);
-    state.stats.highlights += count;
+    const segments = [];
+    let offset = 0;
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const text = node.nodeValue || '';
+      segments.push({
+        node,
+        text,
+        start: offset,
+        end: offset + text.length
+      });
+      offset += text.length;
+    }
+    return segments;
+  }
+
+  function mapMatchesToTextNodeSegments(segments, matches, fullText) {
+    const byNode = new Map();
+    for (const match of matches) {
+      for (const segment of segments) {
+        if (match.start >= segment.end || match.end <= segment.start) continue;
+        const nodeStart = Math.max(match.start, segment.start) - segment.start;
+        const nodeEnd = Math.min(match.end, segment.end) - segment.start;
+        const nodeMatches = byNode.get(segment.node) || [];
+        nodeMatches.push({
+          start: nodeStart,
+          end: nodeEnd,
+          rule: match.rule,
+          matchedText: fullText.slice(match.start, match.end)
+        });
+        byNode.set(segment.node, nodeMatches);
+      }
+    }
+    return byNode;
+  }
+
+  function wrapTextNodeMatches(node, matches) {
+    const text = node.nodeValue || '';
+    const orderedMatches = matches
+      .filter((match) => match.start < match.end)
+      .sort((a, b) => a.start - b.start || b.end - a.end);
+    if (!orderedMatches.length) return;
+
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    for (const match of orderedMatches) {
+      if (match.start < cursor) continue;
+      if (match.start > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, match.start)));
+      const span = document.createElement('span');
+      span.className = `amh-highlight amh-highlight--${safeClassName(match.rule.tag)}`;
+      span.textContent = text.slice(match.start, match.end);
+      applyHighlightStyle(span, match.rule);
+      applyTooltipData(span, match.rule, match.matchedText);
+      fragment.appendChild(span);
+      cursor = match.end;
+    }
+    if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
+    node.parentNode.replaceChild(fragment, node);
   }
 
   function clearHighlightsWithin(root) {
@@ -333,27 +507,6 @@
       highlight.replaceWith(textNode);
       textNode.parentNode?.normalize();
     }
-  }
-
-  function highlightTextNode(node, activeRules) {
-    const text = node.nodeValue;
-    const matches = core.collectMatches(text, activeRules, state.settings);
-    if (!matches.length) return 0;
-    const fragment = document.createDocumentFragment();
-    let cursor = 0;
-    for (const match of matches) {
-      if (match.start > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, match.start)));
-      const span = document.createElement('span');
-      span.className = `amh-highlight amh-highlight--${safeClassName(match.rule.tag)}`;
-      span.textContent = text.slice(match.start, match.end);
-      applyHighlightStyle(span, match.rule);
-      applyTooltipData(span, match.rule, span.textContent);
-      fragment.appendChild(span);
-      cursor = match.end;
-    }
-    if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
-    node.parentNode.replaceChild(fragment, node);
-    return matches.length;
   }
 
   function highlightEscalationTarget(element) {

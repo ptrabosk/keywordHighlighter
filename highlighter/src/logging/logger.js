@@ -16,7 +16,9 @@ async function getActiveSessionId() {
 
 function requestUpload(reason) {
   try {
-    globalThis.chrome?.runtime?.sendMessage?.({ type: "logging:uploadRequested", reason });
+    globalThis.chrome?.runtime
+      ?.sendMessage?.({ type: "logging:uploadRequested", reason })
+      ?.catch?.(() => {});
   } catch {
     // Best effort only; logging must never interrupt the popup.
   }

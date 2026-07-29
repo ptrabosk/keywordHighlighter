@@ -418,11 +418,10 @@ def select_texts(row: dict[str, str], rule: dict[str, Any]) -> tuple[str, str]:
 
 def is_hot_topic_prompt(brand_message: str) -> bool:
     normalized = normalize_text(brand_message)
-    return "hot topic" in normalized and (
-        "never" in normalized
-        or re.search(r"\b4\b", normalized) is not None
-        or "four" in normalized
-    )
+    return normalized.startswith("hot topic") and re.search(
+        r"\b1\s+same\b.*\b2\s+weekly\b.*\b3\s+monthly\b.*\b4\s+never\b",
+        normalized,
+    ) is not None
 
 
 def is_hot_topic_opt_out_reply(customer_message: str) -> bool:

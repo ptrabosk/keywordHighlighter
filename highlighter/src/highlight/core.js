@@ -32,6 +32,19 @@
     return output;
   }
 
+  function sortSimpleBoundedAlternatives(pattern) {
+    return String(pattern || '').replace(/\\b\(([^()]+(?:\|[^()]+)+)\)\\b/g, (_match, alternatives) => {
+      const sorted = alternatives
+        .split('|')
+        .sort((a, b) => strippedRegexLength(b) - strippedRegexLength(a));
+      return `\\b(${sorted.join('|')})\\b`;
+    });
+  }
+
+  function strippedRegexLength(value) {
+    return String(value || '').replace(/\\[a-z]\+?/gi, ' ').replace(/\\./g, '.').length;
+  }
+
   function compileRegex(rule) {
     try {
       const proceduralRegex = getProceduralRegex(rule);
@@ -46,7 +59,7 @@
   }
 
   function isProceduralRule(rule) {
-    return rule.matchScope === 'procedural' || !rule.pattern || (Boolean(rule.matchScope) && looksLikeProceduralDescription(rule.pattern));
+    return rule.matchScope === 'procedural' || !rule.pattern || (!rule.type && Boolean(rule.matchScope) && looksLikeProceduralDescription(rule.pattern));
   }
 
   function looksLikeProceduralDescription(pattern) {
@@ -65,7 +78,12 @@
     if (rule.id === 'rule_9501f80f59e3b9fd' || rule.name === 'zapOptOuts.deterministic_js.not_opt_out.020.i_m') {
       return 'i\\s*m|im';
     }
-    if (rule.type === 'regex' || scope.includes('regex')) return rule.pattern;
+    if (rule.id === 'rule_bc981d8e383b5305') {
+      return "\\b(no more messages|no more texts|don't reach out|do not send|don't send|stop messaging|stop texting|unsubscribe|remove me|delete me|opt out|opt-out|unsub|ban me|stop)\\b";
+    }
+    if (rule.type === 'regex' || scope.includes('regex')) {
+      return shouldSearchNormalizedText(rule) ? normalizeRegexPatternForSearch(rule.pattern) : rule.pattern;
+    }
     if (scope.includes('phrase') || scope.includes('normalized') || scope.includes('keyword') || scope.includes('full')) {
       return phraseToFlexibleRegex(rule.pattern);
     }
@@ -82,7 +100,7 @@
       return /\b(?:cancel|remove|stop|delete)\w*\b[\s\S]{0,80}\bsubscriptions?\b|\bsubscriptions?\b[\s\S]{0,80}\b(?:cancel|remove|stop|delete)\w*\b/gi;
     }
     if (rule.id === 'rule_b25458937a65a761' || rule.name === 'autoQAMessages.under_13_age_threshold') {
-      return /\b(?:(?:i\s*(?:am|'m)|im)\s*)?(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:years?\s*old|yrs?\s*old|yo|y\/o)\b|\b(?:i\s*(?:am|'m)|im)\s*(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi;
+      return /\b(?:(?:i\s*(?:am|'m)|im)\s*)?(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:years?\s*old|yrs?\s*old|yo|y\/o)\b|\b(?:i\s*(?:am|'m)|im)\s*(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b|\b(?:grade\s*[1-6]|[1-6](?:st|nd|rd|th)\s*grade)\b/gi;
     }
     if (rule.id === 'rule_combined_reaction_reply' || rule.name === 'combined.reaction_reply') {
       return /^(?:reacted to .+|(?:liked|loved|emphasized|disliked|questioned) .+|laughed at .+|removed (?:a |from ).+)[\s.!?]*$/gi;
@@ -100,9 +118,114 @@
   }
 
   function phraseToFlexibleRegex(value) {
+    if (hasDisplayAlternatives(value)) return displayAlternativesToRegex(value);
     const words = String(value || '').trim().split(/\s+/).filter(Boolean).map(escapeRegex);
     if (!words.length) return '';
-    return `\\b${words.join('[\\W_]+')}\\b`;
+    return `\\b${joinFlexibleWords(words)}\\b`;
+  }
+
+  function hasDisplayAlternatives(value) {
+    return /\s\/\s/.test(String(value || ''));
+  }
+
+  function displayAlternativesToRegex(value) {
+    const parts = String(value || '').split(/\s+\/\s+/).map((part) => part.trim()).filter(Boolean);
+    if (!parts.length) return '';
+    const prefix = parts[0].split(/\s+/).filter(Boolean).map(escapeRegex);
+    if (prefix.length < 2) return `\\b(?:${parts.map(escapeRegex).join('|')})\\b`;
+    const lead = prefix[0];
+    const firstAlternative = prefix.slice(1).join('[\\W_]+');
+    const alternatives = [firstAlternative, ...parts.slice(1).map(escapeRegex)]
+      .filter(Boolean)
+      .join('|');
+    return `\\b${lead}[\\W_]+(?:${alternatives})(?:[\\W_]+(?:me|you|us|again|anymore))*\\b`;
+  }
+
+  function joinFlexibleWords(words) {
+    const output = [];
+    for (let index = 0; index < words.length; index += 1) {
+      if (index > 0) output.push(isContractionPair(words[index - 1], words[index]) ? '[\\W_]*' : '[\\W_]+');
+      output.push(words[index]);
+    }
+    return output.join('');
+  }
+
+  function isContractionPair(left, right) {
+    return /^(?:i|you|we|they|he|she|it|that|there|what|who|do|don|doesn|didn|can|couldn|wouldn|shouldn|won|isn|aren|wasn|werent|havent|hasnt|hadnt)$/i.test(left)
+      && /^(?:m|re|ve|ll|d|s|t)$/i.test(right);
+  }
+
+  function normalizeRegexPatternForSearch(pattern) {
+    let output = '';
+    let escaped = false;
+    let inCharacterClass = false;
+    let inQuantifierBrace = false;
+    let skippedQuantifiableToken = false;
+
+    for (const char of String(pattern || '')) {
+      if (escaped) {
+        output += char;
+        escaped = false;
+        skippedQuantifiableToken = false;
+        continue;
+      }
+      if (char === '\\') {
+        output += char;
+        escaped = true;
+        skippedQuantifiableToken = false;
+        continue;
+      }
+      if (char === '[') inCharacterClass = true;
+      if (char === ']') inCharacterClass = false;
+      if (!inCharacterClass && char === '{') {
+        inQuantifierBrace = true;
+        output += char;
+        continue;
+      }
+      if (inQuantifierBrace) {
+        output += char;
+        if (char === '}') inQuantifierBrace = false;
+        continue;
+      }
+
+      if (!inCharacterClass && /['`\u2018\u2019\u201c\u201d]/.test(char)) {
+        skippedQuantifiableToken = true;
+        continue;
+      }
+      if (!inCharacterClass && char === '?' && skippedQuantifiableToken) {
+        skippedQuantifiableToken = false;
+        continue;
+      }
+      skippedQuantifiableToken = false;
+
+      if (!inCharacterClass && char === '?' && output.endsWith('(')) {
+        output += char;
+        continue;
+      }
+      if (!inCharacterClass && char === '?' && isRegexQuestionMarkSyntax(output)) {
+        output += char;
+        continue;
+      }
+      if (!inCharacterClass && /[!=]/.test(char) && (output.endsWith('(?') || output.endsWith('(?<'))) {
+        output += char;
+        continue;
+      }
+      if (!inCharacterClass && char === ':' && output.endsWith('(?')) {
+        output += char;
+        continue;
+      }
+      if (!inCharacterClass && /[-,.:;!?—–]/.test(char)) {
+        output += '\\s+';
+        continue;
+      }
+      output += char;
+    }
+    return sortSimpleBoundedAlternatives(output).replace(/\\s\+\s+/g, '\\s+');
+  }
+
+  function isRegexQuestionMarkSyntax(output) {
+    const previous = String(output || '').at(-1);
+    return Boolean(previous && !/[\s(|]/.test(previous));
   }
 
   function stemPatternToRegex(value) {

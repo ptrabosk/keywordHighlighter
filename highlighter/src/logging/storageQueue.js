@@ -157,7 +157,9 @@ export async function enqueueEvent(event) {
 
     const config = await getLoggingConfig();
     if (meta.estimatedBytes >= config.softStorageLimitBytes) {
-      globalThis.chrome?.runtime?.sendMessage?.({ type: "logging:uploadRequested", reason: "storage_pressure" });
+      globalThis.chrome?.runtime
+        ?.sendMessage?.({ type: "logging:uploadRequested", reason: "storage_pressure" })
+        ?.catch?.(() => {});
     }
 
     return true;
