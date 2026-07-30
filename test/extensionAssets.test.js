@@ -1,0 +1,52 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const extensionDir = path.join(__dirname, "../highlighter");
+
+function readExtensionFile(relativePath) {
+  return fs.readFileSync(path.join(extensionDir, relativePath), "utf8");
+}
+
+test("manifest content scripts parse as classic Chrome scripts", () => {
+  const manifest = JSON.parse(readExtensionFile("manifest.json"));
+  const scriptPaths = manifest.content_scripts.flatMap((entry) => entry.js || []);
+
+  assert.deepEqual(scriptPaths, [
+    "settings.js",
+    "src/highlight/core.js",
+    "content.js"
+  ]);
+
+  for (const scriptPath of scriptPaths) {
+    assert.doesNotThrow(() => new vm.Script(readExtensionFile(scriptPath), { filename: scriptPath }), scriptPath);
+  }
+});
+
+test("manifest JSON resources exist and are parseable", () => {
+  const manifest = JSON.parse(readExtensionFile("manifest.json"));
+  const jsonResources = manifest.web_accessible_resources
+    .flatMap((entry) => entry.resources || [])
+    .filter((resource) => resource.endsWith(".json"));
+
+  assert.ok(jsonResources.includes("data/rules/opt_out_deterministic_rules.json"));
+  assert.ok(jsonResources.includes("data/rules/rule_hover_text.json"));
+
+  for (const resource of jsonResources) {
+    const parsed = JSON.parse(readExtensionFile(resource));
+    assert.equal(typeof parsed, "object", resource);
+  }
+});
+
+test("conversation split phrase highlights render as continuous multi-part spans", () => {
+  const cssSource = readExtensionFile("content.css");
+
+  assert.match(cssSource, /\.amh-highlight--multipart/);
+  assert.match(cssSource, /box-shadow:\s*none !important/);
+  assert.match(cssSource, /\.amh-highlight--match-start/);
+  assert.match(cssSource, /\.amh-highlight--match-end/);
+});

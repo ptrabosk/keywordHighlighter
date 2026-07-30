@@ -465,15 +465,19 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /newIndexRows\.length/);
   assert.match(source, /setValues\(newRows\)/);
   assert.match(source, /markIndexWritten_/);
+  assert.match(source, /DUPLICATE_EVENT_ID/);
+  assert.match(source, /SHEET_HEADER_MISMATCH/);
   assert.match(source, /function sheetSafe_/);
-  assert.doesNotMatch(source, /createTextFinder/);
+  assert.match(source, /function findRowByExactCellValue_/);
+  assert.match(source, /createTextFinder/);
+  assert.match(source, /matchEntireCell\(true\)/);
   assert.doesNotMatch(source, /console\.error/);
 });
 
 test("Apps Script and extension logging event type contracts stay in sync", () => {
   const source = fs.readFileSync(path.join(__dirname, "../google-apps-script/Code.gs"), "utf8");
-  const match = source.match(/const EVENT_TYPES = \[([\s\S]*?)\];/);
-  assert.ok(match, "Apps Script EVENT_TYPES constant is present");
+  const match = source.match(/const KW_EVENT_TYPES = \[([\s\S]*?)\];/);
+  assert.ok(match, "Apps Script KW_EVENT_TYPES constant is present");
 
   const appsScriptEventTypes = Array.from(match[1].matchAll(/"([^"]+)"/g), (item) => item[1]);
   assert.deepEqual(appsScriptEventTypes, LOG_EVENT_TYPES);
@@ -490,6 +494,8 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /RENDER_LOG_INTERVAL_MS/);
   assert.match(contentSource, /maybeLogRenderCompleted/);
   assert.match(contentSource, /render_failed/);
+  assert.match(contentSource, /clearAllHighlights/);
+  assert.match(contentSource, /!state\.settings\.enabled/);
 });
 
 test("content highlighter matches full message elements before wrapping text nodes", () => {
@@ -500,16 +506,20 @@ test("content highlighter matches full message elements before wrapping text nod
   assert.match(contentSource, /core\.collectMatches\(text, activeRules, state\.settings\)/);
   assert.match(contentSource, /function mapMatchesToTextNodeSegments\(segments, matches, fullText\)/);
   assert.match(contentSource, /matchedText: fullText\.slice\(match\.start, match\.end\)/);
+  assert.match(contentSource, /isMultiPart: intersectingSegments\.length > 1/);
+  assert.match(contentSource, /function getHighlightClassName\(match\)/);
   assert.match(contentSource, /applyTooltipData\(span, match\.rule, match\.matchedText\)/);
   assert.doesNotMatch(contentSource, /function highlightTextNode\(node, activeRules\)/);
 });
 
-test("content highlighter includes conservative brand message targets", () => {
+test("content highlighter only includes Hot Topic brand message targets", () => {
   const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
 
   assert.match(contentSource, /\.brand-message__text/);
   assert.match(contentSource, /\[class\*="brand-message"\] p\[class\*="variant-caption"\]/);
-  assert.match(contentSource, /node\.closest\('div\[class\*="type-INBOUND"\], \[class\*="brand-message"\]'\)/);
+  assert.match(contentSource, /isHotTopicBrandPrompt\(node\.textContent \|\| ''\)/);
+  assert.match(contentSource, /function isHotTopicBrandElement\(element\)/);
+  assert.doesNotMatch(contentSource, /node\.closest\('div\[class\*="type-INBOUND"\], \[class\*="brand-message"\]'\)/);
   assert.doesNotMatch(contentSource, /querySelectorAll\('p\[class\*="variant-caption"\]'\)\.filter\(\(node\) => node instanceof HTMLElement && isVisible\(node\)\)/);
 });
 
@@ -518,10 +528,11 @@ test("content highlighter treats Hot Topic brand/customer context as one message
 
   assert.match(contentSource, /function collectContextualMessageMatches\(element, text\)/);
   assert.match(contentSource, /function getHotTopicContextualRule\(element, text\)/);
+  assert.match(contentSource, /HOT_TOPIC_BRAND_LOOKBACK_LIMIT = 3/);
+  assert.match(contentSource, /function getRecentBrandMessageTexts\(element, limit\)/);
   assert.match(contentSource, /opt_outs_ml\.hot_topic_opt_out/);
   assert.match(contentSource, /opt_outs_ml\.hot_topic_not_opt_out/);
   assert.match(contentSource, /createHotTopicFallbackRule/);
-  assert.match(contentSource, /hasHotTopicRuleMetadata/);
   assert.match(contentSource, /\[data-speaker="Brand"\] p\[class\*="variant-caption"\]/);
   assert.match(contentSource, /start: 0,\s*end: text\.length,\s*length: text\.length/s);
   assert.match(contentSource, /mergeContextualMatches/);

@@ -1,9 +1,9 @@
-const EVENTS_SHEET_NAME = "Events_keywordHighlighter";
-const BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
-const INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
-const RECEIVER_VERSION = "1.1.0";
+const KW_EVENTS_SHEET_NAME = "Events_keywordHighlighter";
+const KW_BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
+const KW_INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
+const KW_RECEIVER_VERSION = "1.1.0";
 
-const EVENTS_HEADERS = [
+const KW_EVENTS_HEADERS = [
   "Received At",
   "Event Timestamp",
   "Event ID",
@@ -22,7 +22,7 @@ const EVENTS_HEADERS = [
   "Batch ID"
 ];
 
-const BATCH_HEADERS = [
+const KW_BATCH_HEADERS = [
   "Batch ID",
   "Received At",
   "Event Count",
@@ -35,7 +35,7 @@ const BATCH_HEADERS = [
   "Rejection Summary"
 ];
 
-const EVENT_TYPES = [
+const KW_EVENT_TYPES = [
   "session_started",
   "session_ended",
   "session_abandoned",
@@ -57,11 +57,11 @@ const EVENT_TYPES = [
   "cache_pruned"
 ];
 
-const SEVERITIES = ["info", "warning", "error"];
-const RESULTS = ["success", "failure", "cancelled", "unknown"];
-const UPLOAD_STATES = ["pending", "uploading"];
-const METADATA_KEYS = ["operation", "trigger", "areaName", "changeSource", "retryCount", "httpStatus", "failureCategory"];
-const EVENT_FIELDS = [
+const KW_SEVERITIES = ["info", "warning", "error"];
+const KW_RESULTS = ["success", "failure", "cancelled", "unknown"];
+const KW_UPLOAD_STATES = ["pending", "uploading"];
+const KW_METADATA_KEYS = ["operation", "trigger", "areaName", "changeSource", "retryCount", "httpStatus", "failureCategory"];
+const KW_EVENT_FIELDS = [
   "schemaVersion",
   "eventId",
   "sessionId",
@@ -81,13 +81,13 @@ const EVENT_FIELDS = [
   "uploadAttempts",
   "batchId"
 ];
-const INDEX_HEADERS = ["Event ID", "Status", "Reserved At", "Batch ID", "Written At"];
+const KW_INDEX_HEADERS = ["Event ID", "Status", "Reserved At", "Batch ID", "Written At"];
 
 function setupLoggingSheets() {
   const spreadsheet = getSpreadsheet_();
-  ensureSheet_(spreadsheet, EVENTS_SHEET_NAME, EVENTS_HEADERS);
-  ensureSheet_(spreadsheet, BATCHES_SHEET_NAME, BATCH_HEADERS);
-  const indexSheet = ensureSheet_(spreadsheet, INDEX_SHEET_NAME, INDEX_HEADERS);
+  ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
+  ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
+  const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
   indexSheet.hideSheet();
 }
 
@@ -95,20 +95,20 @@ function doGet() {
   try {
     const spreadsheet = getSpreadsheet_();
     const sheetStatus = [
-      sheetHealth_(spreadsheet, EVENTS_SHEET_NAME, EVENTS_HEADERS),
-      sheetHealth_(spreadsheet, BATCHES_SHEET_NAME, BATCH_HEADERS),
-      sheetHealth_(spreadsheet, INDEX_SHEET_NAME, INDEX_HEADERS)
+      sheetHealth_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS),
+      sheetHealth_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS),
+      sheetHealth_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS)
     ];
     return jsonResponse_({
       success: true,
-      receiverVersion: RECEIVER_VERSION,
+      receiverVersion: KW_RECEIVER_VERSION,
       spreadsheetConfigured: true,
       sheets: sheetStatus
     });
   } catch (error) {
     return jsonResponse_({
       success: false,
-      receiverVersion: RECEIVER_VERSION,
+      receiverVersion: KW_RECEIVER_VERSION,
       spreadsheetConfigured: false,
       errorCode: error.publicCode || "SERVER_ERROR"
     });
@@ -125,9 +125,9 @@ function doPost(e) {
 
     lock.waitLock(30 * 1000);
     const spreadsheet = getSpreadsheet_();
-    const eventsSheet = ensureSheet_(spreadsheet, EVENTS_SHEET_NAME, EVENTS_HEADERS);
-    const batchesSheet = ensureSheet_(spreadsheet, BATCHES_SHEET_NAME, BATCH_HEADERS);
-    const indexSheet = ensureSheet_(spreadsheet, INDEX_SHEET_NAME, INDEX_HEADERS);
+    const eventsSheet = ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
+    const batchesSheet = ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
+    const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
     indexSheet.hideSheet();
 
     const validEvents = [];
@@ -136,6 +136,7 @@ function doPost(e) {
     const rejected = [];
     const acceptedTimestamps = [];
     const rowsToMarkWritten = [];
+    const seenEventIds = Object.create(null);
 
     body.events.forEach(function(event) {
       const validation = validateEvent_(event);
@@ -143,6 +144,11 @@ function doPost(e) {
         rejected.push({ eventId: safeString_(event && event.eventId, 80), reason: validation.reason });
         return;
       }
+      if (seenEventIds[event.eventId]) {
+        rejected.push({ eventId: safeString_(event.eventId, 80), reason: "DUPLICATE_EVENT_ID" });
+        return;
+      }
+      seenEventIds[event.eventId] = true;
       validEvents.push(event);
     });
 
@@ -188,7 +194,7 @@ function doPost(e) {
 
     if (newIndexRows.length) {
       const startRow = indexSheet.getLastRow() + 1;
-      indexSheet.getRange(startRow, 1, newIndexRows.length, INDEX_HEADERS.length).setValues(newIndexRows);
+      indexSheet.getRange(startRow, 1, newIndexRows.length, KW_INDEX_HEADERS.length).setValues(newIndexRows);
       newIndexEvents.forEach(function(event, index) {
         newRows.push(eventToRow_(event, body.batchId, receivedAt));
         rowsToMarkWritten.push(startRow + index);
@@ -198,14 +204,14 @@ function doPost(e) {
     }
 
     if (newRows.length) {
-      eventsSheet.getRange(eventsSheet.getLastRow() + 1, 1, newRows.length, EVENTS_HEADERS.length).setValues(newRows);
+      eventsSheet.getRange(eventsSheet.getLastRow() + 1, 1, newRows.length, KW_EVENTS_HEADERS.length).setValues(newRows);
     }
     rowsToMarkWritten.forEach(function(row) {
       markIndexWritten_(indexSheet, row, receivedAt);
     });
 
     const sortedTimestamps = acceptedTimestamps.slice().sort();
-    batchesSheet.getRange(batchesSheet.getLastRow() + 1, 1, 1, BATCH_HEADERS.length).setValues([[
+    batchesSheet.getRange(batchesSheet.getLastRow() + 1, 1, 1, KW_BATCH_HEADERS.length).setValues([[
       sheetSafe_(body.batchId),
       receivedAt,
       body.events.length,
@@ -261,7 +267,7 @@ function validateRequestShape_(body) {
 }
 
 function validateApiKey_(apiKey) {
-  const expected = PropertiesService.getScriptProperties().getProperty("LOG_API_KEY");
+  const expected = PropertiesService.getScriptProperties().getProperty("KEYWORD_HIGHLIGHTER_LOG_API_KEY");
   if (!expected || apiKey !== expected) throw publicError_("UNAUTHORIZED");
 }
 
@@ -269,17 +275,17 @@ function validateEvent_(event) {
   if (!event || typeof event !== "object" || Array.isArray(event)) return invalid_("INVALID_SCHEMA");
   if (jsonBytes_(event) > 4096) return invalid_("EVENT_TOO_LARGE");
   for (const key in event) {
-    if (EVENT_FIELDS.indexOf(key) === -1) return invalid_("UNKNOWN_FIELD");
+    if (KW_EVENT_FIELDS.indexOf(key) === -1) return invalid_("UNKNOWN_FIELD");
   }
   if (event.schemaVersion !== 1) return invalid_("INVALID_SCHEMA_VERSION");
   if (!isSafeString_(event.eventId, 80)) return invalid_("INVALID_EVENT_ID");
   if (!isSafeString_(event.sessionId, 80)) return invalid_("INVALID_SESSION_ID");
   if (!event.timestamp || isNaN(Date.parse(event.timestamp))) return invalid_("INVALID_TIMESTAMP");
-  if (EVENT_TYPES.indexOf(event.eventType) === -1) return invalid_("INVALID_EVENT_TYPE");
-  if (SEVERITIES.indexOf(event.severity) === -1) return invalid_("INVALID_SEVERITY");
-  if (RESULTS.indexOf(event.result) === -1) return invalid_("INVALID_RESULT");
+  if (KW_EVENT_TYPES.indexOf(event.eventType) === -1) return invalid_("INVALID_EVENT_TYPE");
+  if (KW_SEVERITIES.indexOf(event.severity) === -1) return invalid_("INVALID_SEVERITY");
+  if (KW_RESULTS.indexOf(event.result) === -1) return invalid_("INVALID_RESULT");
   if (!isSafeString_(event.extensionVersion, 40)) return invalid_("INVALID_EXTENSION_VERSION");
-  if (UPLOAD_STATES.indexOf(event.uploadState) === -1) return invalid_("INVALID_UPLOAD_STATE");
+  if (KW_UPLOAD_STATES.indexOf(event.uploadState) === -1) return invalid_("INVALID_UPLOAD_STATE");
   if (!Number.isInteger(event.uploadAttempts) || event.uploadAttempts < 0) return invalid_("INVALID_UPLOAD_ATTEMPTS");
   if (event.surface !== undefined && !isSafeString_(event.surface, 40)) return invalid_("INVALID_SURFACE");
   if (event.pageHost !== undefined && !isSafeString_(event.pageHost, 120)) return invalid_("INVALID_PAGE_HOST");
@@ -298,7 +304,7 @@ function isValidMetadata_(metadata) {
   if (keys.length > 10) return false;
   return keys.every(function(key) {
     const value = metadata[key];
-    if (METADATA_KEYS.indexOf(key) === -1) return false;
+    if (KW_METADATA_KEYS.indexOf(key) === -1) return false;
     if (typeof value === "string") return value.length <= 100;
     if (typeof value === "number") return isFinite(value);
     return typeof value === "boolean";
@@ -327,7 +333,7 @@ function eventToRow_(event, requestBatchId, receivedAt) {
 }
 
 function getSpreadsheet_() {
-  const spreadsheetId = PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID");
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty("KEYWORD_HIGHLIGHTER_SPREADSHEET_ID");
   if (!spreadsheetId) throw publicError_("SERVER_NOT_CONFIGURED");
   return SpreadsheetApp.openById(spreadsheetId);
 }
@@ -336,22 +342,27 @@ function ensureSheet_(spreadsheet, name, headers) {
   const sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    return sheet;
   }
+  const actual = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+  const headersReady = headers.every(function(header, index) {
+    return actual[index] === header;
+  });
+  if (!headersReady) throw publicError_("SHEET_HEADER_MISMATCH");
   return sheet;
 }
 
 function loadIndexRecords_(indexSheet, eventIds) {
   const records = {};
-  const wanted = toSet_(eventIds);
+  const wanted = uniqueValues_(eventIds);
   const lastRow = indexSheet.getLastRow();
-  if (lastRow < 2 || !wanted.size) return records;
-  const values = indexSheet.getRange(2, 1, lastRow - 1, INDEX_HEADERS.length).getValues();
-  values.forEach(function(rowValues, index) {
-    const eventId = String(rowValues[0] || "");
-    if (!wanted.has(eventId)) return;
+  if (lastRow < 2 || !wanted.length) return records;
+  wanted.forEach(function(eventId) {
+    const row = findRowByExactCellValue_(indexSheet, 1, eventId);
+    if (!row) return;
     records[eventId] = {
-      row: index + 2,
-      status: rowValues[1] || "written"
+      row: row,
+      status: indexSheet.getRange(row, 2).getValue() || "written"
     };
   });
   return records;
@@ -359,15 +370,24 @@ function loadIndexRecords_(indexSheet, eventIds) {
 
 function findExistingEventRows_(eventsSheet, eventIds) {
   const rows = {};
-  const wanted = toSet_(eventIds);
+  const wanted = uniqueValues_(eventIds);
   const lastRow = eventsSheet.getLastRow();
-  if (lastRow < 2 || !wanted.size) return rows;
-  const values = eventsSheet.getRange(2, 3, lastRow - 1, 1).getValues();
-  values.forEach(function(rowValues, index) {
-    const eventId = String(rowValues[0] || "");
-    if (wanted.has(eventId)) rows[eventId] = index + 2;
+  if (lastRow < 2 || !wanted.length) return rows;
+  wanted.forEach(function(eventId) {
+    const row = findRowByExactCellValue_(eventsSheet, 3, eventId);
+    if (row) rows[eventId] = row;
   });
   return rows;
+}
+
+function findRowByExactCellValue_(sheet, column, value) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2 || !value) return null;
+  const finder = sheet.getRange(2, column, lastRow - 1, 1)
+    .createTextFinder(value)
+    .matchEntireCell(true);
+  const match = finder.findNext();
+  return match ? match.getRow() : null;
 }
 
 function sheetHealth_(spreadsheet, name, headers) {
@@ -396,6 +416,17 @@ function toSet_(values) {
     },
     size: Object.keys(set).length
   };
+}
+
+function uniqueValues_(values) {
+  const set = Object.create(null);
+  const output = [];
+  values.forEach(function(value) {
+    if (!value || set[value]) return;
+    set[value] = true;
+    output.push(value);
+  });
+  return output;
 }
 
 function markIndexWritten_(indexSheet, row, writtenAt) {

@@ -43,10 +43,12 @@ test("flattens and compiles nested consolidated rule shapes", () => {
 });
 
 test("merges settings, deduplicates custom keywords, and preserves the fixed custom color", () => {
+  const longKeyword = "k".repeat(140);
+  const longText = "d".repeat(300);
   const settings = core.mergeSettings(defaults, {
     opacity: 9,
-    customKeywords: [" launch code ", "launch   code", { pattern: "VIP", text: "Added in popup" }, ""],
-    customKeywordTextByPattern: { "launch code": "Custom hover copy" },
+    customKeywords: [" launch code ", "launch   code", { pattern: "VIP", text: "Added in popup" }, longKeyword, ""],
+    customKeywordTextByPattern: { "launch code": "Custom hover copy", [longKeyword]: longText },
     categories: {
       user_added: { color: "#000000" },
       opt_out: { enabled: false }
@@ -54,9 +56,10 @@ test("merges settings, deduplicates custom keywords, and preserves the fixed cus
   });
 
   assert.equal(settings.opacity, 0.85);
-  assert.deepEqual(settings.customKeywords, ["launch code", "VIP"]);
+  assert.deepEqual(settings.customKeywords, ["launch code", "VIP", "k".repeat(128)]);
   assert.equal(settings.customKeywordTextByPattern["launch code"], "Custom hover copy");
   assert.equal(settings.customKeywordTextByPattern.VIP, "Added in popup");
+  assert.equal(settings.customKeywordTextByPattern["k".repeat(128)].length, 256);
   assert.equal(settings.categories.user_added.color, defaults.categories.user_added.color);
   assert.equal(settings.categories.opt_out.enabled, false);
 });
@@ -342,8 +345,7 @@ test("deterministic rules resolve QA diagnostic phrases to their intended action
 
   const cases = [
     ["Please stop texting me and remove me from your list.", [
-      ["opt_out", "stop"],
-      ["opt_out", "remove me"]
+      ["opt_out", "stop"]
     ]],
     ["who is this", [["txt", "who is this"]]],
     ["i dont know you", [["txt", "i dont know you"]]],
@@ -416,6 +418,37 @@ test("deterministic cleanup rules cover requested variants and exclusions", () =
   }
 });
 
+test("standalone remove phrases do not block longer list-removal phrases", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+  const settings = core.mergeSettings(defaults, {});
+  const rules = core.buildRules(payload.rules);
+  const rulesById = new Map(rules.map((item) => [item.id, item]));
+  const activeRules = core.getActiveRules(rules, settings);
+
+  assert.equal(core.collectMatches("remove me", activeRules, settings).some((match) => match.rule.id === "rule_3a9dc0981448dafb"), true);
+  assert.equal(core.collectMatches("please remove", activeRules, settings).some((match) => match.rule.id === "rule_26cc75d8805d262e"), true);
+
+  for (const text of ["please remove me", "please remove me from your list", "can you remove me please"]) {
+    const matches = core.collectMatches(text, activeRules, settings);
+    assert.equal(matches.some((match) => match.rule.id === "rule_3a9dc0981448dafb"), false, `${text} should not match standalone remove me`);
+    assert.equal(matches.some((match) => match.rule.id === "rule_26cc75d8805d262e"), false, `${text} should not match standalone please remove`);
+  }
+
+  for (const listType of ["email", "text", "message", "messaging", "mailing", "mail"]) {
+    const text = `Please remove me from your ${listType} list today.`;
+    const matches = core.collectMatches(text, activeRules, settings);
+    assert.ok(
+      matches.some((match) => match.rule.id === "rule_remove_me_from_your_contact_list" && text.slice(match.start, match.end) === `remove me from your ${listType} list`),
+      `${text} should match the contact-list removal rule`
+    );
+  }
+
+  assert.equal(
+    core.collectMatches("remove me from your email list", [rulesById.get("rule_remove_me_from_your_contact_list")], settings).length,
+    1
+  );
+});
+
 test("explicit done rules are tagged with the test action", () => {
   const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
   const rulesById = new Map(core.buildRules(payload.rules).map((item) => [item.id, item]));
@@ -464,10 +497,11 @@ test("deterministic rules compile highlightable entries and skip procedural dete
   const optionalGroupRule = rules.find((item) => item.id === "rule_9a0a246dfc518c29");
   const curlyQuoteRule = rules.find((item) => item.id === "rule_6da31ef70e2d6310");
 
-  assert.equal(rules.length, 387);
+  assert.equal(rules.length, 388);
   assert.equal(procedural.regex, null);
   assert.equal(optOutPhrase.tag, "opt_out");
-  assert.match("please remove me", optOutPhrase.regex);
+  assert.equal(core.collectMatches("remove me", [optOutPhrase], settings).length, 1);
+  assert.equal(core.collectMatches("please remove me", [optOutPhrase], settings).length, 0);
   assert.equal(core.collectMatches("I dont want this", [optionalGroupRule], settings).length, 1);
   assert.equal(
     core.collectMatches(

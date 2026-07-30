@@ -1,6 +1,9 @@
 (function installHighlightCore(globalScope) {
   'use strict';
 
+  const MAX_CUSTOM_KEYWORD_LENGTH = 128;
+  const MAX_CUSTOM_KEYWORD_TEXT_LENGTH = 256;
+
   function flattenRules(value, path = [], output = []) {
     if (Array.isArray(value)) {
       value.forEach((item, index) => flattenRules(item, path.concat(index), output));
@@ -79,7 +82,7 @@
       return 'i\\s*m|im';
     }
     if (rule.id === 'rule_bc981d8e383b5305') {
-      return "\\b(no more messages|no more texts|don't reach out|do not send|don't send|stop messaging|stop texting|unsubscribe|remove me|delete me|opt out|opt-out|unsub|ban me|stop)\\b";
+      return "\\b(no more messages|no more texts|don't reach out|do not send|don't send|stop messaging|stop texting|unsubscribe|delete me|opt out|opt-out|unsub|ban me|stop)\\b";
     }
     if (rule.type === 'regex' || scope.includes('regex')) {
       return shouldSearchNormalizedText(rule) ? normalizeRegexPatternForSearch(rule.pattern) : rule.pattern;
@@ -347,7 +350,7 @@
 
   function collectEscalationBulletMatches(text) {
     const matches = [];
-    const bulletRegex = /•[^\r\n]*/g;
+    const bulletRegex = /\u2022[^\r\n]*/g;
     let bulletMatch;
     while ((bulletMatch = bulletRegex.exec(String(text || ''))) !== null) {
       const bulletText = bulletMatch[0];
@@ -513,7 +516,7 @@
   }
 
   function normalizeKeyword(value) {
-    return getKeywordPattern(value).trim().replace(/\s+/g, ' ');
+    return limitText(getKeywordPattern(value).trim().replace(/\s+/g, ' '), MAX_CUSTOM_KEYWORD_LENGTH);
   }
 
   function getKeywordPattern(value) {
@@ -526,14 +529,18 @@
     for (const item of customKeywords || []) {
       if (item && typeof item === 'object') {
         const pattern = normalizeKeyword(item);
-        if (pattern) textByPattern[pattern] = String(item.text || existingTextByPattern[pattern] || '');
+        if (pattern) textByPattern[pattern] = limitText(item.text || existingTextByPattern[pattern] || '', MAX_CUSTOM_KEYWORD_TEXT_LENGTH);
       }
     }
     for (const [pattern, text] of Object.entries(existingTextByPattern || {})) {
       const normalized = normalizeKeyword(pattern);
-      if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = String(text || '');
+      if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = limitText(text || '', MAX_CUSTOM_KEYWORD_TEXT_LENGTH);
     }
     return textByPattern;
+  }
+
+  function limitText(value, maxLength) {
+    return String(value || '').slice(0, maxLength).trim();
   }
 
   function shouldMatchWholeMessage(rule) {

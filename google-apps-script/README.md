@@ -8,8 +8,8 @@ This Apps Script receives privacy-safe operational logs from the Chrome extensio
 2. Open **Extensions > Apps Script** from the sheet.
 3. Add the contents of `Code.gs`.
 4. In Apps Script, open **Project Settings > Script Properties** and add:
-   - `LOG_API_KEY`: a locally generated shared key.
-   - `SPREADSHEET_ID`: the ID from the Google Sheet URL.
+   - `KEYWORD_HIGHLIGHTER_LOG_API_KEY`: a locally generated shared key.
+   - `KEYWORD_HIGHLIGHTER_SPREADSHEET_ID`: the ID from the Google Sheet URL.
 5. Run `setupLoggingSheets()` once and approve spreadsheet access.
 6. Deploy with **Deploy > New deployment > Web app**.
 7. Set **Execute as** to **Me**.

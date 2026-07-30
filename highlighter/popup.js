@@ -9,6 +9,9 @@ const els = {
   status: document.querySelector('#status')
 };
 
+const MAX_KEYWORD_LENGTH = 128;
+const MAX_HOVER_TEXT_LENGTH = 256;
+
 let settings = structuredClone(DEFAULT_SETTINGS);
 
 function logOperationalEvent(event) {
@@ -215,12 +218,16 @@ function mergeSettings(base, override) {
 }
 
 function normalizeKeyword(value) {
-  if (value && typeof value === 'object') return String(value.pattern || value.name || '').trim().replace(/\s+/g, ' ');
-  return String(value || '').trim().replace(/\s+/g, ' ');
+  if (value && typeof value === 'object') return limitText(String(value.pattern || value.name || '').trim().replace(/\s+/g, ' '), MAX_KEYWORD_LENGTH);
+  return limitText(String(value || '').trim().replace(/\s+/g, ' '), MAX_KEYWORD_LENGTH);
 }
 
 function normalizeHoverText(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ');
+  return limitText(String(value || '').trim().replace(/\s+/g, ' '), MAX_HOVER_TEXT_LENGTH);
+}
+
+function limitText(value, maxLength) {
+  return String(value || '').slice(0, maxLength).trim();
 }
 
 function normalizeCustomKeywordTextMap(customKeywords, existingTextByPattern = {}) {

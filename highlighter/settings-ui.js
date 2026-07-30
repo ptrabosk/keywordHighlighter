@@ -1,4 +1,7 @@
 function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults restored.' } = {}) {
+  const MAX_KEYWORD_LENGTH = 128;
+  const MAX_HOVER_TEXT_LENGTH = 256;
+
   const els = {
     enabled: document.querySelector('#enabled'),
     showTooltip: document.querySelector('#showTooltip'),
@@ -216,8 +219,8 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
   }
 
   function normalizeKeyword(value) {
-    if (value && typeof value === 'object') return String(value.pattern || value.name || '').trim().replace(/\s+/g, ' ');
-    return String(value || '').trim().replace(/\s+/g, ' ');
+    if (value && typeof value === 'object') return limitText(String(value.pattern || value.name || '').trim().replace(/\s+/g, ' '), MAX_KEYWORD_LENGTH);
+    return limitText(String(value || '').trim().replace(/\s+/g, ' '), MAX_KEYWORD_LENGTH);
   }
 
   function normalizeCustomKeywordTextMap(customKeywords, existingTextByPattern = {}) {
@@ -225,14 +228,18 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     for (const item of customKeywords || []) {
       if (item && typeof item === 'object') {
         const pattern = normalizeKeyword(item);
-        if (pattern) textByPattern[pattern] = String(item.text || existingTextByPattern[pattern] || '').trim().replace(/\s+/g, ' ');
+        if (pattern) textByPattern[pattern] = limitText(String(item.text || existingTextByPattern[pattern] || '').trim().replace(/\s+/g, ' '), MAX_HOVER_TEXT_LENGTH);
       }
     }
     for (const [pattern, text] of Object.entries(existingTextByPattern || {})) {
       const normalized = normalizeKeyword(pattern);
-      if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = String(text || '').trim().replace(/\s+/g, ' ');
+      if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = limitText(String(text || '').trim().replace(/\s+/g, ' '), MAX_HOVER_TEXT_LENGTH);
     }
     return textByPattern;
+  }
+
+  function limitText(value, maxLength) {
+    return String(value || '').slice(0, maxLength).trim();
   }
 
   function setStatus(text) {
