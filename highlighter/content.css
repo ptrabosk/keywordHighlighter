@@ -4,12 +4,6 @@
   -webkit-box-decoration-break: clone;
 }
 
-.amh-highlight:hover,
-.amh-highlight--hover {
-  background-color: rgba(250, 236, 185, 0.5) !important;
-  box-shadow: none !important;
-}
-
 .amh-highlight--multipart {
   box-shadow: none !important;
 }

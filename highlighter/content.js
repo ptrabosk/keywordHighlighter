@@ -753,6 +753,10 @@
     const tag = target.dataset.amhRuleTag || '';
     if (tag === 'opt_out') return 'OPT OUT';
     if (tag === 'fuzzy_opt_out') return 'FUZZY OPT OUT';
+    if (tag === 'tmt') return 'TMT';
+    if (tag === 'txt') return 'TXT';
+    if (tag === 'reply') return 'REPLY';
+    if (tag === 'close') return 'CLOSE';
     return '';
   }
 
