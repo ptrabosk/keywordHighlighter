@@ -36,7 +36,7 @@
   }
 
   function sortSimpleBoundedAlternatives(pattern) {
-    return String(pattern || '').replace(/\\b\(([^()]+(?:\|[^()]+)+)\)\\b/g, (_match, alternatives) => {
+    return String(pattern || '').replace(/\\b\((?!\?:)([^()]+(?:\|[^()]+)+)\)\\b/g, (_match, alternatives) => {
       const sorted = alternatives
         .split('|')
         .sort((a, b) => strippedRegexLength(b) - strippedRegexLength(a));
@@ -103,7 +103,7 @@
       return /\b(?:cancel|remove|stop|delete)\w*\b[\s\S]{0,80}\bsubscriptions?\b|\bsubscriptions?\b[\s\S]{0,80}\b(?:cancel|remove|stop|delete)\w*\b/gi;
     }
     if (rule.id === 'rule_b25458937a65a761' || rule.name === 'autoQAMessages.under_13_age_threshold') {
-      return /\b(?:(?:i\s*(?:am|'m)|im)\s*)?(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:years?\s*old|yrs?\s*old|yo|y\/o)\b|\b(?:i\s*(?:am|'m)|im)\s*(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b|\b(?:grade\s*[1-6]|[1-6](?:st|nd|rd|th)\s*grade)\b/gi;
+      return /\b(?:my age is\s*)?(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:years?\s*old|yrs?\s*old|yo|y\/o)\b|\bmy age is\s*(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b|\b(?:grade\s*[1-6]|[1-6](?:st|nd|rd|th)\s*grade)\b/gi;
     }
     if (rule.id === 'rule_combined_reaction_reply' || rule.name === 'combined.reaction_reply') {
       return /^(?:reacted to .+|(?:liked|loved|emphasized|disliked|questioned) .+|laughed at .+|removed (?:a |from ).+)[\s.!?]*$/gi;
@@ -165,7 +165,9 @@
     let inQuantifierBrace = false;
     let skippedQuantifiableToken = false;
 
-    for (const char of String(pattern || '')) {
+    const text = String(pattern || '');
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index];
       if (escaped) {
         output += char;
         escaped = false;
@@ -214,6 +216,10 @@
         continue;
       }
       if (!inCharacterClass && char === ':' && output.endsWith('(?')) {
+        output += char;
+        continue;
+      }
+      if (!inCharacterClass && char === '.' && text[index + 1] === '*') {
         output += char;
         continue;
       }
@@ -396,6 +402,9 @@
         }
         const span = mapSearchSpanToRaw(searchContext, match.index, match.index + value.length);
         const rawValue = messageText.slice(span.start, span.end);
+        if (/^fu$/i.test(rawValue) && /[a-z0-9_-]/i.test(`${messageText[span.start - 1] || ''}${messageText[span.end] || ''}`)) {
+          continue;
+        }
         if (shouldSuppressContextualNonOptOutMatch(rule, messageText, span.start, span.end)) {
           continue;
         }

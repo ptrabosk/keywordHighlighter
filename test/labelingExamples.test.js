@@ -53,7 +53,7 @@ test('under-13 labeling examples use the requested caught and not-caught shape',
   const rule = rules.find((item) => item.id === 'rule_b25458937a65a761');
   const entry = examples.rule_b25458937a65a761;
 
-  assert.equal(entry.caught, 'I am three');
+  assert.equal(entry.caught, 'I am three years old');
   assert.equal(entry.notCaught, 'i am a girl');
   assert.equal(matches(rule, entry, 'caught'), true);
   assert.equal(matches(rule, entry, 'notCaught'), false);

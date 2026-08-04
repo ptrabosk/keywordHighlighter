@@ -288,7 +288,7 @@ function validateEvent_(event) {
   if (KW_UPLOAD_STATES.indexOf(event.uploadState) === -1) return invalid_("INVALID_UPLOAD_STATE");
   if (!Number.isInteger(event.uploadAttempts) || event.uploadAttempts < 0) return invalid_("INVALID_UPLOAD_ATTEMPTS");
   if (event.surface !== undefined && !isSafeString_(event.surface, 40)) return invalid_("INVALID_SURFACE");
-  if (event.pageHost !== undefined && !isSafeString_(event.pageHost, 120)) return invalid_("INVALID_PAGE_HOST");
+  if (event.pageHost !== undefined && !isStringWithin_(event.pageHost, 500)) return invalid_("INVALID_PAGE_HOST");
   if (event.ruleSource !== undefined && !isSafeString_(event.ruleSource, 120)) return invalid_("INVALID_RULE_SOURCE");
   if (event.durationMs !== undefined && (typeof event.durationMs !== "number" || event.durationMs < 0)) return invalid_("INVALID_DURATION");
   if (event.errorCode !== undefined && !isSafeString_(event.errorCode, 80)) return invalid_("INVALID_ERROR_CODE");

@@ -147,6 +147,7 @@ test("compiles procedural close detectors used by the demo site", () => {
   assert.equal(core.collectMatches("see https://example.com", [rules[2]], settings).length, 0);
   assert.equal(core.collectMatches("Please cancel my subscription.", [rules[3]], settings).length, 1);
   assert.equal(core.collectMatches("I am 12 years old.", [rules[4]], settings).length, 1);
+  assert.equal(core.collectMatches("I am 8.", [rules[4]], settings).length, 0);
   assert.equal(core.collectMatches("I am 13 years old.", [rules[4]], settings).length, 0);
   assert.equal(core.collectMatches('Loved "Thanks for your order"', [rules[5]], settings).length, 1);
   assert.equal(core.collectMatches("Sorry can't talk now.", [rules[6]], settings).length, 1);
@@ -208,6 +209,22 @@ test("normalizes deterministic browser examples back to raw highlight spans", ()
   }
 
   assert.deepEqual(core.collectMatches("Stop by my house after delivery.", activeRules, settings), []);
+  assert.deepEqual(core.collectMatches("kung-fu", activeRules, settings), []);
+  assert.equal(core.collectMatches("fu", activeRules, settings).length, 1);
+});
+
+test("under-13 rules require explicit age wording and grades 1-6", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+  const settings = core.mergeSettings(defaults, {});
+  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
+
+  for (const text of ["my age is 8", "my age is eight", "I am 8 years old", "I'm only eight yo", "I am in grade 6"]) {
+    assert.ok(core.collectMatches(text, activeRules, settings).some((match) => match.rule.tag === "opt_out"), `${text} should match`);
+  }
+
+  for (const text of ["I am 8", "I'm eight", "I am 13 years old", "my age is 13", "my age is thirteen", "I am in grade 7"]) {
+    assert.deepEqual(core.collectMatches(text, activeRules, settings), [], `${text} should not match`);
+  }
 });
 
 test("highlights normalized punctuation and generated demo examples", () => {
@@ -412,6 +429,17 @@ test("deterministic cleanup rules cover requested variants and exclusions", () =
 
   assert.equal(core.collectMatches("Customer support?", activeRules, settings).some((match) => match.rule.id === "rule_d71b14fc71ed188f"), true);
   assert.equal(core.collectMatches("do not spam", [rulesById.get("rule_fe8eca5e5e5ff867")], settings).length, 0);
+  assert.equal(core.collectMatches("issue", activeRules, settings).some((match) => match.rule.id === "rule_e9bc789ec1b52ceb"), false);
+  assert.equal(core.collectMatches("pursue", activeRules, settings).some((match) => match.rule.id === "rule_e9bc789ec1b52ceb"), false);
+  assert.equal(core.collectMatches("I will sue you", [rulesById.get("rule_e9bc789ec1b52ceb")], settings).length, 1);
+  assert.equal(core.collectMatches("reportage", activeRules, settings).some((match) => match.rule.id === "rule_d9dedf14099f4647"), false);
+  assert.equal(core.collectMatches("reported you", [rulesById.get("rule_d9dedf14099f4647")], settings).length, 1);
+  assert.equal(rulesById.has("rule_5e2385aac4ffe493"), false);
+  assert.equal(core.collectMatches("unsubsidized loan", activeRules, settings).some((match) => match.rule.id === "rule_e51dc7d4ebc2632c"), false);
+  assert.equal(core.collectMatches("unsub", [rulesById.get("rule_e51dc7d4ebc2632c")], settings).length, 1);
+  assert.equal(core.collectMatches("unsubscribe", [rulesById.get("rule_e51dc7d4ebc2632c")], settings).length, 1);
+  assert.equal(core.collectMatches("kung fu", activeRules, settings).some((match) => match.rule.id === "rule_578078b652df9a1c"), false);
+  assert.equal(core.collectMatches("f u", activeRules, settings).some((match) => match.rule.id === "rule_578078b652df9a1c"), true);
 
   for (const removedId of ["rule_aaec757169b5d045", "rule_cf5d12213cf5b726", "rule_754d2c360b0b43fe", "rule_41434a27f4e64824"]) {
     assert.equal(rulesById.has(removedId), false);
@@ -497,7 +525,11 @@ test("deterministic rules compile highlightable entries and skip procedural dete
   const optionalGroupRule = rules.find((item) => item.id === "rule_9a0a246dfc518c29");
   const curlyQuoteRule = rules.find((item) => item.id === "rule_6da31ef70e2d6310");
 
-  assert.equal(rules.length, 388);
+  assert.equal(rules.length, 389);
+  assert.deepEqual(rules.filter((item) => !item.regex).map((item) => item.id), [
+    "rule_451c36fb9b91ee65",
+    "rule_39802d76d8b46842"
+  ]);
   assert.equal(procedural.regex, null);
   assert.equal(optOutPhrase.tag, "opt_out");
   assert.equal(core.collectMatches("remove me", [optOutPhrase], settings).length, 1);
@@ -511,6 +543,11 @@ test("deterministic rules compile highlightable entries and skip procedural dete
     ).length,
     1
   );
+
+  const emojiRules = rules.filter((item) => item.id.startsWith("rule_emoji_"));
+  for (const emoji of [0x1F595, 0x1F6D1, 0x270B, 0x1F645, 0x1F6AB, 0x1F515].map((codePoint) => String.fromCodePoint(codePoint))) {
+    assert.ok(core.collectMatches(emoji, emojiRules, settings).some((match) => match.rule.tag === "opt_out"), `${emoji} should opt out`);
+  }
 });
 
 test("deterministic hover text file has editable title, text, and name entries", () => {

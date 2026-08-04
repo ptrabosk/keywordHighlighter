@@ -111,6 +111,7 @@ export function sanitizeError(error, errorCode = ERROR_CODES.UNEXPECTED_ERROR, f
 
 export function sanitizeEvent(input = {}) {
   if (!LOGGING_CONFIG.enabled) return null;
+  if (input.eventType?.startsWith("session_")) return null;
 
   const eventType = LOG_EVENT_TYPES.includes(input.eventType) ? input.eventType : "unexpected_exception";
   const severity = LOG_SEVERITIES.includes(input.severity) ? input.severity : "info";
@@ -130,7 +131,7 @@ export function sanitizeEvent(input = {}) {
   };
 
   const surface = sanitizeSafeId(input.surface, 40);
-  const pageHost = sanitizeSafeId(input.pageHost, 120);
+  const pageHost = truncateString(input.pageHost, 500) || undefined;
   const ruleSource = sanitizeSafeId(input.ruleSource, 120);
   const batchId = sanitizeSafeId(input.batchId, 80);
 

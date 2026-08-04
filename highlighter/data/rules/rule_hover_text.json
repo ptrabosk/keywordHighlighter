@@ -1979,6 +1979,16 @@
       "text": "\\bquit\\w*\\b",
       "name": "optOutClassifier.json.patterns.78"
     },
+    "rule_emoji_middle_finger_opt_out": {
+      "title": "opt_out",
+      "text": "\\u{1F595}",
+      "name": "deterministic.hard_opt_out.052"
+    },
+    "rule_emoji_stop_opt_out": {
+      "title": "opt_out",
+      "text": "(?:\\u{1F6D1}|\\u{270B}\\u{FE0F}?[\\u{1F3FB}-\\u{1F3FF}]?|\\u{1F645}[\\u{1F3FB}-\\u{1F3FF}]?(?:\\u{200D}[\\u{2640}\\u{2642}]\\u{FE0F}?)?|\\u{1F6AB}|\\u{1F515})",
+      "name": "stop_emoji"
+    },
     "rule_zap_not_doing_business_search": {
       "title": "fuzzy_opt_out",
       "text": "\\bnot\\s+doing\\s+business\\b",

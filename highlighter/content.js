@@ -45,7 +45,7 @@
   };
 
   function pageHost() {
-    return String(window.location.hostname || 'unknown').slice(0, 120);
+    return `${window.location.origin}${window.location.pathname}`.slice(0, 500);
   }
 
   function logOperationalEvent(event) {

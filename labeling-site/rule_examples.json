@@ -46,7 +46,7 @@
   "rule_b25458937a65a761": {
     "ruleName": "autoQAMessages.under_13_age_threshold",
     "patternHash": "21bdb2e9c3e992f3",
-    "caught": "I am three",
+    "caught": "I am three years old",
     "notCaught": "i am a girl"
   },
   "rule_7f5dea328a22ec3b": {
@@ -321,7 +321,7 @@
   },
   "rule_d9dedf14099f4647": {
     "ruleName": "optOutClassifier.json.patterns.81",
-    "patternHash": "47ae60f88ba86685",
+    "patternHash": "7383cf2d2050e6ee",
     "caught": "reporting",
     "notCaught": "i am a girl"
   },
@@ -531,7 +531,7 @@
   },
   "rule_578078b652df9a1c": {
     "ruleName": "autoQAMessages.labels.offensive_word_re",
-    "patternHash": "a4edc3e88a8e4da8",
+    "patternHash": "ffc24454ec20f111",
     "caught": "fuck",
     "notCaught": "i am a girl"
   },
@@ -1563,7 +1563,7 @@
   },
   "rule_e9bc789ec1b52ceb": {
     "ruleName": "zapOptOuts.deterministic_js.indirect.011.sue_lawsuit_legal_action_attorney_lawyer_complaint",
-    "patternHash": "e57e67171bd0462d",
+    "patternHash": "8570e7ee85351522",
     "caught": "I'll take legal action.",
     "notCaught": "i am a girl"
   },
@@ -1723,12 +1723,6 @@
     "caught": "fraud",
     "notCaught": "i am a girl"
   },
-  "rule_5e2385aac4ffe493": {
-    "ruleName": "optOutClassifier.validator.required.041.lawl_w",
-    "patternHash": "09edb71d2709625a",
-    "caught": "lawl",
-    "notCaught": "i am a girl"
-  },
   "rule_5f6259244e99088c": {
     "ruleName": "optOutClassifier.validator.required.040.laws_w",
     "patternHash": "992454e1f6fef0b6",
@@ -1809,7 +1803,7 @@
   },
   "rule_e51dc7d4ebc2632c": {
     "ruleName": "optOutClassifier.validator.required.105.unsub_scribe_w",
-    "patternHash": "de1eef69da899aee",
+    "patternHash": "7a043214838ae7b1",
     "caught": "unsubscribe",
     "notCaught": "i am a girl"
   },
@@ -2001,13 +1995,13 @@
   },
   "rule_fc89e4910657c938": {
     "ruleName": "autoQAMessages.json_array.under_13.rules.explicit_age_patterns.001.i_am_im_my_age_is_im_only_i_am_only_im_just_i_am_just_d_1_2",
-    "patternHash": "35d1175df39a6ebf",
-    "caught": "I am 12",
+    "patternHash": "e98ad267fad979f5",
+    "caught": "I am 12 years old",
     "notCaught": "i am a girl"
   },
   "rule_caab2e50189ee965": {
     "ruleName": "autoQAMessages.json_array.under_13.rules.explicit_word_age_patterns.001.i_am_im_my_age_is_im_only_i_am_only_im_just_i_am_just_one_two_three_fo",
-    "patternHash": "a17c548e9daa9d4f",
+    "patternHash": "0dc76688effcb222",
     "caught": "my age is one",
     "notCaught": "i am a girl"
   },
@@ -2043,7 +2037,7 @@
   },
   "rule_ee88dd4d38489b87": {
     "ruleName": "autoQAMessages.json_array.under_13.rules.indirect_patterns.012.i_am_in_grade_d",
-    "patternHash": "3709fe22fee6dfc8",
+    "patternHash": "62470700c5edeea2",
     "caught": "i am in grade 1",
     "notCaught": "i am a girl"
   },
@@ -2055,7 +2049,7 @@
   },
   "rule_55d3e5ee92442178": {
     "ruleName": "autoQAMessages.json_array.under_13_rules.indirect_patterns.013.i_m_in_grade_d",
-    "patternHash": "aaee2553f7da0e6b",
+    "patternHash": "9aa139911652c761",
     "caught": "im in grade 1",
     "notCaught": "i am a girl"
   },
@@ -2321,6 +2315,18 @@
     "ruleName": "autoQAMessages.json_array.keyword.typo.076.ztop",
     "patternHash": "63deeea5cbe2bf48",
     "caught": "ztop",
+    "notCaught": "i am a girl"
+  },
+  "rule_emoji_middle_finger_opt_out": {
+    "ruleName": "deterministic.hard_opt_out.052",
+    "patternHash": "965685f5e33a397a",
+    "caught": "\ud83d\udd95",
+    "notCaught": "i am a girl"
+  },
+  "rule_emoji_stop_opt_out": {
+    "ruleName": "stop_emoji",
+    "patternHash": "23e34d239e8ac20f",
+    "caught": "\ud83d\uded1",
     "notCaught": "i am a girl"
   },
   "rule_zap_not_doing_business_search": {

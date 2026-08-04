@@ -113,7 +113,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
     severity: "loud",
     result: "success",
     surface: "content",
-    pageHost: "ui.attentivemobile.com",
+    pageHost: "https://ui.attentivemobile.com/concierge/conversation/123",
     ruleSource: "consolidated_rules",
     metadata: {
       operation: "x".repeat(150),
@@ -127,7 +127,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   assert.equal(sanitized.severity, "info");
   assert.equal(sanitized.extensionVersion, "1.0.0");
   assert.equal(sanitized.surface, "content");
-  assert.equal(sanitized.pageHost, "ui.attentivemobile.com");
+  assert.equal(sanitized.pageHost, "https://ui.attentivemobile.com/concierge/conversation/123");
   assert.equal(sanitized.ruleSource, "consolidated_rules");
   assert.equal(sanitized.metadata.operation.length, 100);
   assert.equal(sanitized.metadata.ignored, undefined);
@@ -347,7 +347,7 @@ test("example local config placeholders are treated as not configured", async ()
   assert.equal((await getUploadStatus()).blockedUntilConfigurationChange, true);
 });
 
-test("detects abandoned sessions and records a replacement session", async () => {
+test("session lifecycle events are omitted while useful info events remain", async () => {
   resetEnvironment();
   await storageSet({
     activeSession: {
@@ -371,7 +371,13 @@ test("detects abandoned sessions and records a replacement session", async () =>
 
   const chunks = await loadAllChunks();
   const types = chunks.flatMap((chunk) => chunk.chunk.events.map((item) => item.eventType));
-  assert.deepEqual(types, ["session_abandoned", "session_started"]);
+  assert.deepEqual(types, []);
+
+  await logEvent({ eventType: "rules_loaded", severity: "info", result: "success" });
+  assert.deepEqual(
+    (await loadAllChunks()).flatMap((chunk) => chunk.chunk.events.map((item) => item.eventType)),
+    ["rules_loaded"]
+  );
 });
 
 test("ended sessions are cleared and are not later marked abandoned", async () => {
@@ -396,7 +402,7 @@ test("ended sessions are cleared and are not later marked abandoned", async () =
   }
 
   const types = (await loadAllChunks()).flatMap((chunk) => chunk.chunk.events.map((item) => item.eventType));
-  assert.deepEqual(types, ["session_ended", "session_started"]);
+  assert.deepEqual(types, []);
 });
 
 test("service worker restart restores uploading events to pending", async () => {
@@ -468,6 +474,7 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /DUPLICATE_EVENT_ID/);
   assert.match(source, /SHEET_HEADER_MISMATCH/);
   assert.match(source, /function sheetSafe_/);
+  assert.match(source, /isStringWithin_\(event\.pageHost, 500\)/);
   assert.match(source, /function findRowByExactCellValue_/);
   assert.match(source, /createTextFinder/);
   assert.match(source, /matchEntireCell\(true\)/);
@@ -492,6 +499,7 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(backgroundSource, /highlighter:runDiagnosticsUpload/);
   assert.doesNotMatch(backgroundSource, /apiKey:\s*config\.apiKey/);
   assert.match(contentSource, /RENDER_LOG_INTERVAL_MS/);
+  assert.match(contentSource, /window\.location\.origin.*window\.location\.pathname/);
   assert.match(contentSource, /maybeLogRenderCompleted/);
   assert.match(contentSource, /render_failed/);
   assert.match(contentSource, /clearAllHighlights/);

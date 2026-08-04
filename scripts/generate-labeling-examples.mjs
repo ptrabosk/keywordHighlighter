@@ -384,6 +384,8 @@ function uniqueNonEmpty(values) {
 }
 
 const caughtOverridesByRuleId = {
+  rule_emoji_middle_finger_opt_out: String.fromCodePoint(0x1F595),
+  rule_emoji_stop_opt_out: String.fromCodePoint(0x1F6D1),
   rule_451c36fb9b91ee65: '2',
   rule_39802d76d8b46842: '4',
   rule_combined_single_letter_only: 'x',
