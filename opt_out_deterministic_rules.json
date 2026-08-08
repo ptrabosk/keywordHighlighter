@@ -103,7 +103,7 @@
       "type": "deterministic_detector",
       "name": "zapOptOuts.workflow.node_4.subscription.subscription_candidate",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 2,
       "pattern": "normalized message contains cancel/remove/stop/delete and subscriptions?",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
@@ -261,7 +261,7 @@
       "type": "regex",
       "name": "optOutClassifier.json.patterns.7",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 3,
       "pattern": "\\b(?:spam|spams|spammer|spamming)\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
@@ -487,14 +487,14 @@
     },
     {
       "id": "rule_235ad34a90c941a4",
-      "type": "literal_phrase",
+      "type": "regex",
       "name": "optOutClassifier.json.patterns.14",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "lawy...",
-      "flags": "",
-      "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "extension_ready_phrase",
+      "pattern": "\\b(?:law|lawyer)\\b",
+      "flags": "i",
+      "match_target": "normalized CUSTOMER_MESSAGE",
+      "match_scope": "regex_search",
       "notes": [
         "confidence: medium"
       ],
@@ -562,7 +562,7 @@
       "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.28",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "not interested",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
@@ -613,7 +613,7 @@
       "type": "regex",
       "name": "optOutClassifier.json.patterns.37",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "\\bi\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
@@ -681,7 +681,7 @@
       "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.68",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "bother...",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
@@ -835,7 +835,7 @@
       "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.62",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "harass...",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
@@ -886,7 +886,7 @@
       "type": "literal_phrase",
       "name": "optOutClassifier.json.patterns.66",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "no longer",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
@@ -1124,7 +1124,7 @@
       "type": "regex",
       "name": "autoQAMessages.json_array.opt_out_phrases.081.don_t_want_your_promo",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "\\b(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+your\\s+promo\\b",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
@@ -1149,20 +1149,6 @@
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
       "action": "opt_out"
-    },
-    {
-      "id": "rule_cc5eeb5fc6b88c64",
-      "type": "regex",
-      "name": "autoQAMessages.json_array.opt_out_phrases.006.i_m_done",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "\\b(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)\\s+done\\b",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "contains_full_normalized_phrase",
-      "opt_out": "non_opt_out",
-      "subcategory": "done",
-      "action": "test"
     },
     {
       "id": "rule_13c0f6e52d78fa78",
@@ -1238,23 +1224,6 @@
       "match_scope": "extension_ready_phrase",
       "notes": [
         "confidence: required"
-      ],
-      "opt_out": "opt_out",
-      "subcategory": "unsubscribe_phrase",
-      "action": "opt_out"
-    },
-    {
-      "id": "rule_2cee9ccfd5c3206f",
-      "type": "literal_phrase",
-      "name": "optOutClassifier.json.patterns.26",
-      "category": "opt_out",
-      "prediction": 1,
-      "pattern": "leave me alone",
-      "flags": "",
-      "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "extension_ready_phrase",
-      "notes": [
-        "confidence: high"
       ],
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
@@ -1350,7 +1319,7 @@
       "type": "regex",
       "name": "optOutClassifier.validator.curated.030.complaint",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "\\bfraud\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
@@ -1367,7 +1336,7 @@
       "type": "regex",
       "name": "optOutClassifier.validator.curated.038.complaint",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "\\bharass\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
@@ -1384,7 +1353,7 @@
       "type": "regex",
       "name": "optOutClassifier.json.patterns.61",
       "category": "opt_out",
-      "prediction": null,
+      "prediction": 1,
       "pattern": "\\breport\\w*",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
@@ -1405,7 +1374,7 @@
       "type": "regex",
       "name": "optOutClassifier.json.patterns.8",
       "category": "non_opt_out",
-      "prediction": null,
+      "prediction": 3,
       "pattern": "\\bspam\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
@@ -1737,28 +1706,30 @@
       "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.017.i_m_done",
       "category": "non_opt_out",
       "prediction": 2,
-      "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) done",
+      "pattern": "\\b(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)\\s+done\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
       "normalized_keyword": "im done",
       "keyword_collapse": {
         "normalized_keyword": "im done",
-        "collapsed_rule_count": 3,
-        "removed_rule_count": 2,
+        "collapsed_rule_count": 5,
+        "removed_rule_count": 4,
         "source_rule_ids": [
           "rule_53833f630b1b2304",
           "rule_881da9bf622b5c5b",
-          "rule_9f9f434d2cfc8890"
+          "rule_9f9f434d2cfc8890",
+          "rule_cc5eeb5fc6b88c64",
+          "rule_83b3924cfc4fb214"
         ],
         "coverage_basis": "same normalized simple keyword/phrase under runner normalization"
       },
       "notes": [
-        "Collapsed 3 normalized keyword rules for 'im done'."
+        "Collapsed 5 normalized keyword rules for 'im done'."
       ],
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
-      "action": "test"
+      "action": "fuzzy_opt_out"
     },
     {
       "id": "rule_7b679a68a34fd49e",
@@ -1884,6 +1855,21 @@
       "flags": "i",
       "match_target": "normalized_customer_message",
       "match_scope": "regex_search",
+      "normalized_keyword": "done",
+      "keyword_collapse": {
+        "normalized_keyword": "done",
+        "collapsed_rule_count": 3,
+        "removed_rule_count": 2,
+        "source_rule_ids": [
+          "rule_56a5032d2bfabde1",
+          "rule_7a4aabc615457dc9",
+          "rule_157e140013fc23de"
+        ],
+        "coverage_basis": "same normalized keyword under browser normalization"
+      },
+      "notes": [
+        "Collapsed 3 normalized keyword rules for 'done'."
+      ],
       "opt_out": "non_opt_out",
       "subcategory": "not_interested",
       "action": "fuzzy_opt_out"
@@ -1972,7 +1958,7 @@
       "type": "regex",
       "name": "exact_finished",
       "category": "opt_out",
-      "prediction": 2,
+      "prediction": 1,
       "pattern": "^\\s*(?:finish|finished|finishes|finishing)[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -1989,7 +1975,7 @@
       "type": "regex",
       "name": "exact_pause",
       "category": "opt_out",
-      "prediction": 2,
+      "prediction": 1,
       "pattern": "^\\s*(?:pause|paused|pausing)[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -2006,7 +1992,7 @@
       "type": "regex",
       "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.exact_shush",
       "category": "opt_out",
-      "prediction": 2,
+      "prediction": 1,
       "pattern": "^\\s*shush[.!?,;:]*\\s*$",
       "flags": "i",
       "match_target": "normalized CUSTOMER_MESSAGE",
@@ -2178,7 +2164,7 @@
       "type": "regex",
       "name": "optOutClassifier.json.patterns.73",
       "category": "opt_out",
-      "prediction": null,
+      "prediction": 1,
       "pattern": "\\bFCC\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
@@ -2426,7 +2412,7 @@
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
       "notes": [
-        "Raw CSV text: iÃ¢â‚¬â„¢m not receiving notifications if this is urgent reply Ã¢â‚¬Å“urgentÃ¢â‚¬Â to send a notification through with your original message"
+        "Raw CSV text: I'm not receiving notifications if this is urgent reply Ã¢â‚¬Å“urgentÃ¢â‚¬Â to send a notification through with your original message"
       ],
       "opt_out": "non_opt_out",
       "subcategory": "auto_reply",
@@ -3624,7 +3610,7 @@
       "type": "regex",
       "name": "zapOptOuts.deterministic.direct_expanded.012.i_don_t_dont_want_this_these_anymore",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "(?<![a-z0-9])(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want (this|these) anymore)(?![a-z0-9])",
       "flags": "i",
       "match_target": "normalized_customer_message OR stage1_customer_message",
@@ -3658,7 +3644,7 @@
       "type": "regex",
       "name": "deterministic.hard_opt_out.026",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want to be here",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -3873,7 +3859,7 @@
       "type": "regex",
       "name": "zapOptOuts.deterministic_js.hard_opt_out.028.i_m_tired_of_y_all",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) tired of yall",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -3903,7 +3889,7 @@
       "type": "regex",
       "name": "deterministic.hard_opt_out.027",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) tired of you",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -4032,7 +4018,7 @@
       "type": "regex",
       "name": "zapOptOuts.deterministic_phrase.direct_expanded.003.stop_bothering_harassing_spamming_me",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "(?<![a-z0-9])(?:stop (bothering|harassing|spamming) me)(?![a-z0-9])",
       "flags": "i",
       "match_target": "normalized_customer_message OR stage1_customer_message",
@@ -4158,20 +4144,6 @@
       "action": "opt_out"
     },
     {
-      "id": "rule_83b3924cfc4fb214",
-      "type": "regex",
-      "name": "zapOptOuts.deterministic_js.indirect.020.i_m_im_done",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) done",
-      "flags": "i",
-      "match_target": "normalized_customer_message",
-      "match_scope": "regex_search",
-      "opt_out": "non_opt_out",
-      "subcategory": "done",
-      "action": "test"
-    },
-    {
       "id": "rule_a0fc16105db53fd4",
       "type": "regex",
       "name": "cannot_receive_messages",
@@ -4200,23 +4172,6 @@
       "match_scope": "regex_search",
       "opt_out": "opt_out",
       "subcategory": "unsubscribe_phrase",
-      "action": "opt_out"
-    },
-    {
-      "id": "rule_06305227826122d3",
-      "type": "regex",
-      "name": "not_accepting_messages",
-      "category": "opt_out",
-      "prediction": 1,
-      "pattern": "\\bnot accepting (?:messages|texts?|emails?)\\b",
-      "flags": "i",
-      "match_target": "inbound DOM message text",
-      "match_scope": "highlight_regex_search",
-      "notes": [
-        "source: optout_classifier/classifier.py"
-      ],
-      "opt_out": "opt_out",
-      "subcategory": "device_not_working",
       "action": "opt_out"
     },
     {
@@ -4320,20 +4275,6 @@
       "opt_out": "opt_out",
       "subcategory": "stop_keywords",
       "action": "opt_out"
-    },
-    {
-      "id": "rule_7a4aabc615457dc9",
-      "type": "regex",
-      "name": "zapOptOuts.workflow.node_4.opt_out.keyword_done",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "^\\s*done[.!?,;:]*\\s*$",
-      "flags": "i",
-      "match_target": "normalized CUSTOMER_MESSAGE",
-      "match_scope": "regex_search",
-      "opt_out": "non_opt_out",
-      "subcategory": "done",
-      "action": "test"
     },
     {
       "id": "rule_9fe7dbf6d648b75c",
@@ -4529,7 +4470,7 @@
       "type": "regex",
       "name": "deterministic.indirect.017",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 4,
       "pattern": "i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) know you",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -4589,12 +4530,25 @@
       "name": "not_accepting_messages",
       "category": "opt_out",
       "prediction": 1,
-      "pattern": "not\\s+accepting\\s+(?:messages|texts|emails)",
+      "pattern": "\\bnot\\s+accepting\\s+(?:messages|texts?|emails?)\\b",
       "flags": "i",
       "match_target": "inbound DOM message text",
       "match_scope": "highlight_regex_search",
+      "normalized_keyword": "not accepting messages",
+      "keyword_collapse": {
+        "normalized_keyword": "not accepting messages",
+        "collapsed_rule_count": 2,
+        "removed_rule_count": 1,
+        "source_rule_ids": [
+          "rule_1fc84bcaffc4ee00",
+          "rule_06305227826122d3"
+        ],
+        "coverage_basis": "overlapping not-accepting-messages browser regexes; canonical pattern preserves their union"
+      },
       "notes": [
-        "source: opt-out-workflow.json node 4 code step"
+        "source: opt-out-workflow.json node 4 code step",
+        "source: optout_classifier/classifier.py",
+        "Collapsed rule_06305227826122d3 into this rule."
       ],
       "opt_out": "opt_out",
       "subcategory": "device_not_working",
@@ -4695,7 +4649,7 @@
       "type": "regex",
       "name": "zapOptOuts.deterministic_js.indirect.016.who_is_this_are_you_are_y_all_yall",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 4,
       "pattern": "who (is this|are you|are (y'all|yall))",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5013,23 +4967,6 @@
       "action": "opt_out"
     },
     {
-      "id": "rule_ee985c7c20c83093",
-      "type": "regex",
-      "name": "optOutClassifier.validator.required.017.de_baja",
-      "category": "opt_out",
-      "prediction": 1,
-      "pattern": "de baja",
-      "flags": "i",
-      "match_target": "normalized_phrase",
-      "match_scope": "regex_search",
-      "notes": [
-        "Always added to validator extension-ready output."
-      ],
-      "opt_out": "opt_out",
-      "subcategory": "stop_keywords",
-      "action": "opt_out"
-    },
-    {
       "id": "rule_78328a8bc856e232",
       "type": "regex",
       "name": "optOutClassifier.validator.required.019.descontin_w",
@@ -5064,45 +5001,11 @@
       "action": "opt_out"
     },
     {
-      "id": "rule_c15592ace39cad2a",
-      "type": "regex",
-      "name": "optOutClassifier.validator.required.029.federal_communications_commission",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "federal communications commission",
-      "flags": "i",
-      "match_target": "normalized_phrase",
-      "match_scope": "regex_search",
-      "notes": [
-        "Always added to validator extension-ready output."
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "legal",
-      "action": "opt_out"
-    },
-    {
-      "id": "rule_7cbb4023388edec3",
-      "type": "regex",
-      "name": "optOutClassifier.validator.required.032.florida_telephone_solicitation_act",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "florida telephone solicitation act",
-      "flags": "i",
-      "match_target": "normalized_phrase",
-      "match_scope": "regex_search",
-      "notes": [
-        "Always added to validator extension-ready output."
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "legal",
-      "action": "opt_out"
-    },
-    {
       "id": "rule_6487a8f2600697d9",
       "type": "regex",
       "name": "optOutClassifier.validator.required.030.fraud_w",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "fraud\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
@@ -5115,27 +5018,10 @@
       "action": "fuzzy_opt_out"
     },
     {
-      "id": "rule_5e2385aac4ffe493",
-      "type": "regex",
-      "name": "optOutClassifier.validator.required.041.lawl_w",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "lawl\\w*",
-      "flags": "i",
-      "match_target": "normalized_phrase",
-      "match_scope": "regex_search",
-      "notes": [
-        "Always added to validator extension-ready output."
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "legal",
-      "action": "opt_out"
-    },
-    {
       "id": "rule_5f6259244e99088c",
       "type": "regex",
       "name": "optOutClassifier.validator.required.040.laws_w",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "laws\\w*",
       "flags": "i",
@@ -5144,7 +5030,7 @@
       "notes": [
         "Always added to validator extension-ready output."
       ],
-      "opt_out": "non_opt_out",
+      "opt_out": "opt_out",
       "subcategory": "legal",
       "action": "opt_out"
     },
@@ -5152,7 +5038,7 @@
       "id": "rule_89cb54259c647ea5",
       "type": "regex",
       "name": "optOutClassifier.validator.required.044.litigat_w",
-      "category": "non_opt_out",
+      "category": "opt_out",
       "prediction": 1,
       "pattern": "litigat\\w*",
       "flags": "i",
@@ -5161,7 +5047,7 @@
       "notes": [
         "Always added to validator extension-ready output."
       ],
-      "opt_out": "non_opt_out",
+      "opt_out": "opt_out",
       "subcategory": "legal",
       "action": "opt_out"
     },
@@ -5252,7 +5138,7 @@
       "type": "regex",
       "name": "optOutClassifier.validator.required.070.scam_w",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 2,
       "pattern": "scam\\w*",
       "flags": "i",
       "match_target": "normalized_phrase",
@@ -5316,23 +5202,6 @@
       "action": "opt_out"
     },
     {
-      "id": "rule_4713232b43ce887d",
-      "type": "regex",
-      "name": "optOutClassifier.validator.required.100.telephone_consumer_protection_act",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "telephone consumer protection act",
-      "flags": "i",
-      "match_target": "normalized_phrase",
-      "match_scope": "regex_search",
-      "notes": [
-        "Always added to validator extension-ready output."
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "legal",
-      "action": "opt_out"
-    },
-    {
       "id": "rule_2ceb64d4bb6ed08e",
       "type": "regex",
       "name": "optOutClassifier.validator.required.101.terminat_w",
@@ -5377,7 +5246,7 @@
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
       "notes": [
-        "Raw CSV text: 10 shein freebies and a 50 allowance for the lucky just click and claimÃ¢â‚¬â€so easy"
+        "Raw CSV text: 10 shein freebies and a 50 allowance for the lucky just click and claim, so easy"
       ],
       "opt_out": "non_opt_out",
       "subcategory": "spam_texts",
@@ -5394,7 +5263,7 @@
       "match_target": "CUSTOMER_MESSAGE",
       "match_scope": "full_normalized_message",
       "notes": [
-        "Raw CSV text: claim 5 free shein products now click the link to help and letÃ¢â‚¬â„¢s both win big"
+        "Raw CSV text: claim 5 free shein products now click the link to help and let's both win big"
       ],
       "opt_out": "non_opt_out",
       "subcategory": "spam_texts",
@@ -5439,7 +5308,7 @@
       "type": "regex",
       "name": "optOutClassifier.json.patterns.47",
       "category": "opt_out",
-      "prediction": null,
+      "prediction": 1,
       "pattern": "\\b(s|a|d)top\\b",
       "flags": "i",
       "match_target": "CUSTOMER_MESSAGE",
@@ -5507,23 +5376,6 @@
       "action": "opt_out"
     },
     {
-      "id": "rule_362b6d62919ca7c8",
-      "type": "regex",
-      "name": "opt_outs_ml.regex_rules.096.thanks",
-      "category": "non_opt_out",
-      "prediction": 0,
-      "pattern": "^thank u$",
-      "flags": "iu",
-      "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
-      "notes": [
-        "Raw CSV text: thank u"
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "gratitude",
-      "action": "no_action"
-    },
-    {
       "id": "rule_5525e07ed34651a0",
       "type": "regex",
       "name": "opt_outs_ml.regex_rules.064.thanks",
@@ -5575,45 +5427,11 @@
       "action": "no_action"
     },
     {
-      "id": "rule_25bed44ed111bce6",
-      "type": "regex",
-      "name": "opt_outs_ml.regex_rules.066.thanks",
-      "category": "non_opt_out",
-      "prediction": 0,
-      "pattern": "^thanks$",
-      "flags": "iu",
-      "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
-      "notes": [
-        "Raw CSV text: thanks"
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "gratitude",
-      "action": "no_action"
-    },
-    {
-      "id": "rule_6677dac08705e6d9",
-      "type": "regex",
-      "name": "opt_outs_ml.regex_rules.065.thanks",
-      "category": "non_opt_out",
-      "prediction": 0,
-      "pattern": "^thx$",
-      "flags": "iu",
-      "match_target": "CUSTOMER_MESSAGE",
-      "match_scope": "full_normalized_message",
-      "notes": [
-        "Raw CSV text: thx"
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "gratitude",
-      "action": "no_action"
-    },
-    {
       "id": "rule_37e1655b9732de03",
       "type": "regex",
       "name": "zapOptOuts.workflow.node_4.tmt.dont_text_so_much",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:text|message|contact)\\s+(?:me\\s+)?so\\s+much",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
@@ -5627,7 +5445,7 @@
       "type": "regex",
       "name": "less_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "(?:send\\s+)?less\\s+(?:texts|text\\s+messages|messages|msgs)",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5644,7 +5462,7 @@
       "type": "regex",
       "name": "text_less",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "(?:text|message|contact)\\s+me\\s+less",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5661,7 +5479,7 @@
       "type": "regex",
       "name": "zapOptOuts.workflow.node_4.tmt.less_often",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "(?:text|message|contact|send)\\s+me\\s+less\\s+often",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
@@ -5675,7 +5493,7 @@
       "type": "regex",
       "name": "zapOptOuts.classifier.TMT_RULES.fewer_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\b(?:send )?fewer (?:texts?|text messages?|messages?|msgs?)\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5689,7 +5507,7 @@
       "type": "regex",
       "name": "lower_frequency",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\blower (?:the )?frequency\\b",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5706,7 +5524,7 @@
       "type": "regex",
       "name": "zapOptOuts.classifier.TMT_RULES.not_as_many_messages",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\bnot as many (?:texts?|text messages?|messages?|msgs?)\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5720,7 +5538,7 @@
       "type": "regex",
       "name": "zapOptOuts.classifier.TMT_RULES.reduce_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\breduce (?:the )?(?:texts?|text messages?|messages?|msgs?)\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5734,7 +5552,7 @@
       "type": "regex",
       "name": "reduce_frequency",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\breduce (?:the )?frequency\\b",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5751,7 +5569,7 @@
       "type": "regex",
       "name": "message_less",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\bsend (?:me )?(?:texts?|text messages?|messages?|msgs?) less\\b",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5768,7 +5586,7 @@
       "type": "regex",
       "name": "zapOptOuts.classifier.TMT_RULES.send_me_less",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\bsend me less\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5782,7 +5600,7 @@
       "type": "regex",
       "name": "zapOptOuts.classifier.TMT_RULES.slow_down_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\bslow down (?:on )?(?:the )?(?:texts?|text messages?|messages?|msgs?)\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5796,7 +5614,7 @@
       "type": "regex",
       "name": "zapOptOuts.classifier.TMT_RULES.so_many_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\bso many (?:texts?|text messages?|messages?|msgs?)\\b",
       "flags": "i",
       "match_target": "normalized_customer_message",
@@ -5810,7 +5628,7 @@
       "type": "regex",
       "name": "stop_texting_so_much",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\bstop (?:texting|messaging|contacting) (?:me )?so much\\b",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5827,7 +5645,7 @@
       "type": "regex",
       "name": "too_many_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "\\btoo many (?:texts?|text messages?|messages?|msgs?)\\b",
       "flags": "i",
       "match_target": "inbound DOM message text",
@@ -5844,7 +5662,7 @@
       "type": "regex",
       "name": "zapOptOuts.workflow.node_4.tmt.not_so_many_texts",
       "category": "non_opt_out",
-      "prediction": 0,
+      "prediction": 3,
       "pattern": "not\\s+so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs)",
       "flags": "",
       "match_target": "normalized CUSTOMER_MESSAGE",
@@ -5858,7 +5676,7 @@
       "type": "deterministic_detector",
       "name": "combined.txt_origin_question",
       "category": "txt",
-      "prediction": 0,
+      "prediction": 4,
       "pattern": "Customer asks how/where the sender got their number, who the sender is, who gave out their number, why they are getting texts/messages, why the sender is texting/contacting/sending messages, or says they do not know the sender.",
       "flags": "",
       "match_target": "CUSTOMER_MESSAGE",
@@ -6275,23 +6093,6 @@
       "action": "opt_out"
     },
     {
-      "id": "rule_157e140013fc23de",
-      "type": "vocabulary",
-      "name": "autoQAMessages.json_array.keyword.exact.029.done",
-      "category": "non_opt_out",
-      "prediction": 1,
-      "pattern": "done",
-      "flags": "",
-      "match_target": "normalized keyword CUSTOMER_MESSAGE",
-      "match_scope": "keyword_detector_input",
-      "aliases": [
-        "autoQAMessages.json_array.opt_out_keywords.016.done"
-      ],
-      "opt_out": "non_opt_out",
-      "subcategory": "done",
-      "action": "test"
-    },
-    {
       "id": "rule_c3dc65183282baaf",
       "type": "vocabulary",
       "name": "autoQAMessages.json_array.keyword.exact.019.drop",
@@ -6330,7 +6131,7 @@
       "type": "vocabulary",
       "name": "autoQAMessages.json_array.keyword.exact.016.junk",
       "category": "non_opt_out",
-      "prediction": 1,
+      "prediction": 3,
       "pattern": "junk",
       "flags": "",
       "match_target": "normalized keyword CUSTOMER_MESSAGE",

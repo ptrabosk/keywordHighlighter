@@ -151,7 +151,7 @@
     },
     "rule_235ad34a90c941a4": {
       "title": "opt_out",
-      "text": "lawy...",
+      "text": "law / lawyer",
       "name": "optOutClassifier.json.patterns.14"
     },
     "rule_96d85e50355029cb": {
@@ -364,11 +364,6 @@
       "text": "get out",
       "name": "autoQAMessages.json_array.opt_out_phrases.003.get_out"
     },
-    "rule_cc5eeb5fc6b88c64": {
-      "title": "test",
-      "text": "i m done",
-      "name": "autoQAMessages.json_array.opt_out_phrases.006.i_m_done"
-    },
     "rule_13c0f6e52d78fa78": {
       "title": "opt_out",
       "text": "leave me alone",
@@ -393,11 +388,6 @@
       "title": "opt_out",
       "text": "halt texts / messages / text messages",
       "name": "optOutClassifier.json.patterns.34"
-    },
-    "rule_2cee9ccfd5c3206f": {
-      "title": "opt_out",
-      "text": "leave me alone",
-      "name": "optOutClassifier.json.patterns.26"
     },
     "rule_0fd61a48592c2b2a": {
       "title": "opt_out",
@@ -535,7 +525,7 @@
       "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.018.i_don_t_want_this_brand"
     },
     "rule_9f9f434d2cfc8890": {
-      "title": "test",
+      "title": "fuzzy_opt_out",
       "text": "im done",
       "name": "zapOptOuts.deterministic_js.fuzzy_opt_out.017.i_m_done"
     },
@@ -1179,11 +1169,6 @@
       "text": "(don't|dont) send me emails or texts",
       "name": "zapOptOuts.deterministic_js.direct_expanded.025.don_t_dont_send_me_emails_or_texts"
     },
-    "rule_83b3924cfc4fb214": {
-      "title": "test",
-      "text": "(i'm|im) done",
-      "name": "zapOptOuts.deterministic_js.indirect.020.i_m_im_done"
-    },
     "rule_a0fc16105db53fd4": {
       "title": "opt_out",
       "text": "\\b(?:cannot|cant|can not|can't)\\s+receive (?:messages?|texts?|emails?|calls?)\\b",
@@ -1193,11 +1178,6 @@
       "title": "opt_out",
       "text": "\\b(?:do not|dont)\\s+(?:contact|text|message|email|call)\\b",
       "name": "zapOptOuts.classifier.HARD_RULES.do_not_contact"
-    },
-    "rule_06305227826122d3": {
-      "title": "opt_out",
-      "text": "\\bnot accepting (?:messages|texts?|emails?)\\b",
-      "name": "not_accepting_messages"
     },
     "rule_0a482397319238ca": {
       "title": "opt_out",
@@ -1228,11 +1208,6 @@
       "title": "opt_out",
       "text": "^\\s*dnc[.!?,;:]*\\s*$",
       "name": "exact_dnc"
-    },
-    "rule_7a4aabc615457dc9": {
-      "title": "test",
-      "text": "^\\s*done[.!?,;:]*\\s*$",
-      "name": "zapOptOuts.workflow.node_4.opt_out.keyword_done"
     },
     "rule_9fe7dbf6d648b75c": {
       "title": "opt_out",
@@ -1321,7 +1296,7 @@
     },
     "rule_1fc84bcaffc4ee00": {
       "title": "opt_out",
-      "text": "not\\s+accepting\\s+(?:messages|texts|emails)",
+      "text": "\\bnot\\s+accepting\\s+(?:messages|texts?|emails?)\\b",
       "name": "not_accepting_messages"
     },
     "rule_26cc75d8805d262e": {
@@ -1449,11 +1424,6 @@
       "text": "ceas\\w*",
       "name": "optOutClassifier.validator.required.014.ceas_w"
     },
-    "rule_ee985c7c20c83093": {
-      "title": "opt_out",
-      "text": "de baja",
-      "name": "optOutClassifier.validator.required.017.de_baja"
-    },
     "rule_78328a8bc856e232": {
       "title": "opt_out",
       "text": "descontin\\w*",
@@ -1463,16 +1433,6 @@
       "title": "opt_out",
       "text": "end (any|all) (communication|communications|texts|text messages|messages)",
       "name": "optOutClassifier.validator.required.027.end_any_all_communication_communications_texts_text_messages_messages"
-    },
-    "rule_c15592ace39cad2a": {
-      "title": "opt_out",
-      "text": "federal communications commission",
-      "name": "optOutClassifier.validator.required.029.federal_communications_commission"
-    },
-    "rule_7cbb4023388edec3": {
-      "title": "opt_out",
-      "text": "florida telephone solicitation act",
-      "name": "optOutClassifier.validator.required.032.florida_telephone_solicitation_act"
     },
     "rule_6487a8f2600697d9": {
       "title": "fuzzy_opt_out",
@@ -1534,11 +1494,6 @@
       "text": "stop2unsubscribe",
       "name": "optOutClassifier.validator.required.087.stop2unsubscribe"
     },
-    "rule_4713232b43ce887d": {
-      "title": "opt_out",
-      "text": "telephone consumer protection act",
-      "name": "optOutClassifier.validator.required.100.telephone_consumer_protection_act"
-    },
     "rule_2ceb64d4bb6ed08e": {
       "title": "opt_out",
       "text": "terminat\\w*",
@@ -1589,11 +1544,6 @@
       "text": "halt\\s+(texts|messages|text messages)",
       "name": "optOutClassifier.validator.curated.004.stop_processing"
     },
-    "rule_362b6d62919ca7c8": {
-      "title": "no_action",
-      "text": "^thank u$",
-      "name": "opt_outs_ml.regex_rules.096.thanks"
-    },
     "rule_5525e07ed34651a0": {
       "title": "no_action",
       "text": "^thank you so much$",
@@ -1608,16 +1558,6 @@
       "title": "no_action",
       "text": "^thanks so much$",
       "name": "opt_outs_ml.regex_rules.095.thanks"
-    },
-    "rule_25bed44ed111bce6": {
-      "title": "no_action",
-      "text": "^thanks$",
-      "name": "opt_outs_ml.regex_rules.066.thanks"
-    },
-    "rule_6677dac08705e6d9": {
-      "title": "no_action",
-      "text": "^thx$",
-      "name": "opt_outs_ml.regex_rules.065.thanks"
     },
     "rule_37e1655b9732de03": {
       "title": "tmt",
@@ -1818,11 +1758,6 @@
       "title": "opt_out",
       "text": "detener",
       "name": "autoQAMessages.json_array.keyword.exact.043.detener"
-    },
-    "rule_157e140013fc23de": {
-      "title": "test",
-      "text": "done",
-      "name": "autoQAMessages.json_array.keyword.exact.029.done"
     },
     "rule_c3dc65183282baaf": {
       "title": "opt_out",

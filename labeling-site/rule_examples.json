@@ -165,7 +165,7 @@
   },
   "rule_235ad34a90c941a4": {
     "ruleName": "optOutClassifier.json.patterns.14",
-    "patternHash": "3ff139104dbb46e0",
+    "patternHash": "e8fb7fd508721f4c",
     "caught": "lawyer",
     "notCaught": "i am a girl"
   },
@@ -397,12 +397,6 @@
     "caught": "get out",
     "notCaught": "i am a girl"
   },
-  "rule_cc5eeb5fc6b88c64": {
-    "ruleName": "autoQAMessages.json_array.opt_out_phrases.006.i_m_done",
-    "patternHash": "10cf7a096f7b1fba",
-    "caught": "im done",
-    "notCaught": "i am a girl"
-  },
   "rule_13c0f6e52d78fa78": {
     "ruleName": "autoQAMessages.json_array.opt_out_phrases.009.leave_me_alone",
     "patternHash": "694f1c72256c5925",
@@ -431,12 +425,6 @@
     "ruleName": "optOutClassifier.json.patterns.34",
     "patternHash": "298b570d7676c52a",
     "caught": "Halt text messages.",
-    "notCaught": "i am a girl"
-  },
-  "rule_2cee9ccfd5c3206f": {
-    "ruleName": "optOutClassifier.json.patterns.26",
-    "patternHash": "6e26c430dccc6cf6",
-    "caught": "leave me alone",
     "notCaught": "i am a girl"
   },
   "rule_0fd61a48592c2b2a": {
@@ -603,7 +591,7 @@
   },
   "rule_9f9f434d2cfc8890": {
     "ruleName": "zapOptOuts.deterministic_js.fuzzy_opt_out.017.i_m_done",
-    "patternHash": "975bd2e712577371",
+    "patternHash": "27a17e4fb89de113",
     "caught": "im done",
     "notCaught": "i am a girl"
   },
@@ -1363,12 +1351,6 @@
     "caught": "dont send me emails or texts",
     "notCaught": "i am a girl"
   },
-  "rule_83b3924cfc4fb214": {
-    "ruleName": "zapOptOuts.deterministic_js.indirect.020.i_m_im_done",
-    "patternHash": "738e9be31f0e2fe7",
-    "caught": "im done",
-    "notCaught": "i am a girl"
-  },
   "rule_a0fc16105db53fd4": {
     "ruleName": "cannot_receive_messages",
     "patternHash": "84437f90db88bcf4",
@@ -1379,12 +1361,6 @@
     "ruleName": "zapOptOuts.classifier.HARD_RULES.do_not_contact",
     "patternHash": "94fceb946359d887",
     "caught": "do not contact",
-    "notCaught": "i am a girl"
-  },
-  "rule_06305227826122d3": {
-    "ruleName": "not_accepting_messages",
-    "patternHash": "3218f18b7a0af2a2",
-    "caught": "not accepting messages",
     "notCaught": "i am a girl"
   },
   "rule_0a482397319238ca": {
@@ -1421,12 +1397,6 @@
     "ruleName": "exact_dnc",
     "patternHash": "7125b8f9cc2927eb",
     "caught": "dnc",
-    "notCaught": "i am a girl"
-  },
-  "rule_7a4aabc615457dc9": {
-    "ruleName": "zapOptOuts.workflow.node_4.opt_out.keyword_done",
-    "patternHash": "7c0dd18289fa3e2e",
-    "caught": "done",
     "notCaught": "i am a girl"
   },
   "rule_9fe7dbf6d648b75c": {
@@ -1527,7 +1497,7 @@
   },
   "rule_1fc84bcaffc4ee00": {
     "ruleName": "not_accepting_messages",
-    "patternHash": "97fae5c8d1ab980d",
+    "patternHash": "a77ab2c67c7752e8",
     "caught": "not accepting messages",
     "notCaught": "i am a girl"
   },
@@ -1687,12 +1657,6 @@
     "caught": "ceas",
     "notCaught": "i am a girl"
   },
-  "rule_ee985c7c20c83093": {
-    "ruleName": "optOutClassifier.validator.required.017.de_baja",
-    "patternHash": "3f0e2753b5c15a9b",
-    "caught": "de baja",
-    "notCaught": "i am a girl"
-  },
   "rule_78328a8bc856e232": {
     "ruleName": "optOutClassifier.validator.required.019.descontin_w",
     "patternHash": "b96a07bfc5071074",
@@ -1703,18 +1667,6 @@
     "ruleName": "optOutClassifier.validator.required.027.end_any_all_communication_communications_texts_text_messages_messages",
     "patternHash": "17dd237bbd2cea13",
     "caught": "end any communication",
-    "notCaught": "i am a girl"
-  },
-  "rule_c15592ace39cad2a": {
-    "ruleName": "optOutClassifier.validator.required.029.federal_communications_commission",
-    "patternHash": "49dbc569180c3fc2",
-    "caught": "I'm reporting this to the Federal Communications Commission.",
-    "notCaught": "i am a girl"
-  },
-  "rule_7cbb4023388edec3": {
-    "ruleName": "optOutClassifier.validator.required.032.florida_telephone_solicitation_act",
-    "patternHash": "c3abc63c9f32cfcf",
-    "caught": "This violates the Florida Telephone Solicitation Act.",
     "notCaught": "i am a girl"
   },
   "rule_6487a8f2600697d9": {
@@ -1789,12 +1741,6 @@
     "caught": "stop2unsubscribe",
     "notCaught": "i am a girl"
   },
-  "rule_4713232b43ce887d": {
-    "ruleName": "optOutClassifier.validator.required.100.telephone_consumer_protection_act",
-    "patternHash": "114a6610d4594f6c",
-    "caught": "This violates the Telephone Consumer Protection Act.",
-    "notCaught": "i am a girl"
-  },
   "rule_2ceb64d4bb6ed08e": {
     "ruleName": "optOutClassifier.validator.required.101.terminat_w",
     "patternHash": "ac6d35bf883d24bd",
@@ -1855,12 +1801,6 @@
     "caught": "halt texts",
     "notCaught": "i am a girl"
   },
-  "rule_362b6d62919ca7c8": {
-    "ruleName": "opt_outs_ml.regex_rules.096.thanks",
-    "patternHash": "455367dfad6dba7b",
-    "caught": "thank u",
-    "notCaught": "i am a girl"
-  },
   "rule_5525e07ed34651a0": {
     "ruleName": "opt_outs_ml.regex_rules.064.thanks",
     "patternHash": "25d14b08a58184e9",
@@ -1877,18 +1817,6 @@
     "ruleName": "opt_outs_ml.regex_rules.095.thanks",
     "patternHash": "36d99f3b2e894b14",
     "caught": "thanks so much",
-    "notCaught": "i am a girl"
-  },
-  "rule_25bed44ed111bce6": {
-    "ruleName": "opt_outs_ml.regex_rules.066.thanks",
-    "patternHash": "5b758b7d1209d90c",
-    "caught": "thanks",
-    "notCaught": "i am a girl"
-  },
-  "rule_6677dac08705e6d9": {
-    "ruleName": "opt_outs_ml.regex_rules.065.thanks",
-    "patternHash": "398a5b2ea2ef420c",
-    "caught": "thx",
     "notCaught": "i am a girl"
   },
   "rule_37e1655b9732de03": {
@@ -2129,12 +2057,6 @@
     "ruleName": "autoQAMessages.json_array.keyword.exact.043.detener",
     "patternHash": "bb36e9249fc02bf7",
     "caught": "detener",
-    "notCaught": "i am a girl"
-  },
-  "rule_157e140013fc23de": {
-    "ruleName": "autoQAMessages.json_array.keyword.exact.029.done",
-    "patternHash": "91afdce92f9789f6",
-    "caught": "done",
     "notCaught": "i am a girl"
   },
   "rule_c3dc65183282baaf": {

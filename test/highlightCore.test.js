@@ -441,7 +441,20 @@ test("deterministic cleanup rules cover requested variants and exclusions", () =
   assert.equal(core.collectMatches("kung fu", activeRules, settings).some((match) => match.rule.id === "rule_578078b652df9a1c"), false);
   assert.equal(core.collectMatches("f u", activeRules, settings).some((match) => match.rule.id === "rule_578078b652df9a1c"), true);
 
-  for (const removedId of ["rule_aaec757169b5d045", "rule_cf5d12213cf5b726", "rule_754d2c360b0b43fe", "rule_41434a27f4e64824"]) {
+  for (const removedId of [
+    "rule_aaec757169b5d045",
+    "rule_cf5d12213cf5b726",
+    "rule_754d2c360b0b43fe",
+    "rule_41434a27f4e64824",
+    "rule_2cee9ccfd5c3206f",
+    "rule_ee985c7c20c83093",
+    "rule_c15592ace39cad2a",
+    "rule_7cbb4023388edec3",
+    "rule_4713232b43ce887d",
+    "rule_362b6d62919ca7c8",
+    "rule_25bed44ed111bce6",
+    "rule_6677dac08705e6d9"
+  ]) {
     assert.equal(rulesById.has(removedId), false);
   }
 });
@@ -477,19 +490,89 @@ test("standalone remove phrases do not block longer list-removal phrases", () =>
   );
 });
 
-test("explicit done rules are tagged with the test action", () => {
+test("done phrases collapse to canonical fuzzy rules", () => {
   const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const rulesById = new Map(core.buildRules(payload.rules).map((item) => [item.id, item]));
+  const settings = core.mergeSettings(defaults, {});
+  const rules = core.buildRules(payload.rules);
+  const rulesById = new Map(rules.map((item) => [item.id, item]));
 
+  for (const ruleId of ["rule_56a5032d2bfabde1", "rule_9f9f434d2cfc8890"]) {
+    assert.equal(rulesById.get(ruleId)?.tag, "fuzzy_opt_out", `${ruleId} should be fuzzy`);
+  }
   for (const ruleId of [
     "rule_cc5eeb5fc6b88c64",
-    "rule_9f9f434d2cfc8890",
     "rule_83b3924cfc4fb214",
     "rule_7a4aabc615457dc9",
     "rule_157e140013fc23de"
   ]) {
-    assert.equal(rulesById.get(ruleId)?.tag, "test", `${ruleId} should use the test action`);
+    assert.equal(rulesById.has(ruleId), false, `${ruleId} should be collapsed`);
   }
+
+  const activeRules = core.getActiveRules(rules, settings);
+  assert.equal(core.collectMatches("done", activeRules, settings)[0]?.rule.id, "rule_56a5032d2bfabde1");
+  assert.equal(core.collectMatches("I'm done", activeRules, settings)[0]?.rule.id, "rule_9f9f434d2cfc8890");
+});
+
+test("not accepting messages duplicate collapses into rule_1fc84bcaffc4ee00", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+  const rawRulesById = new Map(payload.rules.map((item) => [item.id, item]));
+  const survivor = core.buildRules([rawRulesById.get("rule_1fc84bcaffc4ee00")])[0];
+  const settings = core.mergeSettings(defaults, {});
+
+  assert.equal(rawRulesById.has("rule_06305227826122d3"), false);
+  assert.deepEqual(rawRulesById.get("rule_1fc84bcaffc4ee00")?.keyword_collapse?.source_rule_ids, [
+    "rule_1fc84bcaffc4ee00",
+    "rule_06305227826122d3"
+  ]);
+  for (const message of [
+    "not accepting messages",
+    "not accepting text",
+    "not accepting texts",
+    "not accepting email",
+    "not accepting emails"
+  ]) {
+    assert.equal(core.collectMatches(message, [survivor], settings)[0]?.rule.id, "rule_1fc84bcaffc4ee00");
+  }
+});
+
+test("predictions follow the opt-out and action mapping in both inventories", () => {
+  const inventoryPaths = [
+    "../opt_out_deterministic_rules.json",
+    "../highlighter/data/rules/opt_out_deterministic_rules.json"
+  ];
+  const expectedPrediction = (rule) => {
+    if (rule.opt_out === "opt_out") return 1;
+    if (rule.action === "fuzzy_opt_out") return 2;
+    if (rule.action === "tmt") return 3;
+    if (rule.action === "txt") return 4;
+    return 0;
+  };
+
+  for (const inventoryPath of inventoryPaths) {
+    const payload = JSON.parse(fs.readFileSync(path.join(__dirname, inventoryPath), "utf8"));
+    for (const rule of payload.rules) {
+      assert.equal(rule.prediction, expectedPrediction(rule), `${inventoryPath}: ${rule.id}`);
+    }
+  }
+});
+
+test("legal rules are opt outs without matching lawlessness", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+  const settings = core.mergeSettings(defaults, {});
+  const rules = core.buildRules(payload.rules);
+  const activeRules = core.getActiveRules(rules, settings);
+
+  for (const rule of payload.rules.filter((item) => item.subcategory === "legal")) {
+    assert.deepEqual(
+      [rule.category, rule.opt_out, rule.action, rule.prediction],
+      ["opt_out", "opt_out", "opt_out", 1],
+      `${rule.id} should be an opt out`
+    );
+  }
+
+  assert.equal(core.collectMatches("law", activeRules, settings)[0]?.rule.tag, "opt_out");
+  assert.equal(core.collectMatches("lawyer", activeRules, settings)[0]?.rule.tag, "opt_out");
+  assert.equal(core.collectMatches("lawlessness", activeRules, settings).length, 0);
 });
 
 test("gratitude no-action rules are limited to whole-message thanks variants", () => {
@@ -525,7 +608,7 @@ test("deterministic rules compile highlightable entries and skip procedural dete
   const optionalGroupRule = rules.find((item) => item.id === "rule_9a0a246dfc518c29");
   const curlyQuoteRule = rules.find((item) => item.id === "rule_6da31ef70e2d6310");
 
-  assert.equal(rules.length, 389);
+  assert.equal(rules.length, 376);
   assert.deepEqual(rules.filter((item) => !item.regex).map((item) => item.id), [
     "rule_451c36fb9b91ee65",
     "rule_39802d76d8b46842"

@@ -390,8 +390,12 @@
   function collectMatches(text, activeRules, settings) {
     const candidates = [];
     const messageText = String(text || '');
+    const rawSearchContext = { text: messageText, normalized: false, rawIndexes: null };
+    let normalizedSearchContext = null;
     for (const rule of activeRules) {
-      const searchContext = getSearchContext(messageText, rule);
+      const searchContext = shouldSearchNormalizedText(rule)
+        ? (normalizedSearchContext ||= normalizeSearchTextWithMapping(messageText))
+        : rawSearchContext;
       rule.regex.lastIndex = 0;
       let match;
       while ((match = rule.regex.exec(searchContext.text)) !== null) {
@@ -426,17 +430,6 @@
       }
     }
     return accepted.sort((a, b) => a.start - b.start);
-  }
-
-  function getSearchContext(text, rule) {
-    if (!shouldSearchNormalizedText(rule)) {
-      return {
-        text,
-        normalized: false,
-        rawIndexes: null
-      };
-    }
-    return normalizeSearchTextWithMapping(text);
   }
 
   function shouldSearchNormalizedText(rule) {
