@@ -115,6 +115,24 @@ input[type="text"] {
   margin-top: 12px;
 }
 
+.telemetry-notice {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--muted);
+  background: #f8f3df;
+  font-size: 12px;
+}
+
+.telemetry-notice strong {
+  color: var(--text);
+}
+
+.telemetry-notice p {
+  margin: 4px 0 0;
+}
+
 .keyword {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

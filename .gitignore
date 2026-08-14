@@ -1,3 +1,4 @@
 node_modules/
 highlighter/src/logging/config.local.js
+dist/
 .DS_Store

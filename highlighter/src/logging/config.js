@@ -20,25 +20,6 @@ export const LOGGING_CONFIG = {
   diagnosticsEnabled: false
 };
 
-let configPromise = null;
-
-export async function getLoggingConfig(options = {}) {
-  if (options.refresh) configPromise = null;
-  if (!configPromise) {
-    configPromise = loadLoggingConfig();
-  }
-  return await configPromise;
-}
-
-async function loadLoggingConfig() {
-  try {
-    if (globalThis.process?.env?.NODE_ENV === "test") return LOGGING_CONFIG;
-    const local = await import("./config.local.js");
-    if (local?.LOGGING_CONFIG && typeof local.LOGGING_CONFIG === "object") {
-      Object.assign(LOGGING_CONFIG, local.LOGGING_CONFIG);
-    }
-  } catch {
-    // Local overrides are optional and intentionally ignored by version control.
-  }
+export async function getLoggingConfig(_options = {}) {
   return LOGGING_CONFIG;
 }

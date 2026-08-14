@@ -18,7 +18,15 @@
     return;
   }
 
+  if (!globalThis.AMH_SHORTCUT_TELEMETRY) {
+    const message = 'shortcut telemetry did not load before content.js. Reload the extension and refresh the page.';
+    document.documentElement.dataset.amhInitError = message;
+    console.error('[Attentive Rule Highlighter] Failed to initialize:', new Error(message));
+    return;
+  }
+
   const core = globalThis.AMH_HIGHLIGHT_CORE;
+  const shortcutTelemetry = globalThis.AMH_SHORTCUT_TELEMETRY;
   const RENDER_LOG_INTERVAL_MS = 5 * 60 * 1000;
   const ESCALATION_HIGHLIGHT_COLOR = '#B9C7FA';
   const HOT_TOPIC_BRAND_LOOKBACK_LIMIT = 3;
@@ -45,7 +53,10 @@
   };
 
   function pageHost() {
-    return `${window.location.origin}${window.location.pathname}`.slice(0, 500);
+    if (window.location.origin === 'https://ui.attentivemobile.com' && window.location.pathname.startsWith('/concierge')) {
+      return 'https://ui.attentivemobile.com/concierge/';
+    }
+    return window.location.origin.slice(0, 500);
   }
 
   function logOperationalEvent(event) {
@@ -90,6 +101,7 @@
     state.hoverText = hoverText;
     state.stats.loadedRules = state.rules.length;
     installTooltipHandlers();
+    installShortcutTelemetry();
     installMutationObserver();
     installMessageHandlers();
     scheduleRender(true);
@@ -138,6 +150,26 @@
       });
       throw new Error(`Rules load failed for ${url}. Select the highlighter folder in Load unpacked, then reload the extension. ${error.message || error}`);
     }
+  }
+
+  function installShortcutTelemetry() {
+    document.addEventListener('keydown', (event) => {
+      const shortcut = shortcutTelemetry.normalizeShortcutEvent(event);
+      if (!shortcut) return;
+
+      const highlightCount = shortcutTelemetry.countRenderedHighlightGroups(document);
+      if (highlightCount < 1) return;
+
+      logOperationalEvent({
+        eventType: 'highlight_shortcut_pressed',
+        severity: 'info',
+        result: 'success',
+        metadata: {
+          shortcut,
+          highlightCount
+        }
+      });
+    }, true);
   }
 
   async function loadHoverText() {

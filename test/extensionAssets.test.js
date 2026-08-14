@@ -19,11 +19,42 @@ test("manifest content scripts parse as classic Chrome scripts", () => {
   assert.deepEqual(scriptPaths, [
     "settings.js",
     "src/highlight/core.js",
+    "src/highlight/shortcutTelemetry.js",
     "content.js"
   ]);
 
   for (const scriptPath of scriptPaths) {
     assert.doesNotThrow(() => new vm.Script(readExtensionFile(scriptPath), { filename: scriptPath }), scriptPath);
+  }
+});
+
+test("production manifest uses minimum Store permissions and no development hosts", () => {
+  const manifest = JSON.parse(readExtensionFile("manifest.json"));
+  const serialized = JSON.stringify(manifest);
+
+  assert.deepEqual(manifest.permissions, ["storage", "alarms"]);
+  assert.equal(serialized.includes("localhost"), false);
+  assert.equal(serialized.includes("127.0.0.1"), false);
+  assert.equal(Object.hasOwn(manifest, "key"), false);
+});
+
+test("service worker dependency graph contains no unsupported dynamic imports", () => {
+  const moduleSources = [
+    "background.js",
+    ...fs.readdirSync(path.join(extensionDir, "src/logging"))
+      .filter((name) => name.endsWith(".js"))
+      .map((name) => `src/logging/${name}`)
+  ].map(readExtensionFile).join("\n");
+
+  assert.doesNotMatch(moduleSources, /\bimport\s*\(/);
+});
+
+test("popup and options pages prominently disclose shortcut telemetry", () => {
+  for (const page of ["popup.html", "options.html"]) {
+    const source = readExtensionFile(page);
+    assert.match(source, /Shortcut activity/);
+    assert.match(source, /Shift\+D, Shift\+N, Shift\+B, or Shift\+C/);
+    assert.match(source, /message text/i);
   }
 });
 

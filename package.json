@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --import ./test/setup-test-env.js --test test/*.test.js"
+    "test": "node --import ./test/setup-test-env.js --test test/*.test.js",
+    "package:store": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1 -Mode Store",
+    "package:dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1 -Mode Development"
   }
 }

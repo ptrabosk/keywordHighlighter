@@ -1,7 +1,13 @@
 const KW_EVENTS_SHEET_NAME = "Events_keywordHighlighter";
 const KW_BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
 const KW_INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
-const KW_RECEIVER_VERSION = "1.1.0";
+const KW_RECEIVER_VERSION = "1.2.0";
+const KW_DAILY_QUOTA_PROPERTY = "KEYWORD_HIGHLIGHTER_DAILY_QUOTA";
+const KW_DAILY_EVENT_LIMIT = 25000;
+const KW_DAILY_SHORTCUT_LIMIT = 10000;
+const KW_SHORTCUT_RETENTION_DAYS = 90;
+const KW_SHORTCUT_EVENT_TYPE = "highlight_shortcut_pressed";
+const KW_SHORTCUTS = ["Shift+D", "Shift+N", "Shift+B", "Shift+C"];
 
 const KW_EVENTS_HEADERS = [
   "Received At",
@@ -44,6 +50,7 @@ const KW_EVENT_TYPES = [
   "options_opened",
   "rules_loaded",
   "render_completed",
+  "highlight_shortcut_pressed",
   "settings_saved",
   "settings_reset",
   "rules_load_failed",
@@ -60,7 +67,7 @@ const KW_EVENT_TYPES = [
 const KW_SEVERITIES = ["info", "warning", "error"];
 const KW_RESULTS = ["success", "failure", "cancelled", "unknown"];
 const KW_UPLOAD_STATES = ["pending", "uploading"];
-const KW_METADATA_KEYS = ["operation", "trigger", "areaName", "changeSource", "retryCount", "httpStatus", "failureCategory"];
+const KW_METADATA_KEYS = ["operation", "trigger", "areaName", "changeSource", "retryCount", "httpStatus", "failureCategory", "shortcut", "highlightCount"];
 const KW_EVENT_FIELDS = [
   "schemaVersion",
   "eventId",
@@ -89,6 +96,7 @@ function setupLoggingSheets() {
   ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
   const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
   indexSheet.hideSheet();
+  ensureShortcutRetentionTrigger_();
 }
 
 function doGet() {
@@ -137,6 +145,9 @@ function doPost(e) {
     const acceptedTimestamps = [];
     const rowsToMarkWritten = [];
     const seenEventIds = Object.create(null);
+    const quota = loadDailyQuota_(receivedAt);
+    const quotaStartTotal = quota.total;
+    const quotaStartShortcuts = quota.shortcuts;
 
     body.events.forEach(function(event) {
       const validation = validateEvent_(event);
@@ -174,6 +185,10 @@ function doPost(e) {
       }
 
       if (!record) {
+        if (!consumeQuota_(quota, event)) {
+          rejected.push({ eventId: event.eventId, reason: "RATE_LIMITED" });
+          return;
+        }
         newIndexRows.push([
           sheetSafe_(event.eventId),
           "reserved",
@@ -183,6 +198,10 @@ function doPost(e) {
         ]);
         newIndexEvents.push(event);
       } else if (record.status === "reserved") {
+        if (!consumeQuota_(quota, event)) {
+          rejected.push({ eventId: event.eventId, reason: "RATE_LIMITED" });
+          return;
+        }
         newRows.push(eventToRow_(event, body.batchId, receivedAt));
         rowsToMarkWritten.push(record.row);
         acceptedEventIds.push(event.eventId);
@@ -209,6 +228,9 @@ function doPost(e) {
     rowsToMarkWritten.forEach(function(row) {
       markIndexWritten_(indexSheet, row, receivedAt);
     });
+    if (quota.total !== quotaStartTotal || quota.shortcuts !== quotaStartShortcuts) {
+      saveDailyQuota_(quota);
+    }
 
     const sortedTimestamps = acceptedTimestamps.slice().sort();
     batchesSheet.getRange(batchesSheet.getLastRow() + 1, 1, 1, KW_BATCH_HEADERS.length).setValues([[
@@ -295,7 +317,20 @@ function validateEvent_(event) {
   if (event.errorMessage !== undefined && !isStringWithin_(event.errorMessage, 200)) return invalid_("INVALID_ERROR_MESSAGE");
   if (event.batchId !== undefined && !isSafeString_(event.batchId, 80)) return invalid_("INVALID_BATCH_ID");
   if (event.metadata !== undefined && !isValidMetadata_(event.metadata)) return invalid_("INVALID_METADATA");
+  if (event.eventType === KW_SHORTCUT_EVENT_TYPE && !isValidShortcutMetadata_(event.metadata)) {
+    return invalid_("INVALID_SHORTCUT_METADATA");
+  }
+  if (event.eventType !== KW_SHORTCUT_EVENT_TYPE && event.metadata &&
+      (event.metadata.shortcut !== undefined || event.metadata.highlightCount !== undefined)) {
+    return invalid_("INVALID_SHORTCUT_METADATA");
+  }
   return { valid: true };
+}
+
+function isValidShortcutMetadata_(metadata) {
+  if (!metadata || Object.keys(metadata).length !== 2) return false;
+  if (KW_SHORTCUTS.indexOf(metadata.shortcut) === -1) return false;
+  return Number.isInteger(metadata.highlightCount) && metadata.highlightCount >= 1 && metadata.highlightCount <= 1000;
 }
 
 function isValidMetadata_(metadata) {
@@ -336,6 +371,102 @@ function getSpreadsheet_() {
   const spreadsheetId = PropertiesService.getScriptProperties().getProperty("KEYWORD_HIGHLIGHTER_SPREADSHEET_ID");
   if (!spreadsheetId) throw publicError_("SERVER_NOT_CONFIGURED");
   return SpreadsheetApp.openById(spreadsheetId);
+}
+
+function loadDailyQuota_(receivedAt) {
+  const day = String(receivedAt).slice(0, 10);
+  let stored = null;
+  try {
+    stored = JSON.parse(PropertiesService.getScriptProperties().getProperty(KW_DAILY_QUOTA_PROPERTY) || "null");
+  } catch (error) {
+    stored = null;
+  }
+  if (!stored || stored.day !== day) return { day: day, total: 0, shortcuts: 0 };
+  return {
+    day: day,
+    total: Math.max(0, Number(stored.total) || 0),
+    shortcuts: Math.max(0, Number(stored.shortcuts) || 0)
+  };
+}
+
+function consumeQuota_(quota, event) {
+  if (quota.total >= KW_DAILY_EVENT_LIMIT) return false;
+  if (event.eventType === KW_SHORTCUT_EVENT_TYPE && quota.shortcuts >= KW_DAILY_SHORTCUT_LIMIT) return false;
+  quota.total += 1;
+  if (event.eventType === KW_SHORTCUT_EVENT_TYPE) quota.shortcuts += 1;
+  return true;
+}
+
+function saveDailyQuota_(quota) {
+  PropertiesService.getScriptProperties().setProperty(KW_DAILY_QUOTA_PROPERTY, JSON.stringify(quota));
+}
+
+function ensureShortcutRetentionTrigger_() {
+  const handler = "purgeExpiredShortcutEvents";
+  const exists = ScriptApp.getProjectTriggers().some(function(trigger) {
+    return trigger.getHandlerFunction() === handler;
+  });
+  if (!exists) ScriptApp.newTrigger(handler).timeBased().everyDays(1).atHour(3).create();
+}
+
+function purgeExpiredShortcutEvents() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30 * 1000);
+  try {
+    const spreadsheet = getSpreadsheet_();
+    const eventsSheet = ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
+    const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
+    const lastRow = eventsSheet.getLastRow();
+    if (lastRow < 2) return { deletedEvents: 0, deletedIndexRows: 0 };
+
+    const cutoff = Date.now() - KW_SHORTCUT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    const values = eventsSheet.getRange(2, 1, lastRow - 1, 5).getValues();
+    const eventRows = [];
+    const eventIds = Object.create(null);
+    values.forEach(function(row, index) {
+      const receivedAt = row[0] instanceof Date ? row[0].getTime() : Date.parse(row[0]);
+      if (row[4] === KW_SHORTCUT_EVENT_TYPE && isFinite(receivedAt) && receivedAt < cutoff) {
+        eventRows.push(index + 2);
+        eventIds[String(row[2])] = true;
+      }
+    });
+
+    const indexRows = [];
+    const indexLastRow = indexSheet.getLastRow();
+    if (indexLastRow >= 2 && Object.keys(eventIds).length) {
+      const indexIds = indexSheet.getRange(2, 1, indexLastRow - 1, 1).getValues();
+      indexIds.forEach(function(row, index) {
+        if (eventIds[String(row[0])]) indexRows.push(index + 2);
+      });
+    }
+
+    deleteSheetRows_(eventsSheet, eventRows);
+    deleteSheetRows_(indexSheet, indexRows);
+    return { deletedEvents: eventRows.length, deletedIndexRows: indexRows.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deleteSheetRows_(sheet, rows) {
+  if (!rows.length) return;
+  const sorted = rows.slice().sort(function(a, b) { return a - b; });
+  const ranges = [];
+  let start = sorted[0];
+  let end = start;
+  sorted.slice(1).forEach(function(row) {
+    if (row === end + 1) {
+      end = row;
+      return;
+    }
+    ranges.push([start, end]);
+    start = row;
+    end = row;
+  });
+  ranges.push([start, end]);
+  ranges.reverse().forEach(function(range) {
+    sheet.deleteRows(range[0], range[1] - range[0] + 1);
+  });
 }
 
 function ensureSheet_(spreadsheet, name, headers) {

@@ -144,15 +144,47 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   assert.ok(JSON.stringify(large).length < 4096);
 });
 
-test("committed logging config contains placeholders and local override example is available", () => {
+test("shortcut events accept only normalized shortcuts and a bounded highlight count", () => {
+  resetEnvironment();
+  const valid = sanitizeEvent({
+    sessionId: "session-1",
+    eventType: "highlight_shortcut_pressed",
+    severity: "info",
+    result: "success",
+    pageHost: "https://ui.attentivemobile.com/concierge/",
+    metadata: {
+      shortcut: "Shift+D",
+      highlightCount: 2,
+      operation: "must-not-survive",
+      messageText: "must-not-survive"
+    }
+  });
+
+  assert.deepEqual(valid.metadata, { shortcut: "Shift+D", highlightCount: 2 });
+  assert.equal(sanitizeEvent({
+    eventType: "highlight_shortcut_pressed",
+    metadata: { shortcut: "Shift+A", highlightCount: 1 }
+  }), null);
+  assert.equal(sanitizeEvent({
+    eventType: "highlight_shortcut_pressed",
+    metadata: { shortcut: "Shift+C", highlightCount: 0 }
+  }), null);
+
+  const unrelated = sanitizeEvent({
+    eventType: "render_completed",
+    metadata: { shortcut: "Shift+D", highlightCount: 4, operation: "render" }
+  });
+  assert.deepEqual(unrelated.metadata, { operation: "render" });
+});
+
+test("committed logging config contains placeholders and no runtime dynamic import", () => {
   const configSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.js"), "utf8");
-  const localExampleSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.local.example.js"), "utf8");
   const gitignoreSource = fs.readFileSync(path.join(__dirname, "../.gitignore"), "utf8");
 
   assert.match(configSource, /REPLACE_WITH_APPS_SCRIPT_EXEC_URL/);
   assert.match(configSource, /REPLACE_WITH_LOCAL_API_KEY/);
   assert.doesNotMatch(configSource, /script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec/);
-  assert.match(localExampleSource, /YOUR_DEPLOYMENT_ID/);
+  assert.doesNotMatch(configSource, /\bimport\s*\(/);
   assert.match(gitignoreSource, /highlighter\/src\/logging\/config\.local\.js/);
 });
 
@@ -327,7 +359,7 @@ test("permanent upload failures block recurring retries until config changes or 
   assert.equal((await getUploadStatus()).blockedUntilConfigurationChange, undefined);
 });
 
-test("example local config placeholders are treated as not configured", async () => {
+test("placeholder logging configuration is treated as not configured", async () => {
   resetEnvironment();
   Object.assign(LOGGING_CONFIG, {
     endpointUrl: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",
@@ -476,6 +508,13 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /function sheetSafe_/);
   assert.match(source, /isStringWithin_\(event\.pageHost, 500\)/);
   assert.match(source, /function findRowByExactCellValue_/);
+  assert.match(source, /KW_DAILY_EVENT_LIMIT = 25000/);
+  assert.match(source, /KW_DAILY_SHORTCUT_LIMIT = 10000/);
+  assert.match(source, /function consumeQuota_/);
+  assert.match(source, /RATE_LIMITED/);
+  assert.match(source, /KW_SHORTCUT_RETENTION_DAYS = 90/);
+  assert.match(source, /function purgeExpiredShortcutEvents/);
+  assert.match(source, /ensureShortcutRetentionTrigger_/);
   assert.match(source, /createTextFinder/);
   assert.match(source, /matchEntireCell\(true\)/);
   assert.doesNotMatch(source, /console\.error/);

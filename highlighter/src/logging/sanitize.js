@@ -13,6 +13,7 @@ import {
 } from "./types.js";
 
 const SAFE_ID_PATTERN = /^[a-zA-Z0-9._:-]+$/;
+const HIGHLIGHT_SHORTCUTS = new Set(["Shift+D", "Shift+N", "Shift+B", "Shift+C"]);
 
 export function byteSize(value) {
   return new TextEncoder().encode(typeof value === "string" ? value : JSON.stringify(value)).length;
@@ -144,7 +145,18 @@ export function sanitizeEvent(input = {}) {
   if (batchId) event.batchId = batchId;
 
   const metadata = sanitizeMetadata(input.metadata);
-  if (metadata) event.metadata = metadata;
+  if (eventType === "highlight_shortcut_pressed") {
+    const shortcut = metadata?.shortcut;
+    const highlightCount = metadata?.highlightCount;
+    if (!HIGHLIGHT_SHORTCUTS.has(shortcut) || !Number.isInteger(highlightCount) || highlightCount < 1 || highlightCount > 1000) {
+      return null;
+    }
+    event.metadata = { shortcut, highlightCount };
+  } else if (metadata) {
+    delete metadata.shortcut;
+    delete metadata.highlightCount;
+    if (Object.keys(metadata).length) event.metadata = metadata;
+  }
 
   if (byteSize(event) <= MAX_EVENT_BYTES) return event;
 

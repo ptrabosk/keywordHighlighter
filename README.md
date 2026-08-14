@@ -17,10 +17,29 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 - Lets users add custom patterns and hover text from the popup.
 - Lets users export and import custom keyword backups as JSON.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
+- Records only Shift+D, Shift+N, Shift+B, and Shift+C when at least one rule highlight is rendered, along with the logical highlight count. Other keys and message text are never recorded.
 - Provides a focused popup for custom keywords and an options page for advanced settings.
-- Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when `highlighter/src/logging/config.local.js` contains a valid `/exec` URL and API key.
+- Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
 
-## Upload or install
+## Package for Chrome Web Store
+
+The committed production manifest has only the Concierge and logging hosts. Build the Store ZIP with release credentials supplied through the process environment:
+
+```powershell
+$env:KEYWORD_HIGHLIGHTER_ENDPOINT_URL = "https://script.google.com/macros/s/DEPLOYMENT_ID/exec"
+$env:KEYWORD_HIGHLIGHTER_API_KEY = "a-new-release-ingestion-token"
+# Optional after the dashboard supplies the item's public key:
+$env:KEYWORD_HIGHLIGHTER_STORE_PUBLIC_KEY = "BASE64_PUBLIC_KEY"
+npm run package:store
+```
+
+The ZIP is written under ignored `dist/`. The shared ingestion token is extractable from the installed package and must be treated as abuse resistance, not user authentication. Rotate the previously exposed token before release.
+
+For localhost QA, create a separate unpacked development package with `npm run package:dev`, then extract the resulting development ZIP and load that folder. The production package never includes localhost access. Set the same endpoint/token environment variables first if the development build should upload logs; otherwise it runs with uploads unconfigured.
+
+See `docs/store-release/store-listing.md` and `docs/store-release/privacy-policy.md` before submission.
+
+## Local install
 
 Use only the `highlighter` folder as the Chrome extension package.
 
@@ -33,7 +52,7 @@ For local install:
 5. Select the `highlighter` folder inside this project.
 6. Open or refresh `https://ui.attentivemobile.com/concierge/*`.
 
-The manifest includes a stable extension key so the extension ID stays consistent for future local installs and updates. If someone already installed an older no-key build, have them export their custom keywords before switching to this keyed build, then import the backup after the update.
+The development package includes the prior local public key so its unpacked ID remains stable. The Store item supplies its own public key. If the IDs differ, export custom keywords from the local extension before switching and import the backup after Store installation.
 
 ## Custom keyword backups
 
@@ -52,7 +71,7 @@ The Apps Script receiver lives in `google-apps-script/Code.gs` and writes to the
 - `Upload_Batches_keywordHighlighter`
 - hidden `Event_ID_Index_keywordHighlighter`
 
-Committed logging config files contain placeholders only. Local runtime credentials belong in ignored `highlighter/src/logging/config.local.js`; copy `highlighter/src/logging/config.local.example.js` if needed and use the deployed Apps Script `/exec` URL, not the Sheet ID or `/dev` URL.
+Committed logging configuration contains placeholders only. The packaging script injects credentials directly into the staged, statically imported `config.js`; source files are unchanged. Chrome extension service workers do not support dynamic imports, so `config.local.js` is not a runtime configuration mechanism. Use the deployed Apps Script `/exec` URL, not the Sheet ID or `/dev` URL.
 
 ## Live Server QA site
 
