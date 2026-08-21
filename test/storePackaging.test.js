@@ -48,7 +48,7 @@ test("Store packager creates a production-only ZIP with injected release configu
     const manifestText = JSON.stringify(manifest);
     const configText = fs.readFileSync(path.join(extractDirectory, "src/logging/config.js"), "utf8");
 
-    assert.deepEqual(manifest.permissions, ["storage", "alarms"]);
+    assert.deepEqual(manifest.permissions, ["storage", "alarms", "identity"]);
     assert.doesNotMatch(manifestText, /localhost|127\.0\.0\.1|"tabs"/);
     assert.match(configText, /test-deployment/);
     assert.match(configText, /test-release-token-1234567890/);

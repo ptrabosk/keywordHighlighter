@@ -3,7 +3,7 @@ const SETTINGS_KEY = 'amhSettings';
 const DEFAULT_SETTINGS = {
   enabled: true,
   showTooltip: true,
-  opacity: 0.28,
+  opacity: 0.40,
   selector: 'div[class*="type-INBOUND"] p[class*="variant-caption"]',
   customKeywords: [],
   customKeywordTextByPattern: {},

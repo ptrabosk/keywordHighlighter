@@ -28,7 +28,7 @@
   const core = globalThis.AMH_HIGHLIGHT_CORE;
   const shortcutTelemetry = globalThis.AMH_SHORTCUT_TELEMETRY;
   const RENDER_LOG_INTERVAL_MS = 5 * 60 * 1000;
-  const ESCALATION_HIGHLIGHT_COLOR = '#B9C7FA';
+  const ESCALATION_HIGHLIGHT_COLOR = '#2E6F68';
   const HOT_TOPIC_BRAND_LOOKBACK_LIMIT = 3;
 
   const state = {
@@ -59,6 +59,10 @@
     return window.location.origin.slice(0, 500);
   }
 
+  function pageUrl() {
+    return String(window.location.href || '').slice(0, 2000);
+  }
+
   function logOperationalEvent(event) {
     try {
       chrome.runtime.sendMessage({
@@ -66,6 +70,7 @@
         event: {
           surface: 'content',
           pageHost: pageHost(),
+          pageUrl: pageUrl(),
           ...event
         }
       }).catch(() => {});
@@ -342,24 +347,9 @@
   }
 
   function getEscalationBulletElements() {
-    const headings = Array.from(document.querySelectorAll('p[class*="variant-caption"]')).filter((node) => {
-      return node instanceof HTMLElement && isEscalationHeading(node.textContent || '');
+    return Array.from(document.querySelectorAll('p[class*="variant-caption"]')).filter((node) => {
+      return node instanceof HTMLElement && isVisible(node) && /\u2022/.test(node.textContent || '');
     });
-    const targets = new Set();
-    for (const heading of headings) {
-      const section = heading.parentElement?.parentElement;
-      if (!section) continue;
-      for (const child of Array.from(section.children)) {
-        if (child instanceof HTMLElement && child !== heading && child.matches('p[class*="variant-caption"]') && isVisible(child)) {
-          targets.add(child);
-        }
-      }
-    }
-    return Array.from(targets);
-  }
-
-  function isEscalationHeading(text) {
-    return /\bESCALATE\b/i.test(String(text || ''));
   }
 
   function isVisible(element) {
@@ -379,11 +369,19 @@
     ]);
     if (!matches.length) return;
 
-    const segmentsByNode = mapMatchesToTextNodeSegments(segments, matches, text);
-    for (const [node, nodeMatches] of segmentsByNode) {
-      wrapTextNodeMatches(node, nodeMatches);
-    }
-    state.stats.highlights += matches.length;
+    const winningMatch = matches[0];
+    const wholeMessageMatch = [{ start: 0, end: text.length, length: text.length, rule: winningMatch.rule }];
+
+    applyMessageBlockHighlight(element, winningMatch.rule, text);
+    state.stats.highlights += 1;
+    logOperationalEvent({ eventType: 'highlight_detected', severity: 'info', result: 'success', metadata: { operation: 'message_highlight', highlightCount: 1 } });
+  }
+
+  function applyMessageBlockHighlight(element, rule, messageText) {
+    const messageBlock = element.closest('div[class*="type-INBOUND"]') || element;
+    messageBlock.classList.add('amh-message-highlight');
+    applyHighlightStyle(messageBlock, rule);
+    applyTooltipData(messageBlock, rule, messageText);
   }
 
   function collectContextualMessageMatches(element, text) {
@@ -607,15 +605,29 @@
   }
 
   function clearHighlightsWithin(root) {
+    clearMessageBlockHighlights(root);
     return clearHighlightElements(root.querySelectorAll('.amh-highlight, .amh-escalation-highlight'));
   }
 
   function clearAllHighlights() {
+    clearMessageBlockHighlights(document);
     return clearHighlightElements(document.querySelectorAll('.amh-highlight, .amh-escalation-highlight'));
   }
 
   function clearAllRuleHighlights() {
+    clearMessageBlockHighlights(document);
     return clearHighlightElements(document.querySelectorAll('.amh-highlight'));
+  }
+
+  function clearMessageBlockHighlights(root) {
+    for (const element of root.querySelectorAll('.amh-message-highlight')) {
+      element.classList.remove('amh-message-highlight', 'amh-highlight--hover');
+      element.style.backgroundColor = '';
+      element.style.boxShadow = '';
+      for (const attribute of ['amhRuleName', 'amhRuleTag', 'amhRuleLabel', 'amhTooltipTitle', 'amhTooltipText', 'amhTooltipName', 'amhMatchedText']) {
+        element.removeAttribute(`data-${attribute}`);
+      }
+    }
   }
 
   function clearHighlightElements(highlights) {
@@ -684,6 +696,8 @@
   function applyEscalationHighlightStyle(span) {
     span.style.backgroundColor = hexToRgba(ESCALATION_HIGHLIGHT_COLOR, 0.78);
     span.style.boxShadow = `0 0 0 1px ${hexToRgba(ESCALATION_HIGHLIGHT_COLOR, 0.95)}`;
+    span.style.color = '#FFFFFF';
+    span.style.textShadow = '0 1px 1px rgba(0, 0, 0, 0.35)';
   }
 
   function applyTooltipData(span, rule, matchedText) {
@@ -721,7 +735,7 @@
 
   function installTooltipHandlers() {
     document.addEventListener('mouseover', (event) => {
-      const target = event.target instanceof Element ? event.target.closest('.amh-highlight') : null;
+      const target = event.target instanceof Element ? event.target.closest('.amh-highlight, .amh-message-highlight') : null;
       if (!target || !state.settings.showTooltip) return;
       setHighlightGroupHover(target, true);
       showTooltip(target, event);
@@ -731,9 +745,9 @@
       positionTooltip(event);
     }, true);
     document.addEventListener('mouseout', (event) => {
-      const target = event.target instanceof Element ? event.target.closest('.amh-highlight') : null;
+      const target = event.target instanceof Element ? event.target.closest('.amh-highlight, .amh-message-highlight') : null;
       if (!target) return;
-      const related = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.amh-highlight') : null;
+      const related = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.amh-highlight, .amh-message-highlight') : null;
       if (related && getHighlightGroupId(related) === getHighlightGroupId(target)) return;
       setHighlightGroupHover(target, false);
       hideTooltip();

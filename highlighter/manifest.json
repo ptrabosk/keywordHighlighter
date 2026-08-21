@@ -13,17 +13,14 @@
     "default_title": "Rule Highlighter",
     "default_popup": "popup.html"
   },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
-  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "identity"
   ],
   "host_permissions": [
     "https://ui.attentivemobile.com/concierge/*",

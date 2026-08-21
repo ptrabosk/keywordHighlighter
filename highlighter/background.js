@@ -131,7 +131,12 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
   if (message?.type === "logging:event") {
     void (async () => {
       try {
-        await enqueueEvent(message.event);
+        const event = { ...(message.event || {}) };
+        try {
+          const profile = await chrome.identity.getProfileUserInfo({ accountStatus: "ANY" });
+          if (profile?.email) event.profileEmail = profile.email;
+        } catch { /* unavailable in some managed profiles */ }
+        await enqueueEvent(event);
         const stats = await getQueueStats();
         const config = await getLoggingConfig();
         if (stats.pendingCount >= 100 || stats.estimatedBytes >= config.maxBatchBytes || message.event?.severity === "error") {
@@ -177,7 +182,12 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
   if (message?.type === "highlighter:logEvent") {
     void (async () => {
       try {
-        await logEvent(message.event || {});
+        const event = { ...(message.event || {}) };
+        try {
+          const profile = await chrome.identity.getProfileUserInfo({ accountStatus: "ANY" });
+          if (profile?.email) event.profileEmail = profile.email;
+        } catch { /* unavailable in some managed profiles */ }
+        await logEvent(event);
         sendResponse?.({ ok: true });
       } catch {
         sendResponse?.({ ok: false });

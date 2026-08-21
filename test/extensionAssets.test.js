@@ -32,7 +32,7 @@ test("production manifest uses minimum Store permissions and no development host
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
   const serialized = JSON.stringify(manifest);
 
-  assert.deepEqual(manifest.permissions, ["storage", "alarms"]);
+  assert.deepEqual(manifest.permissions, ["storage", "alarms", "identity"]);
   assert.equal(serialized.includes("localhost"), false);
   assert.equal(serialized.includes("127.0.0.1"), false);
   assert.equal(Object.hasOwn(manifest, "key"), false);

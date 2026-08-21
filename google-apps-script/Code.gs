@@ -1,7 +1,7 @@
 const KW_EVENTS_SHEET_NAME = "Events_keywordHighlighter";
 const KW_BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
 const KW_INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
-const KW_RECEIVER_VERSION = "1.2.0";
+const KW_RECEIVER_VERSION = "1.3.0";
 const KW_DAILY_QUOTA_PROPERTY = "KEYWORD_HIGHLIGHTER_DAILY_QUOTA";
 const KW_DAILY_EVENT_LIMIT = 25000;
 const KW_DAILY_SHORTCUT_LIMIT = 10000;
@@ -19,6 +19,8 @@ const KW_EVENTS_HEADERS = [
   "Result",
   "Surface",
   "Page Host",
+  "Page URL",
+  "Profile Email",
   "Rule Source",
   "Duration Ms",
   "Extension Version",
@@ -50,6 +52,7 @@ const KW_EVENT_TYPES = [
   "options_opened",
   "rules_loaded",
   "render_completed",
+  "highlight_detected",
   "highlight_shortcut_pressed",
   "settings_saved",
   "settings_reset",
@@ -79,6 +82,8 @@ const KW_EVENT_FIELDS = [
   "extensionVersion",
   "surface",
   "pageHost",
+  "pageUrl",
+  "profileEmail",
   "ruleSource",
   "durationMs",
   "errorCode",
@@ -311,6 +316,8 @@ function validateEvent_(event) {
   if (!Number.isInteger(event.uploadAttempts) || event.uploadAttempts < 0) return invalid_("INVALID_UPLOAD_ATTEMPTS");
   if (event.surface !== undefined && !isSafeString_(event.surface, 40)) return invalid_("INVALID_SURFACE");
   if (event.pageHost !== undefined && !isStringWithin_(event.pageHost, 500)) return invalid_("INVALID_PAGE_HOST");
+  if (event.pageUrl !== undefined && !isStringWithin_(event.pageUrl, 2000)) return invalid_("INVALID_PAGE_URL");
+  if (event.profileEmail !== undefined && !isStringWithin_(event.profileEmail, 254)) return invalid_("INVALID_PROFILE_EMAIL");
   if (event.ruleSource !== undefined && !isSafeString_(event.ruleSource, 120)) return invalid_("INVALID_RULE_SOURCE");
   if (event.durationMs !== undefined && (typeof event.durationMs !== "number" || event.durationMs < 0)) return invalid_("INVALID_DURATION");
   if (event.errorCode !== undefined && !isSafeString_(event.errorCode, 80)) return invalid_("INVALID_ERROR_CODE");
@@ -357,6 +364,8 @@ function eventToRow_(event, requestBatchId, receivedAt) {
     sheetSafe_(event.result),
     sheetSafe_(event.surface || ""),
     sheetSafe_(event.pageHost || ""),
+    sheetSafe_(event.pageUrl || ""),
+    sheetSafe_(event.profileEmail || ""),
     sheetSafe_(event.ruleSource || ""),
     event.durationMs === undefined ? "" : event.durationMs,
     sheetSafe_(event.extensionVersion),

@@ -9,6 +9,7 @@ export const LOG_EVENT_TYPES = Object.freeze([
   "options_opened",
   "rules_loaded",
   "render_completed",
+  "highlight_detected",
   "highlight_shortcut_pressed",
   "settings_saved",
   "settings_reset",
@@ -52,6 +53,7 @@ export const METADATA_ALLOWLIST = Object.freeze([
   "failureCategory",
   "shortcut",
   "highlightCount"
+  ,"pageUrl"
 ]);
 
 export const STORAGE_KEYS = Object.freeze({

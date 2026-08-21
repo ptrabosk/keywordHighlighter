@@ -133,11 +133,17 @@ export function sanitizeEvent(input = {}) {
 
   const surface = sanitizeSafeId(input.surface, 40);
   const pageHost = truncateString(input.pageHost, 500) || undefined;
+  const pageUrl = truncateString(input.pageUrl, 2000) || undefined;
+  const profileEmail = typeof input.profileEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.profileEmail)
+    ? truncateString(input.profileEmail, 254).toLowerCase()
+    : undefined;
   const ruleSource = sanitizeSafeId(input.ruleSource, 120);
   const batchId = sanitizeSafeId(input.batchId, 80);
 
   if (surface) event.surface = surface;
   if (pageHost) event.pageHost = pageHost;
+  if (pageUrl) event.pageUrl = pageUrl;
+  if (profileEmail) event.profileEmail = profileEmail;
   if (ruleSource) event.ruleSource = ruleSource;
   if (Number.isFinite(input.durationMs) && input.durationMs >= 0) event.durationMs = Math.round(input.durationMs);
   if (input.errorCode) event.errorCode = sanitizeSafeId(input.errorCode, 80);

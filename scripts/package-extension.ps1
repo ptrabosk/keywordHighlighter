@@ -22,10 +22,7 @@ $topLevelFiles = @(
   "settings-ui.js",
   "popup.js",
   "popup.html",
-  "popup.css",
-  "options.js",
-  "options.html",
-  "options.css"
+  "popup.css"
 )
 $runtimeDirectories = @("icons", "data\rules", "src\highlight", "src\logging")
 $developmentKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5gYsvEBvl5KZHgGi7o7efwFPR+VxFJ1Y84Jmpj/kA4gXbTAeHpJ51aRM2vGl3c7yXMxNCWlYBi0ziXQs9WmAmtR7VvRz7i9913Ghic6euU7GoPujGRYivz7qwk1XPuv4O6g4Yq0JmH4yCRWPXxz+W2X2lED/gIpuvwRF42HhBpuKAEUr8eP1mLUbpyKIfCMQ1TuStScyC/P6sWUSTRWiMYUvoNhr+Kae89s0Ba5+1HPdVCCbXrvls80UsEC3h5pH2qpFsgddLFxkWnmos+p4PMKkSkHSNuOfuAjESE3sBtQtb2XH3m4lSlsYcilte5KXRkzYaqlUg+0ItvsevOtDNwIDAQAB"
@@ -57,8 +54,8 @@ function Set-PackagedLoggingConfig([string]$EndpointUrl, [string]$ApiKey) {
   $configSource = Get-Content -LiteralPath $configPath -Raw
   $endpointLiteral = $EndpointUrl | ConvertTo-Json -Compress
   $apiKeyLiteral = $ApiKey | ConvertTo-Json -Compress
-  $configSource = $configSource.Replace('"REPLACE_WITH_APPS_SCRIPT_EXEC_URL"', $endpointLiteral)
-  $configSource = $configSource.Replace('"REPLACE_WITH_LOCAL_API_KEY"', $apiKeyLiteral)
+  $configSource = [regex]::Replace($configSource, '(?m)(endpointUrl:\s*)"[^"]*"', ('$1' + $endpointLiteral))
+  $configSource = [regex]::Replace($configSource, '(?m)(apiKey:\s*)"[^"]*"', ('$1' + $apiKeyLiteral))
   Write-Utf8NoBom $configPath $configSource
 }
 
