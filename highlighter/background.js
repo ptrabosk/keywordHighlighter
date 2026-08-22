@@ -84,18 +84,7 @@ async function runUpload(reason) {
     const stats = await getQueueStats();
     if (stats.estimatedBytes >= config.pruneInfoAtBytes) {
       const result = await pruneLogs();
-      if (result.removedCount > 0) {
-        await logEvent({
-          eventType: "cache_pruned",
-          severity: "warning",
-          result: "success",
-          surface: "background",
-          metadata: {
-            operation: "prune",
-            failureCategory: reason
-          }
-        });
-      }
+      void result;
     }
     await uploadPendingLogs(reason);
   } catch {

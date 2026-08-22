@@ -23,10 +23,16 @@ test("receiver validates shortcut metadata as an exact two-field contract", () =
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+D", highlightCount: 1, text: "no" }), false);
 });
 
+test("receiver uses the 17-column event schema without Page Host", () => {
+  assert.doesNotMatch(source, /"Page Host"/);
+  assert.match(source, /"Surface",\s*"Page URL",\s*"Profile Email"/);
+  assert.match(source, /"Metadata JSON",\s*"Batch ID"/);
+});
+
 test("receiver enforces total and shortcut daily quotas independently", () => {
   const receiver = loadReceiver();
   const shortcut = { eventType: "highlight_shortcut_pressed" };
-  const operational = { eventType: "render_completed" };
+  const operational = { eventType: "rules_loaded" };
 
   const nearLimits = { day: "2026-08-14", total: 24999, shortcuts: 9999 };
   assert.equal(receiver.consumeQuota_(nearLimits, shortcut), true);

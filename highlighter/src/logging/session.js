@@ -30,7 +30,6 @@ export async function startSession(context = {}) {
         severity: "warning",
         result: "unknown",
         surface: previous.surface,
-        pageHost: previous.pageHost,
         ruleSource: previous.ruleSource
       });
     }
@@ -41,7 +40,6 @@ export async function startSession(context = {}) {
       startedAt: now,
       lastActivityAt: now,
       surface: context.surface || null,
-      pageHost: context.pageHost || null,
       ruleSource: context.ruleSource || null
     };
     await storageSet({ [STORAGE_KEYS.activeSession]: activeSession });
@@ -51,7 +49,6 @@ export async function startSession(context = {}) {
       severity: "info",
       result: "success",
       surface: activeSession.surface,
-      pageHost: activeSession.pageHost,
       ruleSource: activeSession.ruleSource
     });
     return activeSession;
@@ -88,7 +85,6 @@ export async function endSession(result = "success") {
       severity: "info",
       result,
       surface: current.surface,
-      pageHost: current.pageHost,
       ruleSource: current.ruleSource
     });
     await storageRemove(STORAGE_KEYS.activeSession);

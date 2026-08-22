@@ -4,15 +4,10 @@ export const LOG_EVENT_TYPES = Object.freeze([
   "session_started",
   "session_ended",
   "session_abandoned",
-  "content_initialized",
   "popup_opened",
-  "options_opened",
   "rules_loaded",
-  "render_completed",
   "highlight_detected",
   "highlight_shortcut_pressed",
-  "settings_saved",
-  "settings_reset",
   "rules_load_failed",
   "settings_load_failed",
   "settings_save_failed",
@@ -21,7 +16,6 @@ export const LOG_EVENT_TYPES = Object.freeze([
   "render_failed",
   "unexpected_exception",
   "upload_failed",
-  "cache_pruned"
 ]);
 
 export const LOG_SEVERITIES = Object.freeze(["info", "warning", "error"]);
@@ -52,8 +46,15 @@ export const METADATA_ALLOWLIST = Object.freeze([
   "httpStatus",
   "failureCategory",
   "shortcut",
-  "highlightCount"
-  ,"pageUrl"
+  "highlightCount",
+  "pageUrl",
+  "ruleCount",
+  "matchedCount",
+  "renderedCount",
+  "queuePendingCount",
+  "queueBytes",
+  "uploadBatchSize",
+  "configState"
 ]);
 
 export const STORAGE_KEYS = Object.freeze({
@@ -72,13 +73,8 @@ export const MAX_CHUNK_EVENTS = 200;
 export const MAX_CHUNK_BYTES = 200_000;
 
 export const NAVIGATION_EVENT_TYPES = Object.freeze([
-  "content_initialized",
   "popup_opened",
-  "options_opened",
   "rules_loaded",
-  "render_completed",
-  "settings_saved",
-  "settings_reset",
   "session_started",
   "session_ended",
   "session_abandoned"

@@ -52,13 +52,6 @@
     nextMatchGroupId: 1
   };
 
-  function pageHost() {
-    if (window.location.origin === 'https://ui.attentivemobile.com' && window.location.pathname.startsWith('/concierge')) {
-      return 'https://ui.attentivemobile.com/concierge/';
-    }
-    return window.location.origin.slice(0, 500);
-  }
-
   function pageUrl() {
     return String(window.location.href || '').slice(0, 2000);
   }
@@ -69,7 +62,6 @@
         type: 'highlighter:logEvent',
         event: {
           surface: 'content',
-          pageHost: pageHost(),
           pageUrl: pageUrl(),
           ...event
         }
@@ -99,7 +91,6 @@
   });
 
   async function init() {
-    const startedAt = performance.now();
     state.settings = core.mergeSettings(DEFAULT_SETTINGS, await loadSettings());
     const [rules, hoverText] = await Promise.all([loadRules(), loadHoverText()]);
     state.rules = rules;
@@ -110,12 +101,6 @@
     installMutationObserver();
     installMessageHandlers();
     scheduleRender(true);
-    logOperationalEvent({
-      eventType: 'content_initialized',
-      severity: 'info',
-      result: 'success',
-      durationMs: performance.now() - startedAt
-    });
   }
 
   async function loadSettings() {
@@ -146,7 +131,8 @@
         eventType: 'rules_loaded',
         severity: 'info',
         result: 'success',
-        ruleSource: 'opt_out_deterministic_rules'
+        ruleSource: 'opt_out_deterministic_rules',
+        metadata: { operation: 'rulesLoaded', ruleCount: rules.length }
       });
       return rules;
     } catch (error) {
@@ -319,7 +305,9 @@
       persistStats();
       logOperationalFailure('render_failed', 'RENDER_FAILED', error?.message || 'Render failed', {
         operation: 'render',
-        trigger: forceAll ? 'force' : 'scheduled'
+        trigger: forceAll ? 'force' : 'scheduled',
+        ruleCount: state.rules.length,
+        matchedCount: state.stats.highlights
       });
       console.warn('[Attentive Rule Highlighter] Render failed and will retry on the next DOM update:', error);
     }
@@ -374,7 +362,12 @@
 
     applyMessageBlockHighlight(element, winningMatch.rule, text);
     state.stats.highlights += 1;
-    logOperationalEvent({ eventType: 'highlight_detected', severity: 'info', result: 'success', metadata: { operation: 'message_highlight', highlightCount: 1 } });
+    logOperationalEvent({ eventType: 'highlight_detected', severity: 'info', result: 'success', metadata: {
+      operation: 'message_highlight',
+      highlightCount: 1,
+      ruleCount: state.rules.length,
+      matchedCount: state.stats.highlights
+    } });
   }
 
   function applyMessageBlockHighlight(element, rule, messageText) {

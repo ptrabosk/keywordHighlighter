@@ -23,7 +23,7 @@ export function installLoggingDiagnostics() {
 
   globalThis.window.keywordHighlighterLogging = {
     createTestInfoEvent: () => logEvent({
-      eventType: "content_initialized",
+      eventType: "rules_loaded",
       severity: "info",
       result: "success",
       metadata: { operation: "diagnostics" }

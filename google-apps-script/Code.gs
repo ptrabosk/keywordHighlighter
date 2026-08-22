@@ -18,7 +18,6 @@ const KW_EVENTS_HEADERS = [
   "Severity",
   "Result",
   "Surface",
-  "Page Host",
   "Page URL",
   "Profile Email",
   "Rule Source",
@@ -47,15 +46,10 @@ const KW_EVENT_TYPES = [
   "session_started",
   "session_ended",
   "session_abandoned",
-  "content_initialized",
   "popup_opened",
-  "options_opened",
   "rules_loaded",
-  "render_completed",
   "highlight_detected",
   "highlight_shortcut_pressed",
-  "settings_saved",
-  "settings_reset",
   "rules_load_failed",
   "settings_load_failed",
   "settings_save_failed",
@@ -64,13 +58,12 @@ const KW_EVENT_TYPES = [
   "render_failed",
   "unexpected_exception",
   "upload_failed",
-  "cache_pruned"
 ];
 
 const KW_SEVERITIES = ["info", "warning", "error"];
 const KW_RESULTS = ["success", "failure", "cancelled", "unknown"];
 const KW_UPLOAD_STATES = ["pending", "uploading"];
-const KW_METADATA_KEYS = ["operation", "trigger", "areaName", "changeSource", "retryCount", "httpStatus", "failureCategory", "shortcut", "highlightCount"];
+const KW_METADATA_KEYS = ["operation", "trigger", "areaName", "changeSource", "retryCount", "httpStatus", "failureCategory", "shortcut", "highlightCount", "pageUrl", "ruleCount", "matchedCount", "renderedCount", "queuePendingCount", "queueBytes", "uploadBatchSize", "configState"];
 const KW_EVENT_FIELDS = [
   "schemaVersion",
   "eventId",
@@ -81,7 +74,6 @@ const KW_EVENT_FIELDS = [
   "result",
   "extensionVersion",
   "surface",
-  "pageHost",
   "pageUrl",
   "profileEmail",
   "ruleSource",
@@ -315,7 +307,6 @@ function validateEvent_(event) {
   if (KW_UPLOAD_STATES.indexOf(event.uploadState) === -1) return invalid_("INVALID_UPLOAD_STATE");
   if (!Number.isInteger(event.uploadAttempts) || event.uploadAttempts < 0) return invalid_("INVALID_UPLOAD_ATTEMPTS");
   if (event.surface !== undefined && !isSafeString_(event.surface, 40)) return invalid_("INVALID_SURFACE");
-  if (event.pageHost !== undefined && !isStringWithin_(event.pageHost, 500)) return invalid_("INVALID_PAGE_HOST");
   if (event.pageUrl !== undefined && !isStringWithin_(event.pageUrl, 2000)) return invalid_("INVALID_PAGE_URL");
   if (event.profileEmail !== undefined && !isStringWithin_(event.profileEmail, 254)) return invalid_("INVALID_PROFILE_EMAIL");
   if (event.ruleSource !== undefined && !isSafeString_(event.ruleSource, 120)) return invalid_("INVALID_RULE_SOURCE");
@@ -363,7 +354,6 @@ function eventToRow_(event, requestBatchId, receivedAt) {
     sheetSafe_(event.severity),
     sheetSafe_(event.result),
     sheetSafe_(event.surface || ""),
-    sheetSafe_(event.pageHost || ""),
     sheetSafe_(event.pageUrl || ""),
     sheetSafe_(event.profileEmail || ""),
     sheetSafe_(event.ruleSource || ""),

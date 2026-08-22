@@ -14,6 +14,14 @@ import {
 
 const SAFE_ID_PATTERN = /^[a-zA-Z0-9._:-]+$/;
 const HIGHLIGHT_SHORTCUTS = new Set(["Shift+D", "Shift+N", "Shift+B", "Shift+C"]);
+const DROPPED_EVENT_TYPES = new Set([
+  "content_initialized",
+  "options_opened",
+  "render_completed",
+  "settings_saved",
+  "settings_reset",
+  "cache_pruned"
+]);
 
 export function byteSize(value) {
   return new TextEncoder().encode(typeof value === "string" ? value : JSON.stringify(value)).length;
@@ -112,9 +120,10 @@ export function sanitizeError(error, errorCode = ERROR_CODES.UNEXPECTED_ERROR, f
 
 export function sanitizeEvent(input = {}) {
   if (!LOGGING_CONFIG.enabled) return null;
-  if (input.eventType?.startsWith("session_")) return null;
+  if (DROPPED_EVENT_TYPES.has(input.eventType)) return null;
+  if (!LOG_EVENT_TYPES.includes(input.eventType)) return null;
 
-  const eventType = LOG_EVENT_TYPES.includes(input.eventType) ? input.eventType : "unexpected_exception";
+  const eventType = input.eventType;
   const severity = LOG_SEVERITIES.includes(input.severity) ? input.severity : "info";
   const result = LOG_RESULTS.includes(input.result) ? input.result : "unknown";
 
@@ -132,7 +141,6 @@ export function sanitizeEvent(input = {}) {
   };
 
   const surface = sanitizeSafeId(input.surface, 40);
-  const pageHost = truncateString(input.pageHost, 500) || undefined;
   const pageUrl = truncateString(input.pageUrl, 2000) || undefined;
   const profileEmail = typeof input.profileEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.profileEmail)
     ? truncateString(input.profileEmail, 254).toLowerCase()
@@ -141,7 +149,6 @@ export function sanitizeEvent(input = {}) {
   const batchId = sanitizeSafeId(input.batchId, 80);
 
   if (surface) event.surface = surface;
-  if (pageHost) event.pageHost = pageHost;
   if (pageUrl) event.pageUrl = pageUrl;
   if (profileEmail) event.profileEmail = profileEmail;
   if (ruleSource) event.ruleSource = ruleSource;

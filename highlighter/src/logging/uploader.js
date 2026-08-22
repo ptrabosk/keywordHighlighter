@@ -154,7 +154,8 @@ export async function uploadPendingLogs(reason = "scheduled") {
       operation: "upload",
       httpStatus: error?.httpStatus,
       retryCount: nextStatus.consecutiveFailures,
-      failureCategory: isPermanentUploadFailure(errorCode) ? "permanent" : "temporary"
+      failureCategory: isPermanentUploadFailure(errorCode) ? "permanent" : "temporary",
+      uploadBatchSize: events.length
     });
     return { uploaded: false, reason: "failed", errorCode };
   } finally {

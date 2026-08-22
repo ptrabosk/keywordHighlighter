@@ -98,7 +98,7 @@ function resetEnvironment() {
 function event(overrides = {}) {
   return sanitizeEvent({
     sessionId: "session-1",
-    eventType: "content_initialized",
+    eventType: "rules_loaded",
     severity: "info",
     result: "success",
     ...overrides
@@ -109,7 +109,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   resetEnvironment();
   const sanitized = sanitizeEvent({
     sessionId: "session-1",
-    eventType: "unexpected-event",
+    eventType: "unexpected_exception",
     severity: "loud",
     result: "success",
     surface: "content",
@@ -127,7 +127,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   assert.equal(sanitized.severity, "info");
   assert.equal(sanitized.extensionVersion, "1.0.0");
   assert.equal(sanitized.surface, "content");
-  assert.equal(sanitized.pageHost, "https://ui.attentivemobile.com/concierge/conversation/123");
+  assert.equal(sanitized.pageHost, undefined);
   assert.equal(sanitized.ruleSource, "consolidated_rules");
   assert.equal(sanitized.metadata.operation.length, 100);
   assert.equal(sanitized.metadata.ignored, undefined);
@@ -174,7 +174,37 @@ test("shortcut events accept only normalized shortcuts and a bounded highlight c
     eventType: "render_completed",
     metadata: { shortcut: "Shift+D", highlightCount: 4, operation: "render" }
   });
-  assert.deepEqual(unrelated.metadata, { operation: "render" });
+  assert.equal(unrelated, null);
+});
+
+test("logging keeps only the requested event contract and diagnostics", () => {
+  resetEnvironment();
+  const allowed = [
+    "session_started", "session_ended", "session_abandoned", "popup_opened", "rules_loaded",
+    "highlight_detected", "highlight_shortcut_pressed", "rules_load_failed", "settings_load_failed",
+    "settings_save_failed", "storage_read_failed", "storage_write_failed", "render_failed",
+    "unexpected_exception", "upload_failed"
+  ];
+  for (const eventType of allowed) {
+    const metadata = eventType === "highlight_shortcut_pressed"
+      ? { shortcut: "Shift+D", highlightCount: 1 }
+      : {
+        ruleCount: 2,
+        matchedCount: 1,
+        renderedCount: 1,
+        queuePendingCount: 3,
+        queueBytes: 400,
+        uploadBatchSize: 3,
+        configState: "configured",
+        ignored: "drop"
+      };
+    assert.equal(sanitizeEvent({ eventType, metadata: {
+      ...metadata
+    } })?.eventType, eventType);
+  }
+  for (const eventType of ["content_initialized", "options_opened", "render_completed", "settings_saved", "settings_reset", "cache_pruned"]) {
+    assert.equal(sanitizeEvent({ eventType }), null);
+  }
 });
 
 test("committed logging config contains placeholders and no runtime dynamic import", () => {
@@ -216,7 +246,7 @@ test("popup logging proxies sanitized events to the service worker without local
 
   const ok = await logEvent({
     sessionId: "session-1",
-    eventType: "content_initialized",
+    eventType: "rules_loaded",
     severity: "info",
     result: "success",
     metadata: { operation: "render", ignored: "drop-me" }
@@ -403,12 +433,12 @@ test("session lifecycle events are omitted while useful info events remain", asy
 
   const chunks = await loadAllChunks();
   const types = chunks.flatMap((chunk) => chunk.chunk.events.map((item) => item.eventType));
-  assert.deepEqual(types, []);
+  assert.deepEqual(types, ["session_abandoned", "session_started"]);
 
   await logEvent({ eventType: "rules_loaded", severity: "info", result: "success" });
   assert.deepEqual(
     (await loadAllChunks()).flatMap((chunk) => chunk.chunk.events.map((item) => item.eventType)),
-    ["rules_loaded"]
+    ["session_abandoned", "session_started", "rules_loaded"]
   );
 });
 
@@ -434,7 +464,7 @@ test("ended sessions are cleared and are not later marked abandoned", async () =
   }
 
   const types = (await loadAllChunks()).flatMap((chunk) => chunk.chunk.events.map((item) => item.eventType));
-  assert.deepEqual(types, []);
+  assert.deepEqual(types, ["session_ended", "session_started"]);
 });
 
 test("service worker restart restores uploading events to pending", async () => {
@@ -483,7 +513,7 @@ test("logging survives one storage write failure by pruning and retrying", async
   chromeMock.failNextSet();
   const ok = await logEvent({
     sessionId: "session-1",
-    eventType: "content_initialized",
+    eventType: "rules_loaded",
     severity: "info",
     result: "success"
   });
@@ -506,7 +536,7 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /DUPLICATE_EVENT_ID/);
   assert.match(source, /SHEET_HEADER_MISMATCH/);
   assert.match(source, /function sheetSafe_/);
-  assert.match(source, /isStringWithin_\(event\.pageHost, 500\)/);
+  assert.doesNotMatch(source, /pageHost/);
   assert.match(source, /function findRowByExactCellValue_/);
   assert.match(source, /KW_DAILY_EVENT_LIMIT = 25000/);
   assert.match(source, /KW_DAILY_SHORTCUT_LIMIT = 10000/);
@@ -538,7 +568,7 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(backgroundSource, /highlighter:runDiagnosticsUpload/);
   assert.doesNotMatch(backgroundSource, /apiKey:\s*config\.apiKey/);
   assert.match(contentSource, /RENDER_LOG_INTERVAL_MS/);
-  assert.match(contentSource, /window\.location\.origin.*window\.location\.pathname/);
+  assert.doesNotMatch(contentSource, /function pageHost/);
   assert.match(contentSource, /maybeLogRenderCompleted/);
   assert.match(contentSource, /render_failed/);
   assert.match(contentSource, /clearAllHighlights/);

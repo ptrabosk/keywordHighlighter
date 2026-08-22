@@ -29,6 +29,12 @@ The script creates these tabs if missing:
 - `Upload_Batches_keywordHighlighter`
 - hidden `Event_ID_Index_keywordHighlighter`
 
+`Events_keywordHighlighter` uses this header order:
+
+`Received At`, `Event Timestamp`, `Event ID`, `Session ID`, `Event Type`, `Severity`, `Result`, `Surface`, `Page URL`, `Profile Email`, `Rule Source`, `Duration Ms`, `Extension Version`, `Error Code`, `Error Message`, `Metadata JSON`, `Batch ID`.
+
+Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. `Page Host` is intentionally not stored; troubleshooting context is carried by the sanitized page URL, profile email, and bounded metadata.
+
 `Event_ID_Index_keywordHighlighter` is used for deduplication so retrying the same batch does not duplicate rows. It stores event ID reservation and write status under a script lock so interrupted uploads can be retried safely.
 
 The receiver accepts at most 25,000 new events and 10,000 new shortcut events per UTC day. Events beyond either limit are rejected as `RATE_LIMITED`. Duplicate retries of already-written events remain idempotent and do not consume quota.
