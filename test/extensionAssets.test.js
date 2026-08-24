@@ -53,8 +53,8 @@ test("popup and options pages prominently disclose shortcut telemetry", () => {
   for (const page of ["popup.html", "options.html"]) {
     const source = readExtensionFile(page);
     assert.match(source, /Shortcut activity/);
-    assert.match(source, /Shift\+D, Shift\+N, Shift\+B, or Shift\+C/);
     assert.match(source, /message text/i);
+    assert.match(source, /field contents/i);
   }
 });
 

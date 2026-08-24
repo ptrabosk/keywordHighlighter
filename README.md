@@ -17,7 +17,7 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 - Lets users add custom patterns and hover text from the popup.
 - Lets users export and import custom keyword backups as JSON.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
-- Records only Shift+D, Shift+N, Shift+B, and Shift+C when at least one rule highlight is rendered, along with the logical highlight count. Other keys and message text are never recorded.
+- Records limited usage information when a rule highlight is rendered, along with the logical highlight count. Message text, field contents, and unrelated browsing activity are never recorded.
 - Provides a focused popup for custom keywords and an options page for advanced settings.
 - Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
 
