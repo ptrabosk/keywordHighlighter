@@ -166,7 +166,7 @@ try {
   }
 
   $version = $validatedManifest.version
-  $zipPath = Join-Path $OutputDirectory ("attentive-rule-highlighter-$version-" + $Mode.ToLowerInvariant() + ".zip")
+  $zipPath = Join-Path $OutputDirectory ("offisght-operations-rule-highlighter-$version-" + $Mode.ToLowerInvariant() + ".zip")
   Write-DeterministicZip $stageRoot $zipPath
   Write-Output $zipPath
 } finally {

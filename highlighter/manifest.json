@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Attentive Rule Highlighter",
-  "description": "Highlights Concierge rule matches and measures four disclosed response shortcuts when highlights are present.",
+  "name": "Offisght Operations Rule Highlighter",
+  "description": "Highlights rule matches and measures four disclosed response shortcuts when highlights are present.",
   "version": "1.0.0",
   "icons": {
     "16": "icons/icon16.png",

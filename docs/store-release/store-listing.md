@@ -8,7 +8,7 @@ Offsight Operations Rule Highlighter highlights deterministic rule matches in in
 
 When a rule keyword is highlighted, the extension records Shift+D, Shift+N, Shift+B, or Shift+C, including in editable fields, and uploads the normalized shortcut plus the logical highlight count. It never records message text, matched text, field contents, rule identity, or other keys. Shortcut events are retained for 90 days.
 
-Declare website interaction and the canonical Concierge browsing surface in the Privacy tab. Link the hosted privacy policy and affirm Limited Use compliance. The policy must contain a real monitored privacy contact before submission.
+Declare website interaction and the canonical supported browsing surface in the Privacy tab. Link the hosted privacy policy and affirm Limited Use compliance. The policy must contain a real monitored privacy contact before submission.
 
 ## Permission justifications
 

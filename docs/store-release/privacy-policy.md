@@ -1,8 +1,8 @@
-# Attentive Rule Highlighter Privacy Policy
+# Offisght Operations Rule Highlighter Privacy Policy
 
 Last updated: August 14, 2026
 
-Attentive Rule Highlighter highlights rule matches in inbound Attentive Concierge messages and measures four response shortcuts to evaluate whether those highlights support the response workflow.
+Offisght Operations Rule Highlighter highlights rule matches in inbound message text and measures four response shortcuts to evaluate whether those highlights support the response workflow.
 
 ## Data collected
 
@@ -10,7 +10,7 @@ When at least one rule keyword is rendered as highlighted and the user presses S
 
 - the normalized shortcut;
 - the number of rendered logical rule highlights, capped at 1,000;
-- an event timestamp, random event and session identifiers, extension version, and the canonical Concierge page surface.
+- an event timestamp, random event and session identifiers, extension version, and the canonical supported page surface.
 
 The extension does not record other keys, message text, matched text, rule names, selected text, field contents, or whether extra modifier keys were held. A qualifying shortcut is recorded even when focus is in a text field.
 

@@ -7,21 +7,21 @@
   if (typeof DEFAULT_SETTINGS === 'undefined' || typeof SETTINGS_KEY === 'undefined') {
     const message = 'settings.js did not load before content.js. Reload the unpacked extension and refresh the page.';
     document.documentElement.dataset.amhInitError = message;
-    console.error('[Attentive Rule Highlighter] Failed to initialize:', new Error(message));
+    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', new Error(message));
     return;
   }
 
   if (!globalThis.AMH_HIGHLIGHT_CORE) {
     const message = 'highlight core did not load before content.js. Reload the unpacked extension and refresh the page.';
     document.documentElement.dataset.amhInitError = message;
-    console.error('[Attentive Rule Highlighter] Failed to initialize:', new Error(message));
+    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', new Error(message));
     return;
   }
 
   if (!globalThis.AMH_SHORTCUT_TELEMETRY) {
     const message = 'shortcut telemetry did not load before content.js. Reload the extension and refresh the page.';
     document.documentElement.dataset.amhInitError = message;
-    console.error('[Attentive Rule Highlighter] Failed to initialize:', new Error(message));
+    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', new Error(message));
     return;
   }
 
@@ -87,7 +87,7 @@
     logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Content script startup failed', {
       operation: 'init'
     });
-    console.error('[Attentive Rule Highlighter] Failed to initialize:', error);
+    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', error);
   });
 
   async function init() {
@@ -111,7 +111,7 @@
       logOperationalFailure('settings_load_failed', 'SETTINGS_LOAD_FAILED', 'Settings could not be loaded', {
         operation: 'settingsRead'
       });
-      console.warn('[Attentive Rule Highlighter] Could not load settings:', error);
+      console.warn('[Offisght Operations Rule Highlighter] Could not load settings:', error);
       return {};
     }
   }
@@ -168,7 +168,7 @@
       logOperationalFailure('hover_text_load_failed', 'HOVER_TEXT_LOAD_FAILED', 'Hover text could not be loaded', {
         operation: 'hoverTextFetch'
       });
-      console.warn('[Attentive Rule Highlighter] Could not load hover text:', error);
+      console.warn('[Offisght Operations Rule Highlighter] Could not load hover text:', error);
       return {};
     }
   }
@@ -311,15 +311,15 @@
         ruleCount: state.rules.length,
         matchedCount: state.stats.highlights
       });
-      console.warn('[Attentive Rule Highlighter] Render failed and will retry on the next DOM update:', error);
+      console.warn('[Offisght Operations Rule Highlighter] Render failed and will retry on the next DOM update:', error);
     }
   }
 
   function refreshHighlightCountBadge() {
     const existingBadges = document.querySelectorAll('.amh-highlight-count');
-    const isConciergePage = window.location.hostname === 'ui.attentivemobile.com' &&
+    const isSupportedPage = window.location.hostname === 'ui.attentivemobile.com' &&
       window.location.pathname.startsWith('/concierge/');
-    if (!isConciergePage) {
+    if (!isSupportedPage) {
       existingBadges.forEach((badge) => badge.remove());
       return;
     }
@@ -380,7 +380,7 @@
     try {
       nodes = Array.from(document.querySelectorAll(selector));
     } catch (error) {
-      console.warn('[Attentive Rule Highlighter] Invalid selector, using default:', selector, error);
+      console.warn('[Offisght Operations Rule Highlighter] Invalid selector, using default:', selector, error);
       nodes = Array.from(document.querySelectorAll(DEFAULT_SETTINGS.selector));
     }
     const brandNodes = Array.from(document.querySelectorAll(getBrandMessageSelector()))

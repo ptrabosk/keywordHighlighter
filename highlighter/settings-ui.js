@@ -45,7 +45,7 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Options startup failed', {
       operation: 'init'
     });
-    console.error('[Attentive Rule Highlighter] Settings UI failed to initialize:', error);
+    console.error('[Offisght Operations Rule Highlighter] Settings UI failed to initialize:', error);
   });
 
   async function init() {

@@ -43,7 +43,7 @@ init().catch((error) => {
   logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Popup startup failed', {
     operation: 'init'
   });
-  console.error('[Attentive Rule Highlighter] Popup failed to initialize:', error);
+  console.error('[Offisght Operations Rule Highlighter] Popup failed to initialize:', error);
 });
 
 async function init() {
@@ -130,7 +130,7 @@ function exportKeywords() {
   const payload = {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
-    extensionName: 'Attentive Rule Highlighter',
+    extensionName: 'Offisght Operations Rule Highlighter',
     customKeywords: settings.customKeywords || [],
     customKeywordTextByPattern: settings.customKeywordTextByPattern || {}
   };
@@ -138,7 +138,7 @@ function exportKeywords() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `attentive-highlighter-keywords-${formatDateForFilename(new Date())}.json`;
+  link.download = `offisght-operations-highlighter-keywords-${formatDateForFilename(new Date())}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();

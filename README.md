@@ -1,10 +1,10 @@
-# Attentive Rule Highlighter
+# Offisght Operations Rule Highlighter
 
-A Manifest V3 Chrome extension that highlights inbound Attentive Concierge message text using deterministic action rules from `highlighter/data/rules/opt_out_deterministic_rules.json`.
+A Manifest V3 Chrome extension that highlights inbound message text using deterministic action rules from `highlighter/data/rules/opt_out_deterministic_rules.json`.
 
 ## What it does
 
-- Runs on `https://ui.attentivemobile.com/concierge/*`.
+- Runs on the supported Operations web application at `https://ui.attentivemobile.com/concierge/*`.
 - Targets inbound message copy with this default selector:
 
 ```css
@@ -23,7 +23,7 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 
 ## Package for Chrome Web Store
 
-The committed production manifest has only the Concierge and logging hosts. Build the Store ZIP with release credentials supplied through the process environment:
+The committed production manifest has only the supported Operations and logging hosts. Build the Store ZIP with release credentials supplied through the process environment:
 
 ```powershell
 $env:KEYWORD_HIGHLIGHTER_ENDPOINT_URL = "https://script.google.com/macros/s/DEPLOYMENT_ID/exec"
@@ -50,7 +50,7 @@ For local install:
 3. Enable **Developer mode**.
 4. Click **Load unpacked**.
 5. Select the `highlighter` folder inside this project.
-6. Open or refresh `https://ui.attentivemobile.com/concierge/*`.
+6. Open or refresh the supported Operations page at `https://ui.attentivemobile.com/concierge/*`.
 
 The development package includes the prior local public key so its unpacked ID remains stable. The Store item supplies its own public key. If the IDs differ, export custom keywords from the local extension before switching and import the backup after Store installation.
 
@@ -116,4 +116,4 @@ keywordHighlighter/
 - The extension skips procedural/non-highlightable deterministic rules and invalid JavaScript regex patterns, then logs skipped regexes to the console.
 - For overlapping matches, it keeps the earliest match, then the longest match, then the category priority.
 - `close` and whole-message rules only highlight when the match is the whole inbound message body, ignoring surrounding whitespace and simple punctuation.
-- If Attentive changes its DOM, update the selector in the options page rather than changing code.
+- If the supported Operations application changes its DOM, update the selector in the options page rather than changing code.

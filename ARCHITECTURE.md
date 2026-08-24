@@ -1,6 +1,6 @@
 # Architecture
 
-The Attentive Rule Highlighter is a Manifest V3 extension scoped to Attentive Concierge. Its content script loads deterministic rules, wraps matching inbound text in `.amh-highlight` spans, and observes the single-page application for changes. Popup and options pages manage synchronized settings and custom keywords.
+The Offisght Operations Rule Highlighter is a Manifest V3 extension scoped to the supported Operations web application. Its content script loads deterministic rules, wraps matching inbound text in `.amh-highlight` spans, and observes the single-page application for changes. Popup and options pages manage synchronized settings and custom keywords.
 
 Shortcut telemetry is owned by `src/highlight/shortcutTelemetry.js` and the content script. The helper recognizes only four trusted Shift combinations and counts rendered logical rule highlights. The content script sends a sanitized event only when that count is positive. It does not prevent or alter the host page's keyboard handling.
 
