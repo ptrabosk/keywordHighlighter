@@ -27,24 +27,23 @@
       <h1>Offisght Operations Rule Highlighter Privacy Policy</h1>
       <p class="updated">Last updated: August 14, 2026</p>
 
-      <p>Offisght Operations Rule Highlighter highlights rule matches in inbound message text and measures four response shortcuts to evaluate whether those highlights support the response workflow.</p>
+      <p>Offisght Operations Rule Highlighter highlights configured rule matches on its supported work page and collects limited usage and diagnostic information needed to operate the extension.</p>
 
       <h2>Data collected</h2>
-      <p>When at least one rule keyword is rendered as highlighted and the user presses Shift+D, Shift+N, Shift+B, or Shift+C, the extension records:</p>
+      <p>The extension may collect limited usage information associated with highlighted messages:</p>
       <ul>
-        <li>the normalized shortcut;</li>
-        <li>the number of rendered logical rule highlights, capped at 1,000;</li>
-        <li>an event timestamp, random event and session identifiers, extension version, and the canonical supported page surface.</li>
+        <li>the number of rendered rule highlights, capped at 1,000;</li>
+        <li>an event timestamp, random event and session identifiers, extension version, and the supported page surface.</li>
       </ul>
-      <p>The extension does not record other keys, message text, matched text, rule names, selected text, field contents, or whether extra modifier keys were held. A qualifying shortcut is recorded even when focus is in a text field.</p>
-      <p>The extension also records privacy-limited operational events needed to diagnose initialization, rule loading, rendering, settings, storage, and upload failures. Error strings are sanitized before storage.</p>
+      <p>The extension does not collect message text, matched text, rule names, selected text, field contents, text entered into editable fields, or unrelated browsing activity.</p>
+      <p>The extension may also collect privacy-limited technical diagnostics needed to diagnose initialization, rule loading, rendering, settings, storage, and upload failures. Error strings are sanitized before storage.</p>
 
       <h2>Use, storage, and sharing</h2>
-      <p>Events are used only to operate, secure, troubleshoot, and measure the effectiveness of the highlighter. They are queued in Chrome extension storage and sent over HTTPS to a Google Apps Script endpoint that writes to a restricted Google Sheet controlled by the extension publisher. Data is not sold, used for advertising, or shared with unrelated third parties.</p>
-      <p>Normal local events are retained for up to 7 days while awaiting upload. Uploaded shortcut events and their deduplication identifiers are automatically deleted after 90 days. Google may process data as the infrastructure provider under its applicable terms.</p>
+      <p>Information is used only to operate, secure, troubleshoot, and evaluate the extension. It is queued in Chrome extension storage and sent over HTTPS to a Google Apps Script endpoint that writes to a restricted Google Sheet controlled by the extension publisher. Data is not sold, used for advertising, or shared with unrelated third parties.</p>
+      <p>Normal local events are retained for up to 7 days while awaiting upload. Uploaded usage events and their deduplication identifiers are automatically deleted after 90 days. Google may process data as the infrastructure provider under its applicable terms.</p>
 
       <h2>Security and deletion requests</h2>
-      <p>Uploads use HTTPS, strict field validation, daily ingestion quotas, and a rotatable ingestion token. The token limits casual abuse but is not used to identify users. Access to the receiving Sheet and Apps Script project is restricted to authorized maintainers.</p>
+      <p>Uploads use HTTPS, strict field validation, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project.</p>
       <p>Before publishing, the publisher must add a monitored contact method here for privacy questions and deletion requests, then host this exact policy at a stable public HTTPS URL.</p>
       <p>The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.</p>
     </article>

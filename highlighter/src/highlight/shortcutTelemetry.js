@@ -3,8 +3,16 @@
 
   const SHORTCUT_KEYS = new Set(['D', 'N', 'B', 'C']);
 
+  function isEditableTarget(target) {
+    if (!target) return false;
+    if (target.isContentEditable === true) return true;
+    const tagName = String(target.tagName || '').toUpperCase();
+    if (tagName === 'INPUT' || tagName === 'TEXTAREA') return true;
+    return typeof target.closest === 'function' && Boolean(target.closest('input, textarea, [contenteditable="true"]'));
+  }
+
   function normalizeShortcutEvent(event) {
-    if (!event || event.isTrusted !== true || event.shiftKey !== true || event.repeat === true) return null;
+    if (!event || event.isTrusted !== true || event.shiftKey !== true || event.repeat === true || isEditableTarget(event.target)) return null;
     const key = String(event.key || '').toUpperCase();
     return SHORTCUT_KEYS.has(key) ? `Shift+${key}` : null;
   }

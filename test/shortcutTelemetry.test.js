@@ -48,14 +48,22 @@ test("recognizes only trusted, non-repeating Shift+D/N/B/C keydowns", () => {
   assert.equal(telemetry.normalizeShortcutEvent(keyEvent("D", { isTrusted: false })), null);
 });
 
-test("allows extra modifiers and does not inspect the focused field", () => {
+test("allows extra modifiers but ignores editable fields", () => {
   const telemetry = loadShortcutTelemetry();
   assert.equal(telemetry.normalizeShortcutEvent(keyEvent("d", {
     ctrlKey: true,
     altKey: true,
     metaKey: true,
-    target: { tagName: "TEXTAREA", isContentEditable: true }
   })), "Shift+D");
+
+  for (const target of [
+    { tagName: "INPUT" },
+    { tagName: "TEXTAREA" },
+    { isContentEditable: true },
+    { closest: () => ({}) }
+  ]) {
+    assert.equal(telemetry.normalizeShortcutEvent(keyEvent("d", { target })), null);
+  }
 });
 
 test("counts rendered logical rule highlights once, including off-screen highlights", () => {
