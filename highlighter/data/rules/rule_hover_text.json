@@ -977,7 +977,7 @@
     "rule_51122d616562849e": {
       "title": "no_action",
       "text": "thank u",
-      "name": "zapOptOuts.deterministic_js.not_opt_out.082.thank_u"
+      "name": "combined.short_gratitude"
     },
     "rule_800d066d9f05282c": {
       "title": "no_action",
@@ -1928,6 +1928,101 @@
       "title": "fuzzy_opt_out",
       "text": "\\bnot\\s+doing\\s+business\\b",
       "name": "zapOptOuts.workflow.node_4.fuzzy_opt_out.not_doing_business"
+    },
+    "rule_emoji_only_non_stop": {
+      "title": "close",
+      "text": "[☀-➿🀀-🫿]",
+      "name": "opt_outs_ml.emoji_only_non_stop"
+    },
+    "rule_exact_no_not_opt_out": {
+      "title": "close",
+      "text": "^no$",
+      "name": "deterministic.not_opt_out.exact_no"
+    },
+    "rule_exact_no_thanks_not_opt_out": {
+      "title": "close",
+      "text": "^(?:that(?: will be|s) (?:all|it)(?: (?:thank you|thanks))?|no (?:thank you|thanks|thx))$",
+      "name": "deterministic.not_opt_out.no_thanks"
+    },
+    "rule_combined_no_notifs": {
+      "title": "close",
+      "text": "Customer message contains the urgent notification auto-reply text.",
+      "name": "combined.no_notifs"
+    },
+    "rule_combined_driving_auto_reply": {
+      "title": "close",
+      "text": "Normalized customer message is a known driving auto-reply, including the combined driving, cannot-receive-texts, and urgent-notification form.",
+      "name": "combined.driving_auto_reply"
+    },
+    "rule_opt_out_creepy_spying_phrases": {
+      "title": "opt_out",
+      "text": "\\b(?:stop spying|stop being creepy|this is creepy|(?:you|yall|y'all) are spying|(?:you|yall|y'all) are creepy|you re creepy)\\b",
+      "name": "zapOptOuts.opt_out.creepy_spying_variants"
+    },
+    "rule_send_this_loop_marketing_opt_in": {
+      "title": "close",
+      "text": "^send this loop automated personalized marketing alerts e g cart reminders from .+ ref [a-z0-9]+$",
+      "name": "deterministic.not_opt_out.send_this_loop_marketing_opt_in"
+    },
+    "rule_no_longer_exact_fuzzy_opt_out": {
+      "title": "fuzzy_opt_out",
+      "text": "no longer",
+      "name": "not_interested.no_longer_exact"
+    },
+    "rule_remove_me_from_your_contact_list": {
+      "title": "opt_out",
+      "text": "\\bremove\\s+me\\s+from\\s+your\\s+(?:email|text|message|messaging|mailing|mail)\\s+list\\b",
+      "name": "keyword_highlighter.direct_opt_out.remove_me_from_your_contact_list"
+    },
+    "detector.empty_customer_message": {
+      "title": "close",
+      "text": "Customer message is empty or whitespace only.",
+      "name": "empty_customer_message"
+    },
+    "detector.exact_opt_in": {
+      "title": "close",
+      "text": "Normalized customer message is an exact subscribe variant or unstop.",
+      "name": "exact_opt_in"
+    },
+    "detector.real_word_collision": {
+      "title": "close",
+      "text": "Normalized customer message is an exact known word that resembles an opt-out token.",
+      "name": "real_word_collision"
+    },
+    "detector.under_13_age_threshold": {
+      "title": "opt_out",
+      "text": "Customer states that they are under 13 or in an equivalent school grade.",
+      "name": "under_13_age_threshold"
+    },
+    "detector.language_filter_exact_opt_out": {
+      "title": "opt_out",
+      "text": "Short customer message is an approved or non-word near-match of an opt-out token.",
+      "name": "language_filter_opt_out_typo"
+    },
+    "detector.language_filter_non_opt_out": {
+      "title": "close",
+      "text": "Customer message is a short non-opt-out word or sufficiently noisy gibberish.",
+      "name": "language_filter_non_opt_out"
+    },
+    "detector.bounded_block_intent": {
+      "title": "opt_out",
+      "text": "Normalized customer message is a bounded request to block the sender or number.",
+      "name": "bounded_block_intent"
+    },
+    "detector.remove_me_from_list": {
+      "title": "opt_out",
+      "text": "Normalized customer message asks to remove the customer from your or the list.",
+      "name": "remove_me_from_list"
+    },
+    "detector.communication_opt_out": {
+      "title": "opt_out",
+      "text": "Normalized customer message expresses a bounded request to stop communications.",
+      "name": "communication_opt_out"
+    },
+    "detector.targeted_legal_intent": {
+      "title": "opt_out",
+      "text": "Normalized customer message contains a targeted legal threat or agency complaint.",
+      "name": "targeted_legal_intent"
     }
   },
   "by_rule_name": {}

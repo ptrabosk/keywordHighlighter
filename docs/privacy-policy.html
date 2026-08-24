@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy Policy for Attentive Rule Highlighter">
+  <title>Privacy Policy | Attentive Rule Highlighter</title>
+  <style>
+    :root { color-scheme: light; --ink: #172033; --muted: #5f6b7a; --line: #dce2ea; --accent: #3157d5; --paper: #fff; --wash: #f5f7fb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--wash); color: var(--ink); font: 16px/1.7 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { width: min(100% - 2rem, 760px); margin: 4rem auto; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: clamp(1.5rem, 5vw, 3.5rem); box-shadow: 0 12px 40px rgb(23 32 51 / 7%); }
+    h1, h2 { line-height: 1.2; letter-spacing: -.02em; }
+    h1 { margin: 0 0 .35rem; font-size: clamp(2rem, 5vw, 2.75rem); }
+    h2 { margin: 2rem 0 .65rem; font-size: 1.35rem; }
+    .updated { margin: 0 0 2rem; color: var(--muted); }
+    p { margin: 0 0 1rem; }
+    ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+    a { color: var(--accent); }
+    footer { border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; margin-top: 2.5rem; padding-top: 1.25rem; }
+    @media (max-width: 520px) { main { margin: 1rem auto; border-radius: 12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <article>
+      <h1>Attentive Rule Highlighter Privacy Policy</h1>
+      <p class="updated">Last updated: August 14, 2026</p>
+
+      <p>Attentive Rule Highlighter highlights rule matches in inbound Attentive Concierge messages and measures four response shortcuts to evaluate whether those highlights support the response workflow.</p>
+
+      <h2>Data collected</h2>
+      <p>When at least one rule keyword is rendered as highlighted and the user presses Shift+D, Shift+N, Shift+B, or Shift+C, the extension records:</p>
+      <ul>
+        <li>the normalized shortcut;</li>
+        <li>the number of rendered logical rule highlights, capped at 1,000;</li>
+        <li>an event timestamp, random event and session identifiers, extension version, and the canonical Concierge page surface.</li>
+      </ul>
+      <p>The extension does not record other keys, message text, matched text, rule names, selected text, field contents, or whether extra modifier keys were held. A qualifying shortcut is recorded even when focus is in a text field.</p>
+      <p>The extension also records privacy-limited operational events needed to diagnose initialization, rule loading, rendering, settings, storage, and upload failures. Error strings are sanitized before storage.</p>
+
+      <h2>Use, storage, and sharing</h2>
+      <p>Events are used only to operate, secure, troubleshoot, and measure the effectiveness of the highlighter. They are queued in Chrome extension storage and sent over HTTPS to a Google Apps Script endpoint that writes to a restricted Google Sheet controlled by the extension publisher. Data is not sold, used for advertising, or shared with unrelated third parties.</p>
+      <p>Normal local events are retained for up to 7 days while awaiting upload. Uploaded shortcut events and their deduplication identifiers are automatically deleted after 90 days. Google may process data as the infrastructure provider under its applicable terms.</p>
+
+      <h2>Security and deletion requests</h2>
+      <p>Uploads use HTTPS, strict field validation, daily ingestion quotas, and a rotatable ingestion token. The token limits casual abuse but is not used to identify users. Access to the receiving Sheet and Apps Script project is restricted to authorized maintainers.</p>
+      <p>Before publishing, the publisher must add a monitored contact method here for privacy questions and deletion requests, then host this exact policy at a stable public HTTPS URL.</p>
+      <p>The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.</p>
+    </article>
+    <footer>Attentive Rule Highlighter</footer>
+  </main>
+</body>
+</html>

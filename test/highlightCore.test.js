@@ -608,10 +608,24 @@ test("deterministic rules compile highlightable entries and skip procedural dete
   const optionalGroupRule = rules.find((item) => item.id === "rule_9a0a246dfc518c29");
   const curlyQuoteRule = rules.find((item) => item.id === "rule_6da31ef70e2d6310");
 
-  assert.equal(rules.length, 376);
+  assert.equal(rules.length, 394);
   assert.deepEqual(rules.filter((item) => !item.regex).map((item) => item.id), [
     "rule_451c36fb9b91ee65",
-    "rule_39802d76d8b46842"
+    "rule_39802d76d8b46842",
+    "rule_emoji_only_non_stop",
+    "rule_combined_no_notifs",
+    "rule_combined_driving_auto_reply",
+    "rule_send_this_loop_marketing_opt_in",
+    "detector.empty_customer_message",
+    "detector.exact_opt_in",
+    "detector.real_word_collision",
+    "detector.under_13_age_threshold",
+    "detector.language_filter_exact_opt_out",
+    "detector.language_filter_non_opt_out",
+    "detector.bounded_block_intent",
+    "detector.remove_me_from_list",
+    "detector.communication_opt_out",
+    "detector.targeted_legal_intent"
   ]);
   assert.equal(procedural.regex, null);
   assert.equal(optOutPhrase.tag, "opt_out");
@@ -627,9 +641,54 @@ test("deterministic rules compile highlightable entries and skip procedural dete
     1
   );
 
-  const emojiRules = rules.filter((item) => item.id.startsWith("rule_emoji_"));
+  const emojiRules = rules.filter((item) => item.id.startsWith("rule_emoji_") && item.regex);
   for (const emoji of [0x1F595, 0x1F6D1, 0x270B, 0x1F645, 0x1F6AB, 0x1F515].map((codePoint) => String.fromCodePoint(codePoint))) {
     assert.ok(core.collectMatches(emoji, emojiRules, settings).some((match) => match.rule.tag === "opt_out"), `${emoji} should opt out`);
+  }
+});
+
+test("merged inventory keeps compatible additions, exclusions, and hover guidance aligned", () => {
+  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+  const hover = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/rule_hover_text.json"), "utf8"));
+  const settings = core.mergeSettings(defaults, {});
+  const rules = core.buildRules(payload.rules);
+  const rulesById = new Map(rules.map((item) => [item.id, item]));
+
+  assert.equal(new Set(payload.rules.map((item) => item.id)).size, payload.rules.length);
+  assert.equal(new Set(payload.rules.map((item) => item.name)).size, payload.rules.length);
+
+  for (const excludedId of [
+    "rule_5e2385aac4ffe493",
+    "rule_2cee9ccfd5c3206f",
+    "rule_06305227826122d3"
+  ]) {
+    assert.equal(rulesById.has(excludedId), false, `${excludedId} should remain excluded`);
+  }
+
+  for (const preservedId of [
+    "rule_06d01f1a0e0b3885",
+    "rule_14492eac781ac6da",
+    "rule_b25458937a65a761"
+  ]) {
+    assert.equal(rulesById.has(preservedId), true, `${preservedId} should remain available to the extension`);
+  }
+
+  const exactNo = rulesById.get("rule_exact_no_not_opt_out");
+  const creepyPhrase = rulesById.get("rule_opt_out_creepy_spying_phrases");
+  const noLonger = rulesById.get("rule_no_longer_exact_fuzzy_opt_out");
+  const boundedLegal = rulesById.get("rule_e9bc789ec1b52ceb");
+  assert.equal(core.collectMatches("no", [exactNo], settings).length, 1);
+  assert.equal(core.collectMatches("stop spying", [creepyPhrase], settings).length, 1);
+  assert.equal(core.collectMatches("no longer", [noLonger], settings).length, 1);
+  assert.equal(core.collectMatches("issue", [boundedLegal], settings).length, 0);
+  assert.equal(core.collectMatches("I will sue you", [boundedLegal], settings).length, 1);
+
+  for (const rule of payload.rules) {
+    const entry = hover.by_rule_id[rule.id];
+    assert.ok(entry, `missing hover guidance for ${rule.id}`);
+    assert.ok(entry.title, `missing hover title for ${rule.id}`);
+    assert.ok(entry.text, `missing hover text for ${rule.id}`);
+    assert.ok(entry.name, `missing hover name for ${rule.id}`);
   }
 });
 
