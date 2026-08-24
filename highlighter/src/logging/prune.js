@@ -4,8 +4,7 @@ import { NAVIGATION_EVENT_TYPES } from "./types.js";
 import {
   loadAllChunks,
   recalculateQueueMeta,
-  storageRemove,
-  storageSet,
+  removeMatchingIds,
   withQueueWrite
 } from "./storageQueue.js";
 
@@ -34,32 +33,6 @@ function collectRemovals(chunks, predicate, targetBytes) {
   }
 
   return removeIds;
-}
-
-async function removeMatchingIds(chunks, removeIds) {
-  if (!removeIds.size) return 0;
-
-  const updates = {};
-  const removals = [];
-  let removed = 0;
-
-  for (const entry of chunks) {
-    const remaining = entry.chunk.events.filter((event) => {
-      const remove = removeIds.has(event.eventId);
-      if (remove) removed += 1;
-      return !remove;
-    });
-
-    if (remaining.length !== entry.chunk.events.length) {
-      entry.chunk.events = remaining;
-      if (remaining.length) updates[entry.key] = entry.chunk;
-      else removals.push(entry.key);
-    }
-  }
-
-  if (Object.keys(updates).length) await storageSet(updates);
-  if (removals.length) await storageRemove(removals);
-  return removed;
 }
 
 export async function pruneLogs(options = {}) {

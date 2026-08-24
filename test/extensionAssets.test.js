@@ -81,3 +81,22 @@ test("conversation split phrase highlights render as continuous multi-part spans
   assert.match(cssSource, /\.amh-highlight--match-start/);
   assert.match(cssSource, /\.amh-highlight--match-end/);
 });
+
+test("customer highlight count badge is URL-gated and uses logical rendered groups", () => {
+  const contentSource = readExtensionFile("content.js");
+  const cssSource = readExtensionFile("content.css");
+
+  assert.match(contentSource, /hostname === 'ui\.attentivemobile\.com'/);
+  assert.match(contentSource, /pathname\.startsWith\('\/concierge\/'\)/);
+  assert.match(contentSource, /querySelectorAll\('h1'\)/);
+  assert.match(contentSource, /map\(\(child\) => child\.textContent \|\| ''\)/);
+  assert.match(contentSource, /classList\.contains\('amh-highlight-count'\)/);
+  assert.match(contentSource, /countRenderedHighlightGroups\(document\)/);
+  assert.match(contentSource, /querySelectorAll\('\.amh-message-highlight'\)/);
+  assert.match(contentSource, /countVisibleHighlightsForBadge/);
+  assert.match(contentSource, /amh-highlight-count/);
+  assert.match(contentSource, /existingBadges\.forEach\(\(badge\) => badge\.remove\(\)\)/);
+  assert.match(cssSource, /\.amh-customer-heading-row[\s\S]*justify-content:\s*space-between/);
+  assert.match(cssSource, /\.amh-highlight-count[\s\S]*right:\s*38px/);
+  assert.match(cssSource, /\.amh-highlight-count[\s\S]*border-radius:\s*6px/);
+});

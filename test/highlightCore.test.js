@@ -125,7 +125,7 @@ test("never activates no-action rules even when settings enable them", () => {
   assert.deepEqual(activeRules.map((item) => item.tag), ["reply"]);
 });
 
-test("compiles procedural close detectors used by the demo site", () => {
+test("compiles procedural close detectors", () => {
   const settings = core.mergeSettings(defaults, {});
   const rules = [
     rule({ id: "rule_combined_single_letter_only", tag: "close", pattern: "single letter", matchScope: "procedural" }),

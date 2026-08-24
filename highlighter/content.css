@@ -13,6 +13,31 @@
   filter: brightness(0.96);
 }
 
+.amh-customer-heading-row {
+  position: relative !important;
+  display: block !important;
+  align-items: center;
+  width: 100%;
+}
+
+.amh-highlight-count {
+  position: absolute;
+  top: 50%;
+  right: 38px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  color: #fff;
+  background: #6e8a09;
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+  font: 700 12px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  z-index: 1;
+}
+
 .amh-highlight--multipart {
   box-shadow: none !important;
 }

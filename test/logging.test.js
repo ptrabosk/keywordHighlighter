@@ -614,10 +614,3 @@ test("content highlighter treats Hot Topic brand/customer context as one message
   assert.match(contentSource, /start: 0,\s*end: text\.length,\s*length: text\.length/s);
   assert.match(contentSource, /mergeContextualMatches/);
 });
-
-test("demo Hot Topic messages are not pre-split into context highlights", () => {
-  const demoSource = fs.readFileSync(path.join(__dirname, "../test-site/test-site.js"), "utf8");
-
-  assert.match(demoSource, /function renderInboundMessageText\(message\) {\s*return escapeHtml\(message\.text\);\s*}/);
-  assert.doesNotMatch(demoSource, /replace\(\/\\b\(4\|four\|never\)\\b\/gi/);
-});

@@ -124,9 +124,6 @@
         throw new Error(`Rules JSON did not contain a rules property: ${url}`);
       }
       const rules = core.buildRules(payload.rules);
-      for (const rule of rules.filter((item) => !item.regex)) {
-        console.warn('[Attentive Rule Highlighter] Invalid regex skipped:', rule);
-      }
       logOperationalEvent({
         eventType: 'rules_loaded',
         severity: 'info',
@@ -198,7 +195,11 @@
   function installMutationObserver() {
     state.observer?.disconnect();
     state.observer = new MutationObserver((mutations) => {
-      if (mutations.some((mutation) => mutation.type === 'characterData' || mutation.addedNodes?.length || mutation.removedNodes?.length)) {
+      if (mutations.some((mutation) => {
+        if (mutation.type === 'characterData') return true;
+        const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
+        return nodes.some((node) => !(node instanceof Element && node.closest('.amh-highlight-count')));
+      })) {
         scheduleRender();
       }
     });
@@ -294,6 +295,7 @@
       }
 
       persistStats();
+      refreshHighlightCountBadge();
       maybeLogRenderCompleted({
         durationMs: performance.now() - startedAt,
         forceAll,
@@ -311,6 +313,65 @@
       });
       console.warn('[Attentive Rule Highlighter] Render failed and will retry on the next DOM update:', error);
     }
+  }
+
+  function refreshHighlightCountBadge() {
+    const existingBadges = document.querySelectorAll('.amh-highlight-count');
+    const isConciergePage = window.location.hostname === 'ui.attentivemobile.com' &&
+      window.location.pathname.startsWith('/concierge/');
+    if (!isConciergePage) {
+      existingBadges.forEach((badge) => badge.remove());
+      return;
+    }
+
+    const heading = Array.from(document.querySelectorAll('h1')).find((node) => {
+      const text = Array.from(node.childNodes)
+        .filter((child) => !(child instanceof Element && child.classList.contains('amh-highlight-count')))
+        .map((child) => child.textContent || '')
+        .join('')
+        .trim();
+      return text === 'CUSTOMER';
+    });
+    if (!heading) {
+      existingBadges.forEach((badge) => badge.remove());
+      return;
+    }
+
+    const section = heading.parentElement;
+    let headingRow = section.querySelector(':scope > .amh-customer-heading-row');
+    if (!headingRow) {
+      headingRow = document.createElement('div');
+      headingRow.className = 'amh-customer-heading-row';
+      section.insertBefore(headingRow, heading);
+      headingRow.appendChild(heading);
+    }
+
+    const count = state.settings.enabled ? countVisibleHighlightsForBadge() : 0;
+    existingBadges.forEach((badge) => {
+      if (badge.parentElement !== headingRow) badge.remove();
+    });
+
+    const badge = headingRow.querySelector(':scope > .amh-highlight-count') || document.createElement('span');
+    if (!count) {
+      badge.remove();
+      return;
+    }
+
+    if (!badge.parentElement) {
+      badge.className = 'amh-highlight-count';
+      badge.setAttribute('aria-live', 'polite');
+      headingRow.appendChild(badge);
+    }
+    badge.textContent = String(count);
+    badge.setAttribute('aria-label', `${count} highlight${count === 1 ? '' : 's'}`);
+  }
+
+  function countVisibleHighlightsForBadge() {
+    const count = shortcutTelemetry.countRenderedHighlightGroups(document);
+    const messageHighlights = Array.from(document.querySelectorAll('.amh-message-highlight'))
+      .filter((element) => !element.querySelector('.amh-highlight'))
+      .filter((element) => shortcutTelemetry.isRenderedHighlight(element));
+    return Math.min(1000, count + messageHighlights.length);
   }
 
   function getTargetElements() {

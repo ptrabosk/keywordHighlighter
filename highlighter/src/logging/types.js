@@ -20,7 +20,6 @@ export const LOG_EVENT_TYPES = Object.freeze([
 
 export const LOG_SEVERITIES = Object.freeze(["info", "warning", "error"]);
 export const LOG_RESULTS = Object.freeze(["success", "failure", "cancelled", "unknown"]);
-export const UPLOAD_STATES = Object.freeze(["pending", "uploading"]);
 
 export const ERROR_CODES = Object.freeze({
   RULES_LOAD_FAILED: "RULES_LOAD_FAILED",

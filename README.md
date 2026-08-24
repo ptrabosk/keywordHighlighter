@@ -73,27 +73,6 @@ The Apps Script receiver lives in `google-apps-script/Code.gs` and writes to the
 
 Committed logging configuration contains placeholders only. The packaging script injects credentials directly into the staged, statically imported `config.js`; source files are unchanged. Chrome extension service workers do not support dynamic imports, so `config.local.js` is not a runtime configuration mechanism. Use the deployed Apps Script `/exec` URL, not the Sheet ID or `/dev` URL.
 
-## Live Server QA site
-
-The interactive QA site lives outside the upload folder at `test-site/index.html`. The root `test.html` is kept as a compatibility entry and redirects to the QA site.
-
-To run it:
-
-1. Start a local web server from the project root.
-2. Open `test-site/index.html` through that local server.
-3. Select one or more conversations and review the automated QA panel.
-4. Hover highlighted text to verify the rule tooltip.
-
-Example:
-
-```powershell
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000/test-site/index.html`.
-
-For VSCode Live Server, use either `http://127.0.0.1:5501/test-site/index.html` or `http://localhost:5501/test-site/index.html`. The extension manifest supports both localhost hosts across local ports.
-
 ## Tests
 
 ```sh
@@ -106,16 +85,11 @@ npm test
 keywordHighlighter/
 |-- README.md
 |-- package.json
-|-- test.html
 |-- google-apps-script/
 |   |-- Code.gs
 |   `-- README.md
 |-- test/
 |   `-- logging.test.js
-|-- test-site/
-|   |-- index.html
-|   |-- test-site.css
-|   `-- test-site.js
 `-- highlighter/
     |-- manifest.json
     |-- background.js
@@ -139,7 +113,6 @@ keywordHighlighter/
 
 ## Notes
 
-- The root `test.html` redirects to the Live Server QA site.
 - The extension skips procedural/non-highlightable deterministic rules and invalid JavaScript regex patterns, then logs skipped regexes to the console.
 - For overlapping matches, it keeps the earliest match, then the longest match, then the category priority.
 - `close` and whole-message rules only highlight when the match is the whole inbound message body, ignoring surrounding whitespace and simple punctuation.
