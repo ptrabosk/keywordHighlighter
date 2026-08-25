@@ -196,9 +196,14 @@
     state.observer?.disconnect();
     state.observer = new MutationObserver((mutations) => {
       if (mutations.some((mutation) => {
-        if (mutation.type === 'characterData') return true;
+        // Ignore mutations produced by this extension. In particular, updating
+        // the count badge creates characterData mutations; observing those
+        // makes every render schedule another render indefinitely.
+        if (mutation.type === 'characterData') {
+          return !mutation.target.parentElement?.closest('.amh-extension-root, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count');
+        }
         const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
-        return nodes.some((node) => !(node instanceof Element && node.closest('.amh-highlight-count')));
+        return nodes.some((node) => !(node instanceof Element && node.closest('.amh-extension-root, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count')));
       })) {
         scheduleRender();
       }
@@ -362,7 +367,7 @@
       badge.setAttribute('aria-live', 'polite');
       headingRow.appendChild(badge);
     }
-    badge.textContent = String(count);
+    if (badge.textContent !== String(count)) badge.textContent = String(count);
     badge.setAttribute('aria-label', `${count} highlight${count === 1 ? '' : 's'}`);
   }
 
