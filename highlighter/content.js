@@ -28,6 +28,8 @@
   const core = globalThis.AMH_HIGHLIGHT_CORE;
   const shortcutTelemetry = globalThis.AMH_SHORTCUT_TELEMETRY;
   const RENDER_LOG_INTERVAL_MS = 5 * 60 * 1000;
+  const DEBUG_LOG_INTERVAL_MS = 10 * 1000;
+  const DEBUG_MUTATION_THRESHOLD = 50;
   const ESCALATION_HIGHLIGHT_COLOR = '#2E6F68';
   const HOT_TOPIC_BRAND_LOOKBACK_LIMIT = 3;
 
@@ -49,6 +51,14 @@
       lastRunAt: null
     },
     lastRenderLogAt: 0,
+    debug: {
+      mutations: 0,
+      renders: 0,
+      lastMutationLogAt: 0,
+      lastRenderStartedAt: 0,
+      lastRenderDurationMs: 0,
+      lastTrigger: 'startup'
+    },
     nextMatchGroupId: 1
   };
 
@@ -100,7 +110,30 @@
     installShortcutTelemetry();
     installMutationObserver();
     installMessageHandlers();
+    installDiagnostics();
     scheduleRender(true);
+  }
+
+  function installDiagnostics() {
+    window.addEventListener('error', (event) => {
+      const error = event.error;
+      console.warn('[Offisght Rule Highlighter] Page error observed', {
+        message: event.message || error?.message || 'unknown error',
+        stack: error?.stack || '(no stack)',
+        source: event.filename || '(unknown)',
+        line: event.lineno || 0,
+        column: event.colno || 0,
+        highlighter: { ...state.debug }
+      });
+    }, true);
+    window.addEventListener('unhandledrejection', (event) => {
+      const reason = event.reason;
+      console.warn('[Offisght Rule Highlighter] Unhandled rejection observed', {
+        message: reason?.message || String(reason || 'unknown rejection'),
+        stack: reason?.stack || '(no stack)',
+        highlighter: { ...state.debug }
+      });
+    }, true);
   }
 
   async function loadSettings() {
@@ -195,20 +228,37 @@
   function installMutationObserver() {
     state.observer?.disconnect();
     state.observer = new MutationObserver((mutations) => {
-      if (mutations.some((mutation) => {
-        // Ignore mutations produced by this extension. In particular, updating
-        // the count badge creates characterData mutations; observing those
-        // makes every render schedule another render indefinitely.
-        if (mutation.type === 'characterData') {
-          return !mutation.target.parentElement?.closest('.amh-extension-root, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count');
+      state.debug.mutations += mutations.length;
+      const relevantMutations = mutations.filter(isRelevantMutation);
+      if (relevantMutations.length) {
+        const now = Date.now();
+        if (state.debug.mutations >= DEBUG_MUTATION_THRESHOLD && now - state.debug.lastMutationLogAt >= DEBUG_LOG_INTERVAL_MS) {
+          state.debug.lastMutationLogAt = now;
+          console.warn('[Offisght Rule Highlighter] High mutation activity', {
+            batchSize: relevantMutations.length,
+            ignoredBatchSize: mutations.length - relevantMutations.length,
+            totalSinceLoad: state.debug.mutations,
+            lastTrigger: state.debug.lastTrigger,
+            pendingRender: Boolean(state.renderTimer)
+          });
         }
-        const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
-        return nodes.some((node) => !(node instanceof Element && node.closest('.amh-extension-root, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count')));
-      })) {
         scheduleRender();
       }
     });
     state.observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  }
+
+  function isRelevantMutation(mutation) {
+    const extensionSelector = '.amh-extension-root, .amh-customer-heading-row, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count';
+    const contentSelector = 'div[class*="type-INBOUND"], [class*="brand-message"], [data-speaker="Brand"], p[class*="variant-caption"]';
+    const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
+    if (target?.closest(extensionSelector)) return false;
+    if (target?.closest(contentSelector)) return true;
+    const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
+    return nodes.some((node) => {
+      if (!(node instanceof Element) || node.closest(extensionSelector)) return false;
+      return Boolean(node.closest(contentSelector) || node.matches(contentSelector) || node.querySelector(contentSelector));
+    });
   }
 
   function installMessageHandlers() {
@@ -249,12 +299,16 @@
   }
 
   function scheduleRender(forceAll = false) {
+    state.debug.lastTrigger = forceAll ? 'force' : 'mutation';
     window.clearTimeout(state.renderTimer);
     state.renderTimer = window.setTimeout(() => renderNow(forceAll), 120);
   }
 
   function renderNow(forceAll = false) {
     const startedAt = performance.now();
+    state.debug.renders += 1;
+    state.debug.lastRenderStartedAt = Date.now();
+    state.debug.lastTrigger = forceAll ? 'force' : state.debug.lastTrigger;
     window.clearTimeout(state.renderTimer);
     state.renderTimer = null;
 
@@ -307,6 +361,7 @@
         changedElements: state.stats.highlightedElements,
         highlights: state.stats.highlights
       });
+      state.debug.lastRenderDurationMs = performance.now() - startedAt;
     } catch (error) {
       state.targetSnapshots = new WeakMap();
       persistStats();
