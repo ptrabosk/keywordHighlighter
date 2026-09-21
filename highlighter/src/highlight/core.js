@@ -3,6 +3,7 @@
 
   const MAX_CUSTOM_KEYWORD_LENGTH = 128;
   const MAX_CUSTOM_KEYWORD_TEXT_LENGTH = 256;
+  const MATCH_CONDITION_MARKER = 'Match condition:';
 
   function flattenRules(value, path = [], output = []) {
     if (Array.isArray(value)) {
@@ -10,14 +11,17 @@
       return output;
     }
     if (!value || typeof value !== 'object') return output;
-    if (typeof value.pattern === 'string' && (typeof value.tag === 'string' || typeof value.action === 'string')) {
+    if (isRuleDefinition(value)) {
       const tag = value.tag || value.action;
       output.push({
         id: value.id || '',
         name: value.name || 'unnamed_rule',
         tag,
         action: value.action || tag,
-        pattern: value.pattern,
+        category: value.category || '',
+        subcategory: value.subcategory || '',
+        prediction: value.prediction,
+        pattern: getConfiguredPattern(value),
         type: value.type || '',
         flags: value.flags || '',
         source: value.source || '',
@@ -25,6 +29,11 @@
         matchScope: value.match_scope || '',
         matchTarget: value.match_target || '',
         conditionSummary: value.condition_summary || '',
+        detector: value.detector || '',
+        aliasOf: value.alias_of || '',
+        observedPhrases: Array.isArray(value.observed_phrases)
+          ? value.observed_phrases.filter((phrase) => typeof phrase === 'string' && phrase.trim())
+          : [],
         groupPath: path.filter((part) => typeof part === 'string').join('.')
       });
       return output;
@@ -33,6 +42,25 @@
       flattenRules(nested, path.concat(key), output);
     }
     return output;
+  }
+
+  function isRuleDefinition(value) {
+    if (!value || typeof value !== 'object') return false;
+    if (typeof value.tag !== 'string' && typeof value.action !== 'string') return false;
+    return (
+      typeof value.pattern === 'string' ||
+      typeof value.condition_summary === 'string' ||
+      typeof value.detector === 'string'
+    );
+  }
+
+  function getConfiguredPattern(value) {
+    if (typeof value.pattern === 'string') return value.pattern;
+    const summary = String(value.condition_summary || '');
+    if (value.match_scope === 'procedural' || value.type === 'deterministic_detector') return summary;
+    const markerIndex = summary.indexOf(MATCH_CONDITION_MARKER);
+    if (markerIndex < 0) return summary;
+    return summary.slice(markerIndex + MATCH_CONDITION_MARKER.length).trim();
   }
 
   function sortSimpleBoundedAlternatives(pattern) {
@@ -71,18 +99,20 @@
   }
 
   function getRegexPattern(rule) {
+    const configuredPattern = getBaseRegexPattern(rule);
+    const observedPattern = observedPhrasesToRegex(rule.observedPhrases);
+    if (!observedPattern) return configuredPattern;
+    if (!configuredPattern) return observedPattern;
+    return `(?:${observedPattern})|(?:${configuredPattern})`;
+  }
+
+  function getBaseRegexPattern(rule) {
     const scope = String(rule.matchScope || '');
     if (scope.includes('extension_ready_phrase') && /\.\.\.$/.test(rule.pattern)) {
       return stemPatternToRegex(rule.pattern);
     }
-    if (rule.id === 'rule_317fdbf0a6758d04' || rule.name === 'zapOptOuts.workflow.node_4.opt_out.not_opted_in') {
-      return '(?:never|didnt)\\s*(?:opted\\s+in|signed\\s+up|subscribed?)|(?:opted\\s+in|signed\\s+up)';
-    }
-    if (rule.id === 'rule_9501f80f59e3b9fd' || rule.name === 'zapOptOuts.deterministic_js.not_opt_out.020.i_m') {
+    if (rule.name === 'zapOptOuts.deterministic_js.not_opt_out.020.i_m') {
       return 'i\\s*m|im';
-    }
-    if (rule.id === 'rule_bc981d8e383b5305') {
-      return "\\b(no more messages|no more texts|don't reach out|do not send|don't send|stop messaging|stop texting|unsubscribe|delete me|opt out|opt-out|unsub|ban me|stop)\\b";
     }
     if (rule.type === 'regex' || scope.includes('regex')) {
       return shouldSearchNormalizedText(rule) ? normalizeRegexPatternForSearch(rule.pattern) : rule.pattern;
@@ -93,28 +123,41 @@
     return rule.pattern;
   }
 
+  function observedPhrasesToRegex(phrases) {
+    if (!Array.isArray(phrases) || !phrases.length) return '';
+    const alternatives = Array.from(new Set(phrases.map(normalizeObservedPhrase).filter(Boolean)))
+      .sort((left, right) => right.length - left.length)
+      .map((phrase) => phrase.split(' ').map(escapeRegex).join('\\s+'));
+    return alternatives.length ? `^(?:${alternatives.join('|')})$` : '';
+  }
+
+  function normalizeObservedPhrase(value) {
+    return String(value || '')
+      .normalize('NFKC')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function getProceduralRegex(rule) {
-    if (rule.id === 'rule_combined_single_letter_only' || rule.name === 'combined.single_letter_only') return /^[A-Za-z]$/g;
-    if (rule.id === 'rule_combined_number_only' || rule.name === 'combined.number_only') return /^\d+$/g;
-    if (rule.id === 'rule_06d01f1a0e0b3885' || rule.name === 'zapOptOuts.classifier.is_link') {
+    if (rule.detector === 'single_letter_only') return /^[A-Za-z]$/g;
+    if (rule.detector === 'number_only') return /^\d+$/g;
+    if (rule.name === 'zapOptOuts.classifier.is_link') {
       return /^(?:https?:\/\/\S+|www\.\S+)(?:\s+(?:https?:\/\/\S+|www\.\S+))*$/gi;
     }
-    if (rule.id === 'rule_14492eac781ac6da' || rule.name === 'zapOptOuts.workflow.node_4.subscription.subscription_candidate') {
-      return /\b(?:cancel|remove|stop|delete)\w*\b[\s\S]{0,80}\bsubscriptions?\b|\bsubscriptions?\b[\s\S]{0,80}\b(?:cancel|remove|stop|delete)\w*\b/gi;
-    }
-    if (rule.id === 'rule_b25458937a65a761' || rule.name === 'autoQAMessages.under_13_age_threshold') {
+    if (rule.detector === 'under_13') {
       return /\b(?:my age is\s*)?(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:years?\s*old|yrs?\s*old|yo|y\/o)\b|\bmy age is\s*(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b|\b(?:grade\s*[1-6]|[1-6](?:st|nd|rd|th)\s*grade)\b/gi;
     }
-    if (rule.id === 'rule_combined_reaction_reply' || rule.name === 'combined.reaction_reply') {
+    if (rule.detector === 'reaction_reply') {
       return /^(?:reacted to .+|(?:liked|loved|emphasized|disliked|questioned) .+|laughed at .+|removed (?:a |from ).+)[\s.!?]*$/gi;
     }
-    if (rule.id === 'rule_combined_unavailable_auto_reply' || rule.name === 'combined.unavailable_auto_reply') {
+    if (rule.detector === 'unavailable_auto_reply') {
       return /^(?:hey,?\s+i(?:'|\?|’)?m currently unavailable,?\s+i(?:'|\?|’)?ll get back to you as soon as i can|i(?:'|\?|’)?m not receiving notifications if this is urgent reply urgent to send a notification through with your original message|sorry,?\s+i\s+can(?:'|\?|’)?t talk (?:right )?now|sorry,?\s+can(?:'|\?|’)?t talk (?:right )?now|thank you for contacting me,?\s+i(?:'|\?|’)?m unable to chat right now but i(?:'|\?|’)?ll reply to your text as soon as i can,?\s+thanks|thanks for reaching out,?\s+i can(?:'|\?|’)?t chat(?: at the moment| now) but i(?:'|\?|’)?ll text you back as soon as i can(?:,?\s+thanks(?: child of christ| sent from text free)?)?|thanks for reaching out text me and if you have ig please message me let mee feed you set all notifications)[\s.!?]*$/gi;
     }
-    if (rule.id === 'rule_combined_device_not_working' || rule.name === 'combined.device_not_working') {
+    if (rule.detector === 'device_not_working') {
       return /^(?:this is an automatic message this is a kosher talk only device and does not accept text messages please call instead|this number does(?:n'?t| not) support text please call instead|this phone(?: number)? can(?:not|'?t) receive text messages please call instead|this phone does not accept text messages please call instead(?: this is an automatic reply)?)[\s.!?]*$/gi;
     }
-    if (rule.id === 'rule_combined_txt_origin_question' || rule.name === 'combined.txt_origin_question') {
+    if (rule.detector === 'txt_origin_question') {
       return /\bhow did (?:you|u) get my (?:number|phone number|contact)\b|\bwhere did (?:you|u) get my (?:number|phone number|contact)\b|\bwho gave (?:you|u) my (?:number|phone number|contact)\b|\bwhy (?:am i|do i) (?:getting|get|receive|receiving) (?:these )?(?:texts?|text messages?|messages?|msgs?)\b|\bwhy (?:are|r) (?:you|u) (?:texting|messaging|msging|contacting) me\b|\bwhy (?:are|r) (?:you|u) sending (?:me )?(?:texts?|text messages?|messages?|msgs?)\b|\bwhy did (?:you|u) (?:text|message|msg|contact) me\b|\bwhy did i get (?:this|these) (?:text|texts|message|messages|msg|msgs)\b|\bwhy do (?:you|u) (?:text|message|msg) me\b|\bwhy do (?:you|u) keep (?:texting|messaging|contacting)(?: me)?\b|\bi (?:dont|do not) know (?:you|u)\b|\bwho (?:is|are) (?:this|you|u)\b/gi;
     }
     return null;
@@ -219,7 +262,7 @@
         output += char;
         continue;
       }
-      if (!inCharacterClass && char === '.' && text[index + 1] === '*') {
+      if (!inCharacterClass && char === '.' && /[*+]/.test(text[index + 1] || '')) {
         output += char;
         continue;
       }
@@ -446,31 +489,34 @@
 
   function normalizeSearchTextWithMapping(value) {
     const chars = [];
-    const rawIndexes = [];
-    let pendingSpaceIndex = null;
+    const rawSpans = [];
+    let pendingSpaceSpan = null;
     const text = String(value || '');
-    for (let index = 0; index < text.length; index += 1) {
-      const folded = foldSearchChar(text[index]);
+    let rawIndex = 0;
+    for (const codePoint of text) {
+      const sourceSpan = { start: rawIndex, end: rawIndex + codePoint.length };
+      const folded = foldSearchChar(codePoint);
       for (const char of folded) {
         if (/[a-z0-9]/.test(char)) {
-          if (pendingSpaceIndex !== null && chars.length) {
+          if (pendingSpaceSpan !== null && chars.length) {
             chars.push(' ');
-            rawIndexes.push(pendingSpaceIndex);
+            rawSpans.push(pendingSpaceSpan);
           }
-          pendingSpaceIndex = null;
+          pendingSpaceSpan = null;
           chars.push(char);
-          rawIndexes.push(index);
-        } else if (isIgnorableSearchPunctuation(char) || isLikelyMojibakeApostrophe(char, text, index)) {
+          rawSpans.push(sourceSpan);
+        } else if (isIgnorableSearchPunctuation(char) || isLikelyMojibakeApostrophe(char, text, rawIndex)) {
           continue;
         } else if (chars.length) {
-          pendingSpaceIndex = index;
+          pendingSpaceSpan = sourceSpan;
         }
       }
+      rawIndex += codePoint.length;
     }
     return {
       text: chars.join(''),
       normalized: true,
-      rawIndexes
+      rawSpans
     };
   }
 
@@ -493,10 +539,10 @@
 
   function mapSearchSpanToRaw(searchContext, start, end) {
     if (!searchContext.normalized) return { start, end };
-    const rawIndexes = searchContext.rawIndexes || [];
-    const rawStart = rawIndexes[start] ?? 0;
-    const rawEnd = (rawIndexes[Math.max(start, end - 1)] ?? rawStart) + 1;
-    return { start: rawStart, end: rawEnd };
+    const rawSpans = searchContext.rawSpans || [];
+    const startSpan = rawSpans[start] || { start: 0, end: 0 };
+    const endSpan = rawSpans[Math.max(start, end - 1)] || startSpan;
+    return { start: startSpan.start, end: endSpan.end };
   }
 
   function shouldSuppressContextualNonOptOutMatch(rule, text, start, end) {
@@ -571,10 +617,12 @@
     escalationBulletRules,
     escapeRegex,
     flattenRules,
+    getConfiguredPattern,
     getActiveRules,
     getCustomKeywordRules,
     getKeywordPattern,
     getRegexPattern,
+    observedPhrasesToRegex,
     isOnlyMessageBodyMatch,
     isProceduralRule,
     mergeSettings,

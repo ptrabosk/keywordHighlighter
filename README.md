@@ -1,6 +1,6 @@
 # Offisght Operations Rule Highlighter
 
-A Manifest V3 Chrome extension that highlights inbound message text using deterministic action rules from `highlighter/data/rules/opt_out_deterministic_rules.json`.
+A Manifest V3 Chrome extension that highlights inbound message text using deterministic action rules from `highlighter/data/rules/opt_out_deterministic_rules_normalized_ids.json`.
 
 ## What it does
 
@@ -11,9 +11,9 @@ A Manifest V3 Chrome extension that highlights inbound message text using determ
 div[class*="type-INBOUND"] p[class*="variant-caption"]
 ```
 
-- Loads and flattens every highlightable rule object from `highlighter/data/rules/opt_out_deterministic_rules.json`.
+- Loads and flattens every highlightable rule object from `highlighter/data/rules/opt_out_deterministic_rules_normalized_ids.json`.
 - Highlights matches by action/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `no_action`, `close`, and user-added patterns.
-- Shows hover tooltips from editable entries in `highlighter/data/rules/rule_hover_text.json`.
+- Shows hover tooltips from editable entries in `highlighter/data/rules/rule_hover_text_normalized_ids.json`.
 - Lets users add custom patterns and hover text from the popup.
 - Lets users export and import custom keyword backups as JSON.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
@@ -105,9 +105,8 @@ keywordHighlighter/
     |-- settings.js
     |-- icons/
     |-- data/rules/
-    |   |-- consolidated_rules.json
-    |   |-- opt_out_deterministic_rules.json
-    |   `-- rule_hover_text.json
+    |   |-- opt_out_deterministic_rules_normalized_ids.json
+    |   `-- rule_hover_text_normalized_ids.json
     `-- src/logging/
 ```
 

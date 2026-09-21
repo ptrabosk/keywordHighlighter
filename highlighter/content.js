@@ -150,7 +150,7 @@
   }
 
   async function loadRules() {
-    const url = chrome.runtime.getURL('data/rules/opt_out_deterministic_rules.json');
+    const url = chrome.runtime.getURL('data/rules/opt_out_deterministic_rules_normalized_ids.json');
     try {
       const payload = await loadJsonResource(url, 'Rules');
       if (!payload || typeof payload !== 'object' || !payload.rules) {
@@ -161,7 +161,7 @@
         eventType: 'rules_loaded',
         severity: 'info',
         result: 'success',
-        ruleSource: 'opt_out_deterministic_rules',
+        ruleSource: 'opt_out_deterministic_rules_normalized_ids',
         metadata: { operation: 'rulesLoaded', ruleCount: rules.length }
       });
       return rules;
@@ -194,7 +194,7 @@
   }
 
   async function loadHoverText() {
-    const url = chrome.runtime.getURL('data/rules/rule_hover_text.json');
+    const url = chrome.runtime.getURL('data/rules/rule_hover_text_normalized_ids.json');
     try {
       return await loadJsonResource(url, 'Hover text');
     } catch (error) {
@@ -948,7 +948,7 @@
       severity: 'info',
       result: 'success',
       durationMs,
-      ruleSource: 'opt_out_deterministic_rules',
+      ruleSource: 'opt_out_deterministic_rules_normalized_ids',
       metadata: {
         operation: 'render',
         trigger: forceAll ? 'force' : 'scheduled'

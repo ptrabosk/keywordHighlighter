@@ -64,8 +64,17 @@ test("manifest JSON resources exist and are parseable", () => {
     .flatMap((entry) => entry.resources || [])
     .filter((resource) => resource.endsWith(".json"));
 
-  assert.ok(jsonResources.includes("data/rules/opt_out_deterministic_rules.json"));
-  assert.ok(jsonResources.includes("data/rules/rule_hover_text.json"));
+  assert.deepEqual(jsonResources.sort(), [
+    "data/rules/opt_out_deterministic_rules_normalized_ids.json",
+    "data/rules/rule_hover_text_normalized_ids.json"
+  ]);
+  assert.deepEqual(
+    fs.readdirSync(path.join(extensionDir, "data/rules"))
+      .filter((name) => name.endsWith(".json"))
+      .map((name) => `data/rules/${name}`)
+      .sort(),
+    jsonResources
+  );
 
   for (const resource of jsonResources) {
     const parsed = JSON.parse(readExtensionFile(resource));

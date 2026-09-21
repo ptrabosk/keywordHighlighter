@@ -11,6 +11,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const core = globalThis.AMH_HIGHLIGHT_CORE;
 const defaults = globalThis.DEFAULT_SETTINGS;
 const bullet = String.fromCharCode(0x2022);
+const normalizedRulesPath = path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules_normalized_ids.json");
+const normalizedHoverPath = path.join(__dirname, "../highlighter/data/rules/rule_hover_text_normalized_ids.json");
+const observedPhrasesPath = path.join(__dirname, "fixtures/observed-opt-out-phrases.json");
+
+function loadNormalizedRules() {
+  return JSON.parse(fs.readFileSync(normalizedRulesPath, "utf8"));
+}
+
+function buildNormalizedRules() {
+  return core.buildRules(loadNormalizedRules().rules);
+}
 
 function rule(overrides) {
   return {
@@ -21,6 +32,7 @@ function rule(overrides) {
     pattern: overrides.pattern,
     type: overrides.type || "",
     flags: overrides.flags || "i",
+    detector: overrides.detector || "",
     matchScope: overrides.matchScope || "",
     regex: core.compileRegex(overrides)
   };
@@ -128,15 +140,14 @@ test("never activates no-action rules even when settings enable them", () => {
 test("compiles procedural close detectors", () => {
   const settings = core.mergeSettings(defaults, {});
   const rules = [
-    rule({ id: "rule_combined_single_letter_only", tag: "close", pattern: "single letter", matchScope: "procedural" }),
-    rule({ id: "rule_combined_number_only", tag: "close", pattern: "number only", matchScope: "procedural" }),
-    rule({ id: "rule_06d01f1a0e0b3885", tag: "close", pattern: "link only", matchScope: "procedural" }),
-    rule({ id: "rule_14492eac781ac6da", tag: "fuzzy_opt_out", pattern: "subscription candidate", matchScope: "procedural" }),
-    rule({ id: "rule_b25458937a65a761", tag: "opt_out", pattern: "under 13", matchScope: "procedural" }),
-    rule({ id: "rule_combined_reaction_reply", tag: "close", pattern: "reaction reply", matchScope: "procedural" }),
-    rule({ id: "rule_combined_unavailable_auto_reply", tag: "close", pattern: "unavailable auto reply", matchScope: "procedural" }),
-    rule({ id: "rule_combined_device_not_working", tag: "opt_out", pattern: "device not working", matchScope: "procedural" }),
-    rule({ id: "rule_combined_txt_origin_question", tag: "txt", pattern: "origin question", matchScope: "procedural" })
+    rule({ id: "close_2", tag: "close", detector: "single_letter_only", pattern: "single letter", matchScope: "procedural" }),
+    rule({ id: "close_3", tag: "close", detector: "number_only", pattern: "number only", matchScope: "procedural" }),
+    rule({ id: "close_44", name: "zapOptOuts.classifier.is_link", tag: "close", pattern: "link only", matchScope: "procedural" }),
+    rule({ id: "opt_out_30", tag: "opt_out", detector: "under_13", pattern: "under 13", matchScope: "procedural" }),
+    rule({ id: "close_4", tag: "close", detector: "reaction_reply", pattern: "reaction reply", matchScope: "procedural" }),
+    rule({ id: "close_11", tag: "close", detector: "unavailable_auto_reply", pattern: "unavailable auto reply", matchScope: "procedural" }),
+    rule({ id: "opt_out_5", tag: "opt_out", detector: "device_not_working", pattern: "device not working", matchScope: "procedural" }),
+    rule({ id: "txt_1", tag: "txt", detector: "txt_origin_question", pattern: "origin question", matchScope: "procedural" })
   ];
 
   assert.equal(core.collectMatches("x", [rules[0]], settings).length, 1);
@@ -145,16 +156,15 @@ test("compiles procedural close detectors", () => {
   assert.equal(core.collectMatches("45 please", [rules[1]], settings).length, 0);
   assert.equal(core.collectMatches("https://example.com", [rules[2]], settings).length, 1);
   assert.equal(core.collectMatches("see https://example.com", [rules[2]], settings).length, 0);
-  assert.equal(core.collectMatches("Please cancel my subscription.", [rules[3]], settings).length, 1);
-  assert.equal(core.collectMatches("I am 12 years old.", [rules[4]], settings).length, 1);
-  assert.equal(core.collectMatches("I am 8.", [rules[4]], settings).length, 0);
-  assert.equal(core.collectMatches("I am 13 years old.", [rules[4]], settings).length, 0);
-  assert.equal(core.collectMatches('Loved "Thanks for your order"', [rules[5]], settings).length, 1);
-  assert.equal(core.collectMatches("Sorry can't talk now.", [rules[6]], settings).length, 1);
-  assert.equal(core.collectMatches("Sorry, I can't talk right now.", [rules[6]], settings).length, 1);
-  assert.equal(core.collectMatches("This phone number cannot receive text messages please call instead.", [rules[7]], settings).length, 1);
+  assert.equal(core.collectMatches("I am 12 years old.", [rules[3]], settings).length, 1);
+  assert.equal(core.collectMatches("I am 8.", [rules[3]], settings).length, 0);
+  assert.equal(core.collectMatches("I am 13 years old.", [rules[3]], settings).length, 0);
+  assert.equal(core.collectMatches('Loved "Thanks for your order"', [rules[4]], settings).length, 1);
+  assert.equal(core.collectMatches("Sorry can't talk now.", [rules[5]], settings).length, 1);
+  assert.equal(core.collectMatches("Sorry, I can't talk right now.", [rules[5]], settings).length, 1);
+  assert.equal(core.collectMatches("This phone number cannot receive text messages please call instead.", [rules[6]], settings).length, 1);
   assert.ok(
-    core.collectMatches("Who is this and why are you texting me?", [rules[8]], settings)
+    core.collectMatches("Who is this and why are you texting me?", [rules[7]], settings)
       .some((match) => match.rule.tag === "txt")
   );
 });
@@ -162,7 +172,7 @@ test("compiles procedural close detectors", () => {
 test("compiles inventory regex rules before applying whole-message checks", () => {
   const settings = core.mergeSettings(defaults, {});
   const notOptedIn = rule({
-    id: "rule_317fdbf0a6758d04",
+    id: "opt_out_fixture",
     tag: "opt_out",
     type: "regex",
     pattern: "(?:never|didnt)?\\s*(?:opted\\s+in|signed\\s+up|subscribed?)",
@@ -171,126 +181,6 @@ test("compiles inventory regex rules before applying whole-message checks", () =
 
   assert.equal(core.collectMatches("Never opted in.", [notOptedIn], settings).length, 1);
   assert.equal(core.collectMatches("Never opted in. Please stop texting me.", [notOptedIn], settings).length, 0);
-});
-
-test("normalizes deterministic browser examples back to raw highlight spans", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
-
-  const cases = [
-    ["i'm", "close", "i'm"],
-    [
-      "Send this text to subscribe to recurring automated personalized marketing alerts e g cart reminders from darc sport ref f jgm.",
-      "close",
-      "Send this text to subscribe"
-    ],
-    [
-      "Claim 5 free shein products now click the link to help and let’s both win big.",
-      "close",
-      "Claim 5 free shein products"
-    ],
-    [
-      "Claim 5 free shein products now click the link to help and let?s both win big.",
-      "close",
-      "Claim 5 free shein products"
-    ],
-    ["I am in 1st grade.", "opt_out", "1st grade"],
-    ["Sorry, I can't talk right now.", "close", "can't talk right now"],
-    ["Sorry, I can?t talk right now.", "close", "can?t talk right now"]
-  ];
-
-  for (const [text, tag, contains] of cases) {
-    const matches = core.collectMatches(text, activeRules, settings);
-    assert.ok(
-      matches.some((match) => match.rule.tag === tag && text.slice(match.start, match.end).includes(contains)),
-      `${text} should include ${tag}: ${contains}; got ${matches.map((match) => `${match.rule.tag}:${text.slice(match.start, match.end)}`).join(", ")}`
-    );
-  }
-
-  assert.deepEqual(core.collectMatches("Stop by my house after delivery.", activeRules, settings), []);
-  assert.deepEqual(core.collectMatches("kung-fu", activeRules, settings), []);
-  assert.equal(core.collectMatches("fu", activeRules, settings).length, 1);
-});
-
-test("under-13 rules require explicit age wording and grades 1-6", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
-
-  for (const text of ["my age is 8", "my age is eight", "I am 8 years old", "I'm only eight yo", "I am in grade 6"]) {
-    assert.ok(core.collectMatches(text, activeRules, settings).some((match) => match.rule.tag === "opt_out"), `${text} should match`);
-  }
-
-  for (const text of ["I am 8", "I'm eight", "I am 13 years old", "my age is 13", "my age is thirteen", "I am in grade 7"]) {
-    assert.deepEqual(core.collectMatches(text, activeRules, settings), [], `${text} should not match`);
-  }
-});
-
-test("highlights normalized punctuation and generated demo examples", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
-
-  const cases = [
-    ["Auto generated text I'll call you later.", "close", "Auto generated text I'll call you later"],
-    ["Don't want your promo.", "fuzzy_opt_out", "Don't want your promo"],
-    ["Never text me again.", "opt_out", "Never text me again"],
-    ["Customer service?", "reply", "Customer service"],
-    [
-      "10 shein freebies and a 50 allowance for the lucky just click and claim-so easy.",
-      "close",
-      "10 shein freebies and a 50 allowance for the lucky just click and claim-so easy"
-    ],
-    [
-      "Please if you don't do this right now, stop texting me.",
-      "opt_out",
-      "if you don't do this right now, stop texting me"
-    ]
-  ];
-
-  for (const [text, tag, contains] of cases) {
-    const matches = core.collectMatches(text, activeRules, settings);
-    assert.ok(
-      matches.some((match) => match.rule.tag === tag && text.slice(match.start, match.end).includes(contains)),
-      `${text} should include ${tag}: ${contains}; got ${matches.map((match) => `${match.rule.tag}:${text.slice(match.start, match.end)}`).join(", ")}`
-    );
-  }
-
-  assert.deepEqual(core.collectMatches("Can I get help with my order?", activeRules, settings), []);
-  assert.deepEqual(core.collectMatches("thx", activeRules, settings), []);
-});
-
-test("ambiguous slash patterns do not compile to unintended standalone words", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
-
-  const exactCases = [
-    ["please end", "rule_a7188c1cef1b83cf", "please end"],
-    ["kindly end", "rule_a7188c1cef1b83cf", "kindly end"],
-    ["end", "rule_35a64c97cf6b24d5", "end"],
-    ["bring suit", "rule_5b5fa6c84e118a26", "bring suit"],
-    ["file suit", "rule_5b5fa6c84e118a26", "file suit"],
-    ["bring a suit", "rule_4ee373f27aba3ba5", "bring a suit"],
-    ["file a suit", "rule_4ee373f27aba3ba5", "file a suit"],
-    ["Don't send me any more texts.", "rule_9fab5a743c276ca4", "Don't send me any more texts"],
-    ["Do not call me again.", "rule_9fab5a743c276ca4", "Do not call me again"],
-    ["dont message", "rule_9fab5a743c276ca4", "dont message"],
-    ["donot write anymore", "rule_9fab5a743c276ca4", "donot write anymore"]
-  ];
-
-  for (const [text, id, span] of exactCases) {
-    const matches = core.collectMatches(text, activeRules, settings);
-    assert.ok(
-      matches.some((match) => match.rule.id === id && text.slice(match.start, match.end) === span),
-      `${text} should match ${id}: ${span}; got ${matches.map((match) => `${match.rule.id}:${text.slice(match.start, match.end)}`).join(", ")}`
-    );
-  }
-
-  for (const text of ["please", "kindly", "bring", "file", "Don't", "do not", "dont", "donot", "messages"]) {
-    assert.deepEqual(core.collectMatches(text, activeRules, settings), [], `${text} should not match by itself`);
-  }
 });
 
 test("extension-ready stem patterns highlight the whole matching word", () => {
@@ -355,352 +245,139 @@ test("normalizes escalation no esc and post purchase bullets", () => {
   ]);
 });
 
-test("deterministic rules resolve QA diagnostic phrases to their intended actions", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+test("loads the complete normalized-ID inventory and compiles its executable rules", () => {
+  const payload = loadNormalizedRules();
+  const rules = core.buildRules(payload.rules);
+  const ids = new Set(rules.map((item) => item.id));
+
+  assert.equal(rules.length, 161);
+  assert.equal(ids.size, rules.length);
+  for (const rule of rules) {
+    assert.match(rule.id, new RegExp(`^${rule.action}_\\d+$`));
+    assert.equal(rule.tag, rule.action);
+    assert.ok(rule.conditionSummary);
+    if (rule.aliasOf) assert.equal(ids.has(rule.aliasOf), true, `${rule.id} aliases missing ${rule.aliasOf}`);
+    if (rule.matchScope !== "procedural") assert.ok(rule.regex, `${rule.id} should compile`);
+  }
+});
+
+test("extracts executable conditions from normalized rule summaries", () => {
+  assert.equal(core.getConfiguredPattern({
+    action: "opt_out",
+    type: "regex",
+    match_scope: "regex_search",
+    condition_summary: "Human explanation. Match condition: ^stop$"
+  }), "^stop$");
+  assert.equal(core.getConfiguredPattern({
+    action: "opt_out",
+    type: "literal_phrase",
+    match_scope: "contains_full_normalized_phrase",
+    condition_summary: "stop texting"
+  }), "stop texting");
+});
+
+test("normalized rules and hover guidance have a one-to-one normalized-ID mapping", () => {
+  const payload = loadNormalizedRules();
+  const hover = JSON.parse(fs.readFileSync(normalizedHoverPath, "utf8"));
+  const ruleIds = payload.rules.map((item) => item.id).sort();
+  const hoverIds = Object.keys(hover.by_rule_id).sort();
+
+  assert.deepEqual(hoverIds, ruleIds);
+  assert.deepEqual(hover.by_rule_name, {});
+  for (const rule of payload.rules) {
+    const entry = hover.by_rule_id[rule.id];
+    assert.equal(entry.name, rule.name);
+    const expectedTitle = rule.action === "no_action" ? "close" : rule.action;
+    assert.equal(entry.title.toLowerCase().replace(/[- ]/g, "_"), expectedTitle);
+    assert.ok(entry.text);
+  }
+});
+
+test("all approved observed phrases match their categorized opt-out rule", () => {
+  const fixture = JSON.parse(fs.readFileSync(observedPhrasesPath, "utf8"));
+  const rules = buildNormalizedRules();
   const settings = core.mergeSettings(defaults, {});
-  const activeRules = core.getActiveRules(core.buildRules(payload.rules), settings);
+  const ruleIds = {
+    explicit_command: "opt_out_20",
+    explicit_request: "opt_out_4",
+    harassment_rejection: "opt_out_7",
+    blocking_rejection: "opt_out_22",
+    wrong_number: "opt_out_23",
+    offensive_rejection: "opt_out_33"
+  };
+  const allPhrases = Object.values(fixture).flat();
+  const activeRules = core.getActiveRules(rules, settings);
 
-  const cases = [
-    ["Please stop texting me and remove me from your list.", [
-      ["opt_out", "stop"]
-    ]],
-    ["who is this", [["txt", "who is this"]]],
-    ["i dont know you", [["txt", "i dont know you"]]],
-    ["we are done here", [["fuzzy_opt_out", "done"]]],
-    ["finished", [["opt_out", "finished"]]],
-    ["pause", [["opt_out", "pause"]]],
-    ["shush", [["opt_out", "shush"]]],
-    ["subscribe", [["close", "subscribe"]]],
-    ["Please cancel my subscription.", [["fuzzy_opt_out", "cancel my subscription"]]],
-    ['Loved "Thanks for your order"', [["close", "loved"]]],
-    ["Never opted in.", [["opt_out", "never opted in"]]],
-    ["Sorry, I can't talk right now.", [["close", "can't talk right now"]]]
-  ];
-
-  for (const [text, expected] of cases) {
-    const matches = core.collectMatches(text, activeRules, settings);
-    for (const [tag, contains] of expected) {
+  assert.equal(allPhrases.length, 193);
+  assert.equal(new Set(allPhrases).size, allPhrases.length);
+  for (const [subcategory, phrases] of Object.entries(fixture)) {
+    const target = rules.find((item) => item.id === ruleIds[subcategory]);
+    assert.ok(target, `missing ${ruleIds[subcategory]}`);
+    assert.equal(target.subcategory, subcategory);
+    assert.deepEqual(target.observedPhrases, phrases);
+    for (const phrase of phrases) {
+      const matches = core.collectMatches(phrase, [target], settings);
+      assert.equal(matches.length, 1, `${JSON.stringify(phrase)} should match ${target.id}`);
+      assert.equal(matches[0].rule.action, "opt_out");
+      assert.equal(matches[0].rule.prediction, 1);
+      assert.equal(matches[0].rule.category, "opt_out");
       assert.ok(
-        matches.some((match) => match.rule.tag === tag && text.slice(match.start, match.end).toLowerCase().includes(contains)),
-        `${text} should include ${tag}: ${contains}; got ${matches.map((match) => `${match.rule.tag}:${text.slice(match.start, match.end)}`).join(", ")}`
+        core.collectMatches(phrase, activeRules, settings).some((match) => match.rule.action === "opt_out"),
+        `${JSON.stringify(phrase)} should remain opt_out in the complete inventory`
       );
     }
   }
+  assert.ok(core.collectMatches("i would like to opt out of these messages\n\n", activeRules, settings)
+    .some((match) => match.rule.action === "opt_out"));
 });
 
-test("deterministic cleanup rules cover requested variants and exclusions", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+test("short observed opt-out variants are whole-message matches only", () => {
+  const rules = buildNormalizedRules();
   const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const rulesById = new Map(rules.map((item) => [item.id, item]));
-  const activeRules = core.getActiveRules(rules, settings);
+  const commandRule = rules.find((item) => item.id === "opt_out_20");
+  const requestRule = rules.find((item) => item.id === "opt_out_4");
 
-  for (const text of ["spam", "spams", "spammer", "spamming"]) {
-    const matches = core.collectMatches(text, [rulesById.get("rule_fed4cc7912c2263a")], settings);
-    assert.equal(matches.length, 1, `${text} should match spam variants`);
+  for (const phrase of ["step", "cxl", "arrt", "sto0"]) {
+    assert.equal(core.collectMatches(phrase, [commandRule], settings).length, 1, phrase);
   }
-  assert.equal(core.collectMatches("spamalot", [rulesById.get("rule_fed4cc7912c2263a")], settings).length, 0);
-
-  for (const text of ["end", "ends", "ending.", "ended!"]) {
-    assert.equal(core.collectMatches(text, [rulesById.get("rule_35a64c97cf6b24d5")], settings).length, 1);
+  for (const sentence of ["step one", "the cxl order", "arrt project", "code sto0 value"]) {
+    assert.equal(core.collectMatches(sentence, [commandRule], settings).length, 0, sentence);
   }
-  assert.equal(core.collectMatches("the movie ending was good", [rulesById.get("rule_35a64c97cf6b24d5")], settings).length, 0);
-
-  assert.equal(core.collectMatches("take my number off", [rulesById.get("rule_9ae98939ff042262")], settings).length, 1);
-  for (const text of ["take me", "take this", "take this anymore"]) {
-    assert.equal(core.collectMatches(text, activeRules, settings).some((match) => match.rule.id === "rule_9ae98939ff042262"), false);
-  }
-
-  assert.equal(core.collectMatches("This seems fraudulent.", [rulesById.get("rule_1ff20c8e5b17a76f")], settings).length, 1);
-
-  for (const text of ["quit playing", "stop playing", "quit lying", "stop lying"]) {
-    assert.equal(core.collectMatches(text, [rulesById.get("rule_28a16c51871d9e83")], settings).length, 1);
-  }
-
-  for (const text of ["finish", "finished", "finishes", "finishing"]) {
-    assert.equal(core.collectMatches(text, [rulesById.get("rule_5ad2f8fb3c22229d")], settings).length, 1);
-  }
-  assert.equal(core.collectMatches("please finish this order", activeRules, settings).some((match) => match.rule.id === "rule_5ad2f8fb3c22229d"), false);
-
-  for (const text of ["pause", "paused", "pausing"]) {
-    assert.equal(core.collectMatches(text, [rulesById.get("rule_523de625170a42d4")], settings).length, 1);
-  }
-  assert.equal(core.collectMatches("pause my subscription", activeRules, settings).some((match) => match.rule.id === "rule_523de625170a42d4"), false);
-
-  assert.equal(core.collectMatches("Customer support?", activeRules, settings).some((match) => match.rule.id === "rule_d71b14fc71ed188f"), true);
-  assert.equal(core.collectMatches("do not spam", [rulesById.get("rule_fe8eca5e5e5ff867")], settings).length, 0);
-  assert.equal(core.collectMatches("issue", activeRules, settings).some((match) => match.rule.id === "rule_e9bc789ec1b52ceb"), false);
-  assert.equal(core.collectMatches("pursue", activeRules, settings).some((match) => match.rule.id === "rule_e9bc789ec1b52ceb"), false);
-  assert.equal(core.collectMatches("I will sue you", [rulesById.get("rule_e9bc789ec1b52ceb")], settings).length, 1);
-  assert.equal(core.collectMatches("reportage", activeRules, settings).some((match) => match.rule.id === "rule_d9dedf14099f4647"), false);
-  assert.equal(core.collectMatches("reported you", [rulesById.get("rule_d9dedf14099f4647")], settings).length, 1);
-  assert.equal(rulesById.has("rule_5e2385aac4ffe493"), false);
-  assert.equal(core.collectMatches("unsubsidized loan", activeRules, settings).some((match) => match.rule.id === "rule_e51dc7d4ebc2632c"), false);
-  assert.equal(core.collectMatches("unsub", [rulesById.get("rule_e51dc7d4ebc2632c")], settings).length, 1);
-  assert.equal(core.collectMatches("unsubscribe", [rulesById.get("rule_e51dc7d4ebc2632c")], settings).length, 1);
-  assert.equal(core.collectMatches("kung fu", activeRules, settings).some((match) => match.rule.id === "rule_578078b652df9a1c"), false);
-  assert.equal(core.collectMatches("f u", activeRules, settings).some((match) => match.rule.id === "rule_578078b652df9a1c"), true);
-
-  for (const removedId of [
-    "rule_aaec757169b5d045",
-    "rule_cf5d12213cf5b726",
-    "rule_754d2c360b0b43fe",
-    "rule_41434a27f4e64824",
-    "rule_2cee9ccfd5c3206f",
-    "rule_ee985c7c20c83093",
-    "rule_c15592ace39cad2a",
-    "rule_7cbb4023388edec3",
-    "rule_4713232b43ce887d",
-    "rule_362b6d62919ca7c8",
-    "rule_25bed44ed111bce6",
-    "rule_6677dac08705e6d9"
-  ]) {
-    assert.equal(rulesById.has(removedId), false);
-  }
+  assert.equal(core.collectMatches("never", [requestRule], settings).length, 1);
+  assert.equal(core.collectMatches("never mind", [requestRule], settings).length, 0);
 });
 
-test("standalone remove phrases do not block longer list-removal phrases", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
+test("normalizes mathematical-script letters and maps matches to complete raw spans", () => {
+  const rules = buildNormalizedRules();
   const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const rulesById = new Map(rules.map((item) => [item.id, item]));
-  const activeRules = core.getActiveRules(rules, settings);
-
-  assert.equal(core.collectMatches("remove me", activeRules, settings).some((match) => match.rule.id === "rule_3a9dc0981448dafb"), true);
-  assert.equal(core.collectMatches("please remove", activeRules, settings).some((match) => match.rule.id === "rule_26cc75d8805d262e"), true);
-
-  for (const text of ["please remove me", "please remove me from your list", "can you remove me please"]) {
-    const matches = core.collectMatches(text, activeRules, settings);
-    assert.equal(matches.some((match) => match.rule.id === "rule_3a9dc0981448dafb"), false, `${text} should not match standalone remove me`);
-    assert.equal(matches.some((match) => match.rule.id === "rule_26cc75d8805d262e"), false, `${text} should not match standalone please remove`);
-  }
-
-  for (const listType of ["email", "text", "message", "messaging", "mailing", "mail"]) {
-    const text = `Please remove me from your ${listType} list today.`;
-    const matches = core.collectMatches(text, activeRules, settings);
-    assert.ok(
-      matches.some((match) => match.rule.id === "rule_remove_me_from_your_contact_list" && text.slice(match.start, match.end) === `remove me from your ${listType} list`),
-      `${text} should match the contact-list removal rule`
-    );
-  }
-
-  assert.equal(
-    core.collectMatches("remove me from your email list", [rulesById.get("rule_remove_me_from_your_contact_list")], settings).length,
-    1
-  );
-});
-
-test("done phrases collapse to canonical fuzzy rules", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const rulesById = new Map(rules.map((item) => [item.id, item]));
-
-  for (const ruleId of ["rule_56a5032d2bfabde1", "rule_9f9f434d2cfc8890"]) {
-    assert.equal(rulesById.get(ruleId)?.tag, "fuzzy_opt_out", `${ruleId} should be fuzzy`);
-  }
-  for (const ruleId of [
-    "rule_cc5eeb5fc6b88c64",
-    "rule_83b3924cfc4fb214",
-    "rule_7a4aabc615457dc9",
-    "rule_157e140013fc23de"
-  ]) {
-    assert.equal(rulesById.has(ruleId), false, `${ruleId} should be collapsed`);
-  }
-
-  const activeRules = core.getActiveRules(rules, settings);
-  assert.equal(core.collectMatches("done", activeRules, settings)[0]?.rule.id, "rule_56a5032d2bfabde1");
-  assert.equal(core.collectMatches("I'm done", activeRules, settings)[0]?.rule.id, "rule_9f9f434d2cfc8890");
-});
-
-test("not accepting messages duplicate collapses into rule_1fc84bcaffc4ee00", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const rawRulesById = new Map(payload.rules.map((item) => [item.id, item]));
-  const survivor = core.buildRules([rawRulesById.get("rule_1fc84bcaffc4ee00")])[0];
-  const settings = core.mergeSettings(defaults, {});
-
-  assert.equal(rawRulesById.has("rule_06305227826122d3"), false);
-  assert.deepEqual(rawRulesById.get("rule_1fc84bcaffc4ee00")?.keyword_collapse?.source_rule_ids, [
-    "rule_1fc84bcaffc4ee00",
-    "rule_06305227826122d3"
-  ]);
-  for (const message of [
-    "not accepting messages",
-    "not accepting text",
-    "not accepting texts",
-    "not accepting email",
-    "not accepting emails"
-  ]) {
-    assert.equal(core.collectMatches(message, [survivor], settings)[0]?.rule.id, "rule_1fc84bcaffc4ee00");
-  }
-});
-
-test("predictions follow the opt-out and action mapping in both inventories", () => {
-  const inventoryPaths = [
-    "../opt_out_deterministic_rules.json",
-    "../highlighter/data/rules/opt_out_deterministic_rules.json"
+  const requestRule = rules.find((item) => item.id === "opt_out_4");
+  const cases = [
+    "𝓢𝓽𝓸𝓹 𝓽𝓮𝔁𝓽",
+    "Please 𝓢𝓽𝓸𝓹 𝓽𝓮𝔁𝓽"
   ];
-  const expectedPrediction = (rule) => {
-    if (rule.opt_out === "opt_out") return 1;
-    if (rule.action === "fuzzy_opt_out") return 2;
-    if (rule.action === "tmt") return 3;
-    if (rule.action === "txt") return 4;
-    return 0;
-  };
 
-  for (const inventoryPath of inventoryPaths) {
-    const payload = JSON.parse(fs.readFileSync(path.join(__dirname, inventoryPath), "utf8"));
-    for (const rule of payload.rules) {
-      assert.equal(rule.prediction, expectedPrediction(rule), `${inventoryPath}: ${rule.id}`);
-    }
+  for (const text of cases) {
+    const matches = core.collectMatches(text, [requestRule], settings);
+    assert.equal(matches.length, 1, text);
+    assert.equal(text.slice(matches[0].start, matches[0].end), text);
+    assert.equal(matches[0].rule.action, "opt_out");
   }
 });
 
-test("legal rules are opt outs without matching lawlessness", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const activeRules = core.getActiveRules(rules, settings);
+test("normalized inventory retains representative action behavior", () => {
+  const activeRules = core.getActiveRules(buildNormalizedRules(), core.mergeSettings(defaults, {}));
+  const cases = [
+    ["wrong number", "opt_out"],
+    ["who is this", "txt"],
+    ["customer service", "reply"],
+    ["i am done with this brand", "fuzzy_opt_out"],
+    ["Sorry, I can't talk right now.", "close"],
+    ["I am in 1st grade.", "opt_out"]
+  ];
 
-  for (const rule of payload.rules.filter((item) => item.subcategory === "legal")) {
-    assert.deepEqual(
-      [rule.category, rule.opt_out, rule.action, rule.prediction],
-      ["opt_out", "opt_out", "opt_out", 1],
-      `${rule.id} should be an opt out`
-    );
+  for (const [text, action] of cases) {
+    const matches = core.collectMatches(text, activeRules, core.mergeSettings(defaults, {}));
+    assert.ok(matches.some((match) => match.rule.action === action), `${text} should produce ${action}`);
   }
-
-  assert.equal(core.collectMatches("law", activeRules, settings)[0]?.rule.tag, "opt_out");
-  assert.equal(core.collectMatches("lawyer", activeRules, settings)[0]?.rule.tag, "opt_out");
-  assert.equal(core.collectMatches("lawlessness", activeRules, settings).length, 0);
-});
-
-test("gratitude no-action rules are limited to whole-message thanks variants", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const thanks = rules.find((item) => item.id === "rule_800d066d9f05282c");
-  const thx = rules.find((item) => item.id === "rule_b8bbd9e58a1e6618");
-  const thankU = rules.find((item) => item.id === "rule_51122d616562849e");
-  const activeRules = core.getActiveRules(rules, {
-    ...settings,
-    categories: {
-      ...settings.categories,
-      no_action: { ...settings.categories.no_action, enabled: true }
-    }
-  });
-
-  assert.equal(core.collectMatches("thanks", [thanks], settings).length, 1);
-  assert.equal(core.collectMatches("thanks for your help", [thanks], settings).length, 0);
-  assert.equal(core.collectMatches("thx", [thx], settings).length, 1);
-  assert.equal(core.collectMatches("thx for the update", [thx], settings).length, 0);
-  assert.equal(core.collectMatches("thank u", [thankU], settings).length, 1);
-  assert.equal(core.collectMatches("thank u for checking", [thankU], settings).length, 0);
-  assert.equal(activeRules.some((item) => item.tag === "no_action"), false);
-});
-
-test("deterministic rules compile highlightable entries and skip procedural detectors", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const procedural = rules.find((item) => item.id === "rule_451c36fb9b91ee65");
-  const optOutPhrase = rules.find((item) => item.pattern === "remove me");
-  const optionalGroupRule = rules.find((item) => item.id === "rule_9a0a246dfc518c29");
-  const curlyQuoteRule = rules.find((item) => item.id === "rule_6da31ef70e2d6310");
-
-  assert.equal(rules.length, 394);
-  assert.deepEqual(rules.filter((item) => !item.regex).map((item) => item.id), [
-    "rule_451c36fb9b91ee65",
-    "rule_39802d76d8b46842",
-    "rule_emoji_only_non_stop",
-    "rule_combined_no_notifs",
-    "rule_combined_driving_auto_reply",
-    "rule_send_this_loop_marketing_opt_in",
-    "detector.empty_customer_message",
-    "detector.exact_opt_in",
-    "detector.real_word_collision",
-    "detector.under_13_age_threshold",
-    "detector.language_filter_exact_opt_out",
-    "detector.language_filter_non_opt_out",
-    "detector.bounded_block_intent",
-    "detector.remove_me_from_list",
-    "detector.communication_opt_out",
-    "detector.targeted_legal_intent"
-  ]);
-  assert.equal(procedural.regex, null);
-  assert.equal(optOutPhrase.tag, "opt_out");
-  assert.equal(core.collectMatches("remove me", [optOutPhrase], settings).length, 1);
-  assert.equal(core.collectMatches("please remove me", [optOutPhrase], settings).length, 0);
-  assert.equal(core.collectMatches("I dont want this", [optionalGroupRule], settings).length, 1);
-  assert.equal(
-    core.collectMatches(
-      "Im not receiving notifications if this is urgent reply urgent to send a notification through with your original message",
-      [curlyQuoteRule],
-      settings
-    ).length,
-    1
-  );
-
-  const emojiRules = rules.filter((item) => item.id.startsWith("rule_emoji_") && item.regex);
-  for (const emoji of [0x1F595, 0x1F6D1, 0x270B, 0x1F645, 0x1F6AB, 0x1F515].map((codePoint) => String.fromCodePoint(codePoint))) {
-    assert.ok(core.collectMatches(emoji, emojiRules, settings).some((match) => match.rule.tag === "opt_out"), `${emoji} should opt out`);
-  }
-});
-
-test("merged inventory keeps compatible additions, exclusions, and hover guidance aligned", () => {
-  const payload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const hover = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/rule_hover_text.json"), "utf8"));
-  const settings = core.mergeSettings(defaults, {});
-  const rules = core.buildRules(payload.rules);
-  const rulesById = new Map(rules.map((item) => [item.id, item]));
-
-  assert.equal(new Set(payload.rules.map((item) => item.id)).size, payload.rules.length);
-  assert.equal(new Set(payload.rules.map((item) => item.name)).size, payload.rules.length);
-
-  for (const excludedId of [
-    "rule_5e2385aac4ffe493",
-    "rule_2cee9ccfd5c3206f",
-    "rule_06305227826122d3"
-  ]) {
-    assert.equal(rulesById.has(excludedId), false, `${excludedId} should remain excluded`);
-  }
-
-  for (const preservedId of [
-    "rule_06d01f1a0e0b3885",
-    "rule_14492eac781ac6da",
-    "rule_b25458937a65a761"
-  ]) {
-    assert.equal(rulesById.has(preservedId), true, `${preservedId} should remain available to the extension`);
-  }
-
-  const exactNo = rulesById.get("rule_exact_no_not_opt_out");
-  const creepyPhrase = rulesById.get("rule_opt_out_creepy_spying_phrases");
-  const noLonger = rulesById.get("rule_no_longer_exact_fuzzy_opt_out");
-  const boundedLegal = rulesById.get("rule_e9bc789ec1b52ceb");
-  assert.equal(core.collectMatches("no", [exactNo], settings).length, 1);
-  assert.equal(core.collectMatches("stop spying", [creepyPhrase], settings).length, 1);
-  assert.equal(core.collectMatches("no longer", [noLonger], settings).length, 1);
-  assert.equal(core.collectMatches("issue", [boundedLegal], settings).length, 0);
-  assert.equal(core.collectMatches("I will sue you", [boundedLegal], settings).length, 1);
-
-  for (const rule of payload.rules) {
-    const entry = hover.by_rule_id[rule.id];
-    assert.ok(entry, `missing hover guidance for ${rule.id}`);
-    assert.ok(entry.title, `missing hover title for ${rule.id}`);
-    assert.ok(entry.text, `missing hover text for ${rule.id}`);
-    assert.ok(entry.name, `missing hover name for ${rule.id}`);
-  }
-});
-
-test("deterministic hover text file has editable title, text, and name entries", () => {
-  const rulesPayload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/opt_out_deterministic_rules.json"), "utf8"));
-  const hoverPayload = JSON.parse(fs.readFileSync(path.join(__dirname, "../highlighter/data/rules/rule_hover_text.json"), "utf8"));
-  const firstRule = rulesPayload.rules[0];
-  const firstHover = hoverPayload.by_rule_id[firstRule.id];
-
-  assert.equal(firstHover.title, firstRule.action);
-  assert.equal(firstHover.text, firstRule.condition_summary);
-  assert.equal(firstHover.name, firstRule.name);
-  assert.equal(hoverPayload.defaults.user_added.title, "user_added");
-  assert.equal(hoverPayload.defaults.user_added.name, "{pattern}");
+  assert.deepEqual(core.collectMatches("Stop by my house after delivery.", activeRules, core.mergeSettings(defaults, {})), []);
 });

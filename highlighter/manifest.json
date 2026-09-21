@@ -47,8 +47,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "data/rules/opt_out_deterministic_rules.json",
-        "data/rules/rule_hover_text.json"
+        "data/rules/opt_out_deterministic_rules_normalized_ids.json",
+        "data/rules/rule_hover_text_normalized_ids.json"
       ],
       "matches": [
         "https://ui.attentivemobile.com/*"
