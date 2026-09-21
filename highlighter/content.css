@@ -5,8 +5,20 @@
 }
 
 .amh-message-highlight {
-  border-radius: 4px;
+  position: relative;
+  isolation: isolate;
   transition: box-shadow 120ms ease, filter 120ms ease;
+}
+
+.amh-message-highlight::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: var(--amh-highlight-background);
+  box-shadow: inset 0 0 0 1px var(--amh-highlight-border);
+  pointer-events: none;
 }
 
 .amh-message-highlight.amh-highlight--hover {

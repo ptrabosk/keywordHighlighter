@@ -107,6 +107,10 @@ try {
     New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $sourceRoot $relativePath) -Destination $destination -Recurse
   }
+  $stagedConfigPath = Join-Path $stageRoot "src\logging\config.js"
+  if (-not (Test-Path -LiteralPath $stagedConfigPath -PathType Leaf)) {
+    Copy-Item -LiteralPath (Join-Path $stageRoot "src\logging\config.example.js") -Destination $stagedConfigPath
+  }
   Remove-Item -LiteralPath (Join-Path $stageRoot "src\logging\config.example.js") -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath (Join-Path $stageRoot "src\logging\config.local.example.js") -Force -ErrorAction SilentlyContinue
   Remove-Item -LiteralPath (Join-Path $stageRoot "src\logging\config.local.js") -Force -ErrorAction SilentlyContinue

@@ -49,13 +49,18 @@ test("service worker dependency graph contains no unsupported dynamic imports", 
   assert.doesNotMatch(moduleSources, /\bimport\s*\(/);
 });
 
-test("popup and options pages prominently disclose shortcut telemetry", () => {
+test("popup and options pages omit the shortcut activity disclaimer", () => {
   for (const page of ["popup.html", "options.html"]) {
     const source = readExtensionFile(page);
-    assert.match(source, /Shortcut activity/);
-    assert.match(source, /message text/i);
-    assert.match(source, /field contents/i);
+    assert.doesNotMatch(source, /Shortcut activity/i);
+    assert.doesNotMatch(source, /telemetry-notice/);
   }
+});
+
+test("manifest identifies the 1.0.4 release", () => {
+  const manifest = JSON.parse(readExtensionFile("manifest.json"));
+
+  assert.equal(manifest.version, "1.0.4");
 });
 
 test("manifest JSON resources exist and are parseable", () => {
@@ -65,8 +70,8 @@ test("manifest JSON resources exist and are parseable", () => {
     .filter((resource) => resource.endsWith(".json"));
 
   assert.deepEqual(jsonResources.sort(), [
-    "data/rules/opt_out_deterministic_rules_normalized_ids.json",
-    "data/rules/rule_hover_text_normalized_ids.json"
+    "data/rules/opt_out_rules.json",
+    "data/rules/rule_hover_text.json"
   ]);
   assert.deepEqual(
     fs.readdirSync(path.join(extensionDir, "data/rules"))
@@ -89,6 +94,18 @@ test("conversation split phrase highlights render as continuous multi-part spans
   assert.match(cssSource, /box-shadow:\s*none !important/);
   assert.match(cssSource, /\.amh-highlight--match-start/);
   assert.match(cssSource, /\.amh-highlight--match-end/);
+});
+
+test("message highlights preserve the box radius and are inset seven pixels on every edge", () => {
+  const contentSource = readExtensionFile("content.js");
+  const cssSource = readExtensionFile("content.css");
+
+  assert.match(contentSource, /applyInsetHighlightStyle\(messageBlock, rule\)/);
+  assert.doesNotMatch(cssSource, /\.amh-message-highlight\s*\{[^}]*border-radius/);
+  assert.match(cssSource, /\.amh-message-highlight::before[\s\S]*inset:\s*7px/);
+  assert.match(cssSource, /\.amh-message-highlight::before[\s\S]*border-radius:\s*inherit/);
+  assert.match(cssSource, /background-color:\s*var\(--amh-highlight-background\)/);
+  assert.match(cssSource, /box-shadow:\s*inset 0 0 0 1px var\(--amh-highlight-border\)/);
 });
 
 test("customer highlight count badge is URL-gated and uses logical rendered groups", () => {

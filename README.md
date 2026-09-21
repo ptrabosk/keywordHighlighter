@@ -1,6 +1,6 @@
 # Offisght Operations Rule Highlighter
 
-A Manifest V3 Chrome extension that highlights inbound message text using deterministic action rules from `highlighter/data/rules/opt_out_deterministic_rules_normalized_ids.json`.
+A Manifest V3 Chrome extension that highlights inbound message text using the schema-v2 deterministic action registry in `highlighter/data/rules/opt_out_rules.json`.
 
 ## What it does
 
@@ -11,9 +11,9 @@ A Manifest V3 Chrome extension that highlights inbound message text using determ
 div[class*="type-INBOUND"] p[class*="variant-caption"]
 ```
 
-- Loads and flattens every highlightable rule object from `highlighter/data/rules/opt_out_deterministic_rules_normalized_ids.json`.
-- Highlights matches by action/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `no_action`, `close`, and user-added patterns.
-- Shows hover tooltips from editable entries in `highlighter/data/rules/rule_hover_text_normalized_ids.json`.
+- Validates and loads all 202 built-in rules from `highlighter/data/rules/opt_out_rules.json`.
+- Highlights active matches by action/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `close`, and user-added patterns; validated `no_action` rules remain inactive.
+- Shows generated hover tooltips from `highlighter/data/rules/rule_hover_text.json`.
 - Lets users add custom patterns and hover text from the popup.
 - Lets users export and import custom keyword backups as JSON.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
@@ -71,7 +71,7 @@ The Apps Script receiver lives in `google-apps-script/Code.gs` and writes to the
 - `Upload_Batches_keywordHighlighter`
 - hidden `Event_ID_Index_keywordHighlighter`
 
-Committed logging configuration contains placeholders only. The packaging script injects credentials directly into the staged, statically imported `config.js`; source files are unchanged. Chrome extension service workers do not support dynamic imports, so `config.local.js` is not a runtime configuration mechanism. Use the deployed Apps Script `/exec` URL, not the Sheet ID or `/dev` URL.
+The tracked `config.example.js` contains placeholders only, while the runtime `config.js` is ignored by Git. When no local runtime config exists, the packaging script creates its staged `config.js` from the example; Store builds then inject credentials into that staged file from the process environment. Local source files are unchanged. Chrome extension service workers do not support dynamic imports, so `config.local.js` is not a runtime configuration mechanism. Use the deployed Apps Script `/exec` URL, not the Sheet ID or `/dev` URL.
 
 ## Tests
 
@@ -105,14 +105,14 @@ keywordHighlighter/
     |-- settings.js
     |-- icons/
     |-- data/rules/
-    |   |-- opt_out_deterministic_rules_normalized_ids.json
-    |   `-- rule_hover_text_normalized_ids.json
+    |   |-- opt_out_rules.json
+    |   `-- rule_hover_text.json
     `-- src/logging/
 ```
 
 ## Notes
 
-- The extension skips procedural/non-highlightable deterministic rules and invalid JavaScript regex patterns, then logs skipped regexes to the console.
+- The extension validates the complete packaged registry at startup and reports an initialization error if its schema or a rule is invalid.
 - For overlapping matches, it keeps the earliest match, then the longest match, then the category priority.
-- `close` and whole-message rules only highlight when the match is the whole inbound message body, ignoring surrounding whitespace and simple punctuation.
+- `full_match`, `exact`, and `exact_set` rules require the complete selected target; `regex_search` and `bounded_phrase` rules may match within it.
 - If the supported Operations application changes its DOM, update the selector in the options page rather than changing code.

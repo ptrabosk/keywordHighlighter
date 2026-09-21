@@ -150,18 +150,15 @@
   }
 
   async function loadRules() {
-    const url = chrome.runtime.getURL('data/rules/opt_out_deterministic_rules_normalized_ids.json');
+    const url = chrome.runtime.getURL('data/rules/opt_out_rules.json');
     try {
       const payload = await loadJsonResource(url, 'Rules');
-      if (!payload || typeof payload !== 'object' || !payload.rules) {
-        throw new Error(`Rules JSON did not contain a rules property: ${url}`);
-      }
-      const rules = core.buildRules(payload.rules);
+      const rules = core.buildRules(payload);
       logOperationalEvent({
         eventType: 'rules_loaded',
         severity: 'info',
         result: 'success',
-        ruleSource: 'opt_out_deterministic_rules_normalized_ids',
+        ruleSource: 'opt_out_rules',
         metadata: { operation: 'rulesLoaded', ruleCount: rules.length }
       });
       return rules;
@@ -194,7 +191,7 @@
   }
 
   async function loadHoverText() {
-    const url = chrome.runtime.getURL('data/rules/rule_hover_text_normalized_ids.json');
+    const url = chrome.runtime.getURL('data/rules/rule_hover_text.json');
     try {
       return await loadJsonResource(url, 'Hover text');
     } catch (error) {
@@ -315,7 +312,7 @@
     try {
       const activeRules = core.getActiveRules(state.rules, state.settings);
       state.stats.activeRules = activeRules.length;
-      state.stats.invalidRules = state.rules.filter((rule) => !rule.regex).length;
+      state.stats.invalidRules = state.rules.filter((rule) => !rule.executable).length;
       state.stats.highlightedElements = 0;
       state.stats.highlights = 0;
       state.stats.lastRunAt = new Date().toISOString();
@@ -494,7 +491,7 @@
   function applyMessageBlockHighlight(element, rule, messageText) {
     const messageBlock = element.closest('div[class*="type-INBOUND"]') || element;
     messageBlock.classList.add('amh-message-highlight');
-    applyHighlightStyle(messageBlock, rule);
+    applyInsetHighlightStyle(messageBlock, rule);
     applyTooltipData(messageBlock, rule, messageText);
   }
 
@@ -524,16 +521,19 @@
     const brandTexts = getRecentBrandMessageTexts(element, HOT_TOPIC_BRAND_LOOKBACK_LIMIT);
     if (!brandTexts.some(isHotTopicBrandPrompt)) return null;
 
-    const isOptOut = /\b(?:4|four|never)\b/i.test(core.normalizeMessageBody(text));
-    const ruleName = isOptOut ? 'opt_outs_ml.hot_topic_opt_out' : 'opt_outs_ml.hot_topic_not_opt_out';
-    const rule = state.rules.find((item) => item.name === ruleName) || createHotTopicFallbackRule(isOptOut);
+    const normalizedReply = core.normalizeMessageBody(text);
+    const isOptOut = /\b(?:4|four|never)\b/i.test(normalizedReply);
+    const isPositiveChoice = /\b(?:1|one|same|2|two|weekly|3|three|monthly)\b/i.test(normalizedReply);
+    if (!isOptOut && !isPositiveChoice) return null;
+    const detector = isOptOut ? 'hot_topic_opt_out' : 'hot_topic_not_opt_out';
+    const rule = state.rules.find((item) => item.detector === detector) || createHotTopicFallbackRule(isOptOut);
     if (!rule || !isRuleCategoryEnabled(rule)) return null;
     return rule;
   }
 
   function getHotTopicPromptRule(element) {
     if (!isHotTopicBrandElement(element)) return null;
-    const rule = state.rules.find((item) => item.name === 'opt_outs_ml.hot_topic_not_opt_out') || createHotTopicFallbackRule(false);
+    const rule = state.rules.find((item) => item.detector === 'hot_topic_not_opt_out') || createHotTopicFallbackRule(false);
     if (!rule || !isRuleCategoryEnabled(rule)) return null;
     return rule;
   }
@@ -738,6 +738,8 @@
       element.classList.remove('amh-message-highlight', 'amh-highlight--hover');
       element.style.backgroundColor = '';
       element.style.boxShadow = '';
+      element.style.removeProperty('--amh-highlight-background');
+      element.style.removeProperty('--amh-highlight-border');
       for (const attribute of ['amhRuleName', 'amhRuleTag', 'amhRuleLabel', 'amhTooltipTitle', 'amhTooltipText', 'amhTooltipName', 'amhMatchedText']) {
         element.removeAttribute(`data-${attribute}`);
       }
@@ -805,6 +807,14 @@
     const opacity = clamp(Number(state.settings.opacity), 0.08, 0.85);
     span.style.backgroundColor = hexToRgba(color, opacity);
     span.style.boxShadow = `0 0 0 1px ${hexToRgba(color, Math.min(opacity + 0.18, 0.9))}`;
+  }
+
+  function applyInsetHighlightStyle(element, rule) {
+    const category = state.settings.categories[rule.tag] || {};
+    const color = category.color || '#a855f7';
+    const opacity = clamp(Number(state.settings.opacity), 0.08, 0.85);
+    element.style.setProperty('--amh-highlight-background', hexToRgba(color, opacity));
+    element.style.setProperty('--amh-highlight-border', hexToRgba(color, Math.min(opacity + 0.18, 0.9)));
   }
 
   function applyEscalationHighlightStyle(span) {
@@ -948,7 +958,7 @@
       severity: 'info',
       result: 'success',
       durationMs,
-      ruleSource: 'opt_out_deterministic_rules_normalized_ids',
+      ruleSource: 'opt_out_rules',
       metadata: {
         operation: 'render',
         trigger: forceAll ? 'force' : 'scheduled'

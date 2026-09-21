@@ -91,7 +91,7 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
         <input data-key="${escapeHtml(key)}" data-field="enabled" type="checkbox" ${category.enabled !== false ? 'checked' : ''}>
         <div class="category__label">
           <strong>${escapeHtml(category.label || key)}</strong>
-          <span>${escapeHtml(key)}</span>
+          <span>${escapeHtml(key === 'txt' ? 'TXT' : key)}</span>
         </div>
         ${isFixedColor
           ? `<span class="color-swatch" style="background:${escapeHtml(category.color || '#a855f7')}" aria-label="Fixed project color"></span>`
@@ -191,16 +191,18 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
       categories: {}
     };
 
-    const keys = new Set([
-      ...Object.keys(base.categories || {}),
-      ...Object.keys((override && override.categories) || {})
-    ]);
+    const keys = Object.keys(base.categories || {});
 
     for (const key of keys) {
+      const categoryOverride = override?.categories?.[key] || {};
       merged.categories[key] = {
         ...(base.categories[key] || {}),
-        ...((override.categories && override.categories[key]) || {})
+        ...categoryOverride,
+        label: base.categories[key].label
       };
+      if (key === 'txt' && String(categoryOverride.color || '').toUpperCase() === '#F6DA71') {
+        merged.categories[key].color = base.categories[key].color;
+      }
     }
     if (base.categories.user_added && merged.categories.user_added) {
       merged.categories.user_added.color = base.categories.user_added.color;

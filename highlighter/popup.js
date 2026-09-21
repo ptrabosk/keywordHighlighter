@@ -211,9 +211,24 @@ function mergeSettings(base, override) {
   const merged = {
     ...base,
     ...override,
+    categories: {},
     customKeywords: Array.isArray(override?.customKeywords) ? override.customKeywords.map(normalizeKeyword).filter(Boolean) : base.customKeywords,
     customKeywordTextByPattern: normalizeCustomKeywordTextMap(override?.customKeywords, override?.customKeywordTextByPattern || base.customKeywordTextByPattern || {})
   };
+  for (const key of Object.keys(base.categories || {})) {
+    const categoryOverride = override?.categories?.[key] || {};
+    merged.categories[key] = {
+      ...base.categories[key],
+      ...categoryOverride,
+      label: base.categories[key].label
+    };
+    if (key === 'txt' && String(categoryOverride.color || '').toUpperCase() === '#F6DA71') {
+      merged.categories[key].color = base.categories[key].color;
+    }
+  }
+  if (base.categories?.user_added && merged.categories.user_added) {
+    merged.categories.user_added.color = base.categories.user_added.color;
+  }
   return merged;
 }
 

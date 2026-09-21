@@ -207,14 +207,15 @@ test("logging keeps only the requested event contract and diagnostics", () => {
   }
 });
 
-test("committed logging config contains placeholders and no runtime dynamic import", () => {
-  const configSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.js"), "utf8");
+test("tracked logging config template contains placeholders and runtime config is ignored", () => {
+  const configSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.example.js"), "utf8");
   const gitignoreSource = fs.readFileSync(path.join(__dirname, "../.gitignore"), "utf8");
 
-  assert.match(configSource, /REPLACE_WITH_APPS_SCRIPT_EXEC_URL/);
+  assert.match(configSource, /YOUR_DEPLOYMENT_ID/);
   assert.match(configSource, /REPLACE_WITH_LOCAL_API_KEY/);
   assert.doesNotMatch(configSource, /script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec/);
   assert.doesNotMatch(configSource, /\bimport\s*\(/);
+  assert.match(gitignoreSource, /highlighter\/src\/logging\/config\.js/);
   assert.match(gitignoreSource, /highlighter\/src\/logging\/config\.local\.js/);
 });
 
