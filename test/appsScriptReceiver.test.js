@@ -9,9 +9,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const source = fs.readFileSync(path.join(__dirname, "../google-apps-script/Code.gs"), "utf8");
 
 function loadReceiver() {
-  const context = vm.createContext({ console });
+  const context = vm.createContext({
+    console,
+    Utilities: {
+      newBlob: (value) => ({ getBytes: () => new TextEncoder().encode(value) })
+    }
+  });
   vm.runInContext(source, context, { filename: "Code.gs" });
   return context;
+}
+
+function validEvent(overrides = {}) {
+  return {
+    schemaVersion: 1,
+    eventId: "event-1",
+    sessionId: "session-1",
+    timestamp: "2026-09-29T10:00:00.000Z",
+    eventType: "highlight_detected",
+    severity: "info",
+    result: "success",
+    extensionVersion: "1.0.6",
+    surface: "content",
+    uploadState: "pending",
+    uploadAttempts: 0,
+    ...overrides
+  };
 }
 
 test("receiver validates shortcut metadata as an exact two-field contract", () => {
@@ -23,13 +45,36 @@ test("receiver validates shortcut metadata as an exact two-field contract", () =
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+D", highlightCount: 1, text: "no" }), false);
 });
 
-test("receiver uses the 15-column event schema without URL or profile data", () => {
-  assert.match(source, /"Surface",\s*"Rule Source"/);
+test("receiver stores supported-page URLs without profile data", () => {
+  assert.match(source, /"Surface",\s*"Page URL",\s*"Rule Source"/);
   assert.match(source, /"Metadata JSON",\s*"Batch ID"/);
-  assert.match(source, /function migrateLegacyEventsSheet_/);
+  assert.match(source, /function migrateEventsSheet_/);
   assert.match(source, /clearContent\(\)/);
-  assert.match(source, /deleteColumns\(9, 2\)/);
-  assert.doesNotMatch(source, /event\.pageUrl|event\.profileEmail/);
+  assert.match(source, /deleteColumn\(10\)/);
+  assert.match(source, /insertColumnAfter\(8\)/);
+  assert.match(source, /sheetSafe_\(event\.pageUrl \|\| ""\)/);
+  assert.doesNotMatch(source, /event\.profileEmail/);
+});
+
+test("receiver accepts supported-page URLs only for highlights, shortcuts, and errors", () => {
+  const receiver = loadReceiver();
+  const pageUrl = "https://ui.attentivemobile.com/concierge/conversation/123?view=open#latest";
+
+  assert.equal(receiver.validateEvent_(validEvent({ pageUrl })).valid, true);
+  assert.equal(receiver.validateEvent_(validEvent({
+    eventType: "highlight_shortcut_pressed",
+    pageUrl,
+    metadata: { shortcut: "Shift+D", highlightCount: 2 }
+  })).valid, true);
+  assert.equal(receiver.validateEvent_(validEvent({
+    eventType: "render_failed",
+    severity: "error",
+    result: "failure",
+    pageUrl
+  })).valid, true);
+  assert.equal(receiver.validateEvent_(validEvent({ pageUrl: "https://example.com/concierge/123" })).reason, "INVALID_PAGE_URL");
+  assert.equal(receiver.validateEvent_(validEvent({ surface: "background", severity: "error", pageUrl })).reason, "INVALID_PAGE_URL_SURFACE");
+  assert.equal(receiver.validateEvent_(validEvent({ eventType: "rules_loaded", pageUrl })).reason, "PAGE_URL_NOT_ALLOWED");
 });
 
 test("receiver enforces total and shortcut daily quotas independently", () => {

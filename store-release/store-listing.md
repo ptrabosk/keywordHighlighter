@@ -12,7 +12,7 @@ Highlight configured rule matches in inbound Operations messages.
 
 Offsight Highlighter helps Operations teams spot configured action phrases in inbound messages on the supported Operations workspace.
 
-The extension reads supported workspace content, including inbound messages, locally to find configured matches and render highlights. It does not upload or store message text, matched text, page URLs, or unrelated browsing activity.
+The extension reads supported workspace content, including inbound messages, locally to find configured matches and render highlights. It does not upload or store message text or matched text. For debugging, highlight detections, supported shortcut presses, and content-script errors include the full URL of the current supported Operations page; URLs from other sites and general browsing history are not collected.
 
 Features:
 
@@ -25,7 +25,7 @@ Features:
 
 The extension does not request or inspect Chrome profile identity. Operational events are not associated with an email address or Google account identifier. Custom keywords and hover guidance use Chrome Sync storage so they can follow the user across synchronized Chrome browsers; they are not included in telemetry. CSV imports and exports are processed locally.
 
-The extension sends only bounded operational information over HTTPS: random identifiers, timestamps, extension version, supported surface, sanitized diagnostics, and highlight counts. Message text, matched text, page URLs, field contents, rule names, and unrelated browsing activity are not transmitted or stored by the extension. Uploaded telemetry and related batch and deduplication records are deleted after 90 days. See the privacy policy for the complete data-use disclosure.
+The extension sends only bounded operational information over HTTPS: random identifiers, timestamps, extension version, supported surface, the current supported-page URL for highlight/shortcut/error events, sanitized diagnostics, highlight counts, and which supported shortcut (`Shift+D/N/B/C`) was pressed. It does not separately add arbitrary keystrokes, typed text, message text, matched text, field contents, or rule names to telemetry; any value embedded by the supported site in the full URL is included as part of that URL. URLs from other sites and unrelated browsing activity are not collected. Uploaded telemetry and related batch and deduplication records are deleted after 90 days. See the privacy policy for the complete data-use disclosure.
 
 ## Permission explanations
 

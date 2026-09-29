@@ -18,7 +18,7 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 - Lets users export and import custom keyword backups as CSV.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
 - Documents local data practices and operational telemetry in the published privacy policy.
-- Records limited usage information as described in the published privacy policy. Message text, page URLs, profile emails, field contents, and unrelated browsing activity are never recorded.
+- Records limited usage information as described in the published privacy policy. Full supported-page URLs are recorded for highlight, shortcut, and content-error events; message text, profile emails, field contents, and arbitrary keystrokes are not separately added to telemetry, though values embedded by the site in a full URL are included as part of that URL. URLs from other sites and unrelated browsing activity are never recorded.
 - Provides a focused popup and options page for adding and editing custom keywords.
 - Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
 

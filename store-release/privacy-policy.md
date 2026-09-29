@@ -12,9 +12,11 @@ The extension collects limited operational information about the highlighting fe
 
 - the number of rendered rule highlights, capped at 1,000;
 - an event timestamp, random event and session identifiers, extension version, and the supported page surface;
+- the full URL of the supported Operations page when a highlight is detected, a supported shortcut is pressed, or a content-script error occurs; this URL may contain conversation identifiers, query parameters, or fragments;
+- which supported shortcut was pressed (`Shift+D`, `Shift+N`, `Shift+B`, or `Shift+C`); the extension does not record arbitrary keystrokes or text typed by the user;
 - bounded technical event fields such as event type, severity, result, duration, sanitized error code/message, and allowlisted numeric or status metadata.
 
-The extension reads supported page content, including inbound messages that may be personal communications, locally to perform its highlighting feature. It does not transmit or store message text, matched text, page URLs, profile emails, rule names, selected text, field contents, text entered into editable fields, or unrelated browsing activity.
+The extension reads supported page content, including inbound messages that may be personal communications, locally to perform its highlighting feature. It does not separately add message text, matched text, profile emails, rule names, selected text, field contents, text entered into editable fields, or arbitrary keystrokes to telemetry. URL collection is limited to the supported Operations page and the operational events described above; any value that the supported site embeds in that URL is included as part of the full URL. The extension does not collect unrelated browsing activity.
 
 Custom keywords and their hover guidance are stored in Chrome Sync storage so Chrome can synchronize them across browsers where the user is signed in and extension synchronization is enabled. They are not included in operational telemetry. CSV import reads a file selected by the user locally, and CSV export creates a local download; imported or exported keyword content is not sent to the publisher.
 
@@ -30,8 +32,8 @@ The complete data-use disclosure is provided on this privacy policy page.
 
 ## Security and deletion requests
 
-Uploads use HTTPS, an allowlisted and bounded event schema, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project. Unknown fields are rejected, and the extension sanitizes bounded diagnostic strings before upload. The publisher does not permit people to read telemetry except when the user expressly authorizes support access to specific data, when needed for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.
+Uploads use HTTPS, an allowlisted and bounded event schema, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project. Unknown fields and URLs outside the supported Operations page are rejected, and the extension sanitizes bounded diagnostic strings before upload. The publisher does not permit people to read telemetry except when the user expressly authorizes support access to specific data, when needed for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.
 
-For privacy questions and deletion requests, contact [privacy@attentive.com](mailto:privacy@attentive.com). Because operational telemetry contains no account identifier, the publisher may need an event, session, or batch identifier to locate specific records and may be unable to associate anonymous records with a requester.
+For privacy questions and deletion requests, contact [privacy@attentive.com](mailto:privacy@attentive.com). Because operational telemetry contains no Chrome or Google account identifier, the publisher may need a supported-page URL or an event, session, or batch identifier to locate specific records and may be unable to associate other records with a requester.
 
 The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements. User data is used only to provide or improve the extension's single purpose, is transferred only when necessary for that purpose or for security or legal compliance, is never used or transferred for personalized advertising, and is not sold to data brokers or other information resellers.

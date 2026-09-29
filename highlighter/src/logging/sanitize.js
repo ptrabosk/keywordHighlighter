@@ -19,6 +19,8 @@ import {
 
 const SAFE_ID_PATTERN = /^[a-zA-Z0-9._:-]+$/;
 const HIGHLIGHT_SHORTCUTS = new Set(["Shift+D", "Shift+N", "Shift+B", "Shift+C"]);
+const PAGE_URL_EVENT_TYPES = new Set(["highlight_detected", "highlight_shortcut_pressed"]);
+const MAX_PAGE_URL_LENGTH = 2_048;
 const DROPPED_EVENT_TYPES = new Set([
   "content_initialized",
   "options_opened",
@@ -39,6 +41,20 @@ function sanitizeSafeId(value, maxLength = 100) {
   if (value === undefined || value === null || value === "") return undefined;
   const text = truncateString(value, maxLength);
   return SAFE_ID_PATTERN.test(text) ? text : undefined;
+}
+
+function sanitizePageUrl(value) {
+  if (typeof value !== "string" || !value || value.length > MAX_PAGE_URL_LENGTH) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.hostname !== "ui.attentivemobile.com" || url.port) return undefined;
+    if (url.pathname !== "/concierge" && !url.pathname.startsWith("/concierge/")) return undefined;
+    url.username = "";
+    url.password = "";
+    return url.href;
+  } catch {
+    return undefined;
+  }
 }
 
 function sanitizeMetadata(metadata = {}) {
@@ -106,6 +122,11 @@ export function sanitizeEvent(input = {}) {
   if (input.errorCode) event.errorCode = sanitizeSafeId(input.errorCode, 80);
   if (input.errorMessage) event.errorMessage = sanitizeErrorMessage(input.errorMessage);
   if (batchId) event.batchId = batchId;
+
+  if (surface === "content" && (severity === "error" || PAGE_URL_EVENT_TYPES.has(eventType))) {
+    const pageUrl = sanitizePageUrl(input.pageUrl);
+    if (pageUrl) event.pageUrl = pageUrl;
+  }
 
   const metadata = sanitizeMetadata(input.metadata);
   if (eventType === "highlight_shortcut_pressed") {

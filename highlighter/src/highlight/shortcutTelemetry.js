@@ -12,7 +12,8 @@
   }
 
   function normalizeShortcutEvent(event) {
-    if (!event || event.isTrusted !== true || event.shiftKey !== true || event.repeat === true || isEditableTarget(event.target)) return null;
+    if (!event || event.isTrusted !== true || event.shiftKey !== true || event.repeat === true ||
+        event.ctrlKey === true || event.altKey === true || event.metaKey === true || isEditableTarget(event.target)) return null;
     const key = String(event.key || '').toUpperCase();
     return SHORTCUT_KEYS.has(key) ? `Shift+${key}` : null;
   }
