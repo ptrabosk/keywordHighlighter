@@ -1,7 +1,7 @@
 const KW_EVENTS_SHEET_NAME = "Events_keywordHighlighter";
 const KW_BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
 const KW_INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
-const KW_RECEIVER_VERSION = "1.4.0";
+const KW_RECEIVER_VERSION = "1.5.0";
 const KW_DAILY_QUOTA_PROPERTY = "KEYWORD_HIGHLIGHTER_DAILY_QUOTA";
 const KW_DAILY_EVENT_LIMIT = 25000;
 const KW_DAILY_SHORTCUT_LIMIT = 10000;
@@ -10,6 +10,25 @@ const KW_SHORTCUT_EVENT_TYPE = "highlight_shortcut_pressed";
 const KW_SHORTCUTS = ["Shift+D", "Shift+N", "Shift+B", "Shift+C"];
 
 const KW_EVENTS_HEADERS = [
+  "Received At",
+  "Event Timestamp",
+  "Event ID",
+  "Session ID",
+  "Event Type",
+  "Severity",
+  "Result",
+  "Surface",
+  "Page URL",
+  "Rule Source",
+  "Duration Ms",
+  "Extension Version",
+  "Error Code",
+  "Error Message",
+  "Metadata JSON",
+  "Batch ID"
+];
+
+const KW_URLLESS_EVENTS_HEADERS = [
   "Received At",
   "Event Timestamp",
   "Event ID",
@@ -92,6 +111,7 @@ const KW_EVENT_FIELDS = [
   "result",
   "extensionVersion",
   "surface",
+  "pageUrl",
   "ruleSource",
   "durationMs",
   "errorCode",
@@ -323,6 +343,12 @@ function validateEvent_(event) {
   if (KW_UPLOAD_STATES.indexOf(event.uploadState) === -1) return invalid_("INVALID_UPLOAD_STATE");
   if (!Number.isInteger(event.uploadAttempts) || event.uploadAttempts < 0) return invalid_("INVALID_UPLOAD_ATTEMPTS");
   if (event.surface !== undefined && !isSafeString_(event.surface, 40)) return invalid_("INVALID_SURFACE");
+  if (event.pageUrl !== undefined && !isValidPageUrl_(event.pageUrl)) return invalid_("INVALID_PAGE_URL");
+  if (event.pageUrl !== undefined && event.surface !== "content") return invalid_("INVALID_PAGE_URL_SURFACE");
+  if (event.pageUrl !== undefined && event.severity !== "error" &&
+      event.eventType !== "highlight_detected" && event.eventType !== KW_SHORTCUT_EVENT_TYPE) {
+    return invalid_("PAGE_URL_NOT_ALLOWED");
+  }
   if (event.ruleSource !== undefined && !isSafeString_(event.ruleSource, 120)) return invalid_("INVALID_RULE_SOURCE");
   if (event.durationMs !== undefined && (typeof event.durationMs !== "number" || event.durationMs < 0)) return invalid_("INVALID_DURATION");
   if (event.errorCode !== undefined && !isSafeString_(event.errorCode, 80)) return invalid_("INVALID_ERROR_CODE");
@@ -358,6 +384,11 @@ function isValidMetadata_(metadata) {
   });
 }
 
+function isValidPageUrl_(value) {
+  return typeof value === "string" && value.length <= 2048 &&
+    /^https:\/\/ui\.attentivemobile\.com\/concierge(?:\/|[?#]|$)[^\r\n]*$/.test(value);
+}
+
 function eventToRow_(event, requestBatchId, receivedAt) {
   return [
     sheetSafe_(receivedAt),
@@ -368,6 +399,7 @@ function eventToRow_(event, requestBatchId, receivedAt) {
     sheetSafe_(event.severity),
     sheetSafe_(event.result),
     sheetSafe_(event.surface || ""),
+    sheetSafe_(event.pageUrl || ""),
     sheetSafe_(event.ruleSource || ""),
     event.durationMs === undefined ? "" : event.durationMs,
     sheetSafe_(event.extensionVersion),
@@ -426,34 +458,38 @@ function purgeExpiredEvents() {
   try {
     const spreadsheet = getSpreadsheet_();
     const eventsSheet = ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
+    const batchesSheet = ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
     const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
-    const lastRow = eventsSheet.getLastRow();
-    if (lastRow < 2) return { deletedEvents: 0, deletedIndexRows: 0 };
-
     const cutoff = Date.now() - KW_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-    const values = eventsSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    const lastRow = eventsSheet.getLastRow();
     const eventRows = [];
-    const eventIds = Object.create(null);
-    values.forEach(function(row, index) {
-      const receivedAt = row[0] instanceof Date ? row[0].getTime() : Date.parse(row[0]);
-      if (isFinite(receivedAt) && receivedAt < cutoff) {
-        eventRows.push(index + 2);
-        eventIds[String(row[2])] = true;
-      }
-    });
+    if (lastRow >= 2) {
+      const values = eventsSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+      expiredSheetRows_(values, 0, cutoff).forEach(function(row) { eventRows.push(row); });
+    }
 
     const indexRows = [];
     const indexLastRow = indexSheet.getLastRow();
-    if (indexLastRow >= 2 && Object.keys(eventIds).length) {
-      const indexIds = indexSheet.getRange(2, 1, indexLastRow - 1, 1).getValues();
-      indexIds.forEach(function(row, index) {
-        if (eventIds[String(row[0])]) indexRows.push(index + 2);
-      });
+    if (indexLastRow >= 2) {
+      const indexDates = indexSheet.getRange(2, 2, indexLastRow - 1, 4).getValues();
+      expiredIndexRows_(indexDates, cutoff).forEach(function(row) { indexRows.push(row); });
+    }
+
+    const batchRows = [];
+    const batchesLastRow = batchesSheet.getLastRow();
+    if (batchesLastRow >= 2) {
+      const batchDates = batchesSheet.getRange(2, 2, batchesLastRow - 1, 1).getValues();
+      expiredSheetRows_(batchDates, 0, cutoff).forEach(function(row) { batchRows.push(row); });
     }
 
     deleteSheetRows_(eventsSheet, eventRows);
     deleteSheetRows_(indexSheet, indexRows);
-    return { deletedEvents: eventRows.length, deletedIndexRows: indexRows.length };
+    deleteSheetRows_(batchesSheet, batchRows);
+    return {
+      deletedEvents: eventRows.length,
+      deletedIndexRows: indexRows.length,
+      deletedBatchRows: batchRows.length
+    };
   } finally {
     lock.releaseLock();
   }
@@ -461,6 +497,26 @@ function purgeExpiredEvents() {
 
 function purgeExpiredShortcutEvents() {
   return purgeExpiredEvents();
+}
+
+function expiredSheetRows_(values, dateColumn, cutoff) {
+  const rows = [];
+  values.forEach(function(row, index) {
+    const value = row[dateColumn];
+    const timestamp = value instanceof Date ? value.getTime() : Date.parse(value);
+    if (isFinite(timestamp) && timestamp < cutoff) rows.push(index + 2);
+  });
+  return rows;
+}
+
+function expiredIndexRows_(values, cutoff) {
+  const rows = [];
+  values.forEach(function(row, index) {
+    const value = row[3] || row[1];
+    const timestamp = value instanceof Date ? value.getTime() : Date.parse(value);
+    if (isFinite(timestamp) && timestamp < cutoff) rows.push(index + 2);
+  });
+  return rows;
 }
 
 function deleteSheetRows_(sheet, rows) {
@@ -486,7 +542,7 @@ function deleteSheetRows_(sheet, rows) {
 
 function ensureSheet_(spreadsheet, name, headers) {
   const sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
-  if (name === KW_EVENTS_SHEET_NAME) migrateLegacyEventsSheet_(sheet);
+  if (name === KW_EVENTS_SHEET_NAME) migrateEventsSheet_(sheet);
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     return sheet;
@@ -499,17 +555,28 @@ function ensureSheet_(spreadsheet, name, headers) {
   return sheet;
 }
 
-function migrateLegacyEventsSheet_(sheet) {
-  if (sheet.getLastColumn() < KW_LEGACY_EVENTS_HEADERS.length) return;
-  const actual = sheet.getRange(1, 1, 1, KW_LEGACY_EVENTS_HEADERS.length).getValues()[0];
-  const isLegacy = KW_LEGACY_EVENTS_HEADERS.every(function(header, index) {
-    return actual[index] === header;
-  });
-  if (!isLegacy) return;
+function migrateEventsSheet_(sheet) {
+  if (sheet.getLastColumn() >= KW_LEGACY_EVENTS_HEADERS.length) {
+    const legacyHeaders = sheet.getRange(1, 1, 1, KW_LEGACY_EVENTS_HEADERS.length).getValues()[0];
+    const isLegacy = KW_LEGACY_EVENTS_HEADERS.every(function(header, index) {
+      return legacyHeaders[index] === header;
+    });
+    if (isLegacy) {
+      const lastRow = sheet.getLastRow();
+      if (lastRow > 1) sheet.getRange(2, 10, lastRow - 1, 1).clearContent();
+      sheet.deleteColumn(10);
+      return;
+    }
+  }
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow > 1) sheet.getRange(2, 9, lastRow - 1, 2).clearContent();
-  sheet.deleteColumns(9, 2);
+  if (sheet.getLastColumn() < KW_URLLESS_EVENTS_HEADERS.length) return;
+  const currentHeaders = sheet.getRange(1, 1, 1, KW_URLLESS_EVENTS_HEADERS.length).getValues()[0];
+  const isUrlLess = KW_URLLESS_EVENTS_HEADERS.every(function(header, index) {
+    return currentHeaders[index] === header;
+  });
+  if (!isUrlLess) return;
+  sheet.insertColumnAfter(8);
+  sheet.getRange(1, 9).setValue("Page URL");
 }
 
 function loadIndexRecords_(indexSheet, eventIds) {

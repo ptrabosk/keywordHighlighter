@@ -67,12 +67,16 @@
 
   function logOperationalEvent(event) {
     try {
+      const loggedEvent = {
+        surface: 'content',
+        ...event
+      };
+      if (event.severity === 'error' || event.eventType === 'highlight_detected' || event.eventType === 'highlight_shortcut_pressed') {
+        loggedEvent.pageUrl = window.location.href;
+      }
       chrome.runtime.sendMessage({
         type: 'highlighter:logEvent',
-        event: {
-          surface: 'content',
-          ...event
-        }
+        event: loggedEvent
       }).catch(() => {});
     } catch (_error) {
       // Logging must never affect highlighting.

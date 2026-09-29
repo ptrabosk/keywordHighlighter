@@ -81,12 +81,7 @@ async function ensureUploadAlarm() {
 async function runUpload(reason) {
   try {
     await restoreUploadingEvents();
-    const config = await getLoggingConfig();
-    const stats = await getQueueStats();
-    if (stats.estimatedBytes >= config.pruneInfoAtBytes) {
-      const result = await pruneLogs();
-      void result;
-    }
+    await pruneLogs();
     await uploadPendingLogs(reason);
   } catch {
     // Logging must never affect extension behavior.

@@ -111,7 +111,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   const sanitized = sanitizeEvent({
     sessionId: "session-1",
     eventType: "unexpected_exception",
-    severity: "loud",
+    severity: "error",
     result: "success",
     surface: "content",
     pageHost: "https://ui.attentivemobile.com/concierge/conversation/123",
@@ -127,11 +127,11 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   });
 
   assert.equal(sanitized.eventType, "unexpected_exception");
-  assert.equal(sanitized.severity, "info");
+  assert.equal(sanitized.severity, "error");
   assert.equal(sanitized.extensionVersion, "1.0.0");
   assert.equal(sanitized.surface, "content");
   assert.equal(sanitized.pageHost, undefined);
-  assert.equal(sanitized.pageUrl, undefined);
+  assert.equal(sanitized.pageUrl, "https://ui.attentivemobile.com/concierge/conversation/123");
   assert.equal(sanitized.profileEmail, undefined);
   assert.equal(sanitized.ruleSource, "consolidated_rules");
   assert.equal(sanitized.metadata.operation.length, 100);
@@ -156,6 +156,7 @@ test("shortcut events accept only normalized shortcuts and a bounded highlight c
     eventType: "highlight_shortcut_pressed",
     severity: "info",
     result: "success",
+    surface: "content",
     pageHost: "https://ui.attentivemobile.com/concierge/",
     pageUrl: "https://ui.attentivemobile.com/concierge/",
     profileEmail: "employee@attentivemobile.com",
@@ -168,6 +169,7 @@ test("shortcut events accept only normalized shortcuts and a bounded highlight c
   });
 
   assert.deepEqual(valid.metadata, { shortcut: "Shift+D", highlightCount: 2 });
+  assert.equal(valid.pageUrl, "https://ui.attentivemobile.com/concierge/");
   assert.equal(sanitizeEvent({
     eventType: "highlight_shortcut_pressed",
     metadata: { shortcut: "Shift+A", highlightCount: 1 }
@@ -182,6 +184,29 @@ test("shortcut events accept only normalized shortcuts and a bounded highlight c
     metadata: { shortcut: "Shift+D", highlightCount: 4, operation: "render" }
   });
   assert.equal(unrelated, null);
+
+  const nonHighlight = sanitizeEvent({
+    eventType: "rules_loaded",
+    severity: "info",
+    pageUrl: "https://ui.attentivemobile.com/concierge/conversation/123"
+  });
+  assert.equal(nonHighlight.pageUrl, undefined);
+
+  const externalUrl = sanitizeEvent({
+    eventType: "render_failed",
+    severity: "error",
+    surface: "content",
+    pageUrl: "https://example.com/concierge/conversation/123"
+  });
+  assert.equal(externalUrl.pageUrl, undefined);
+
+  const backgroundError = sanitizeEvent({
+    eventType: "unexpected_exception",
+    severity: "error",
+    surface: "background",
+    pageUrl: "https://ui.attentivemobile.com/concierge/conversation/123"
+  });
+  assert.equal(backgroundError.pageUrl, undefined);
 });
 
 test("logging keeps only the requested event contract and diagnostics", () => {
@@ -576,6 +601,14 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.doesNotMatch(source, /console\.error/);
 });
 
+test("scheduled uploads always apply age-based local retention", () => {
+  const backgroundSource = fs.readFileSync(path.join(__dirname, "../highlighter/background.js"), "utf8");
+  const runUpload = backgroundSource.match(/async function runUpload\(reason\) \{([\s\S]*?)\n\}/);
+  assert.ok(runUpload, "runUpload function is present");
+  assert.match(runUpload[1], /await pruneLogs\(\)/);
+  assert.doesNotMatch(runUpload[1], /pruneInfoAtBytes/);
+});
+
 test("Apps Script and extension logging event type contracts stay in sync", () => {
   const source = fs.readFileSync(path.join(__dirname, "../google-apps-script/Code.gs"), "utf8");
   const match = source.match(/const KW_EVENT_TYPES = \[([\s\S]*?)\];/);
@@ -602,7 +635,7 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /clearAllHighlights/);
   assert.match(contentSource, /!state\.settings\.enabled/);
   assert.doesNotMatch(contentSource, /AMH_ACCESS_POLICY|amhAccessDenied|amhAccessReason/);
-  assert.doesNotMatch(contentSource, /pageUrl:/);
+  assert.match(contentSource, /loggedEvent\.pageUrl = window\.location\.href/);
 });
 
 test("content highlighter matches full message elements before wrapping text nodes", () => {
