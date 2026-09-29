@@ -54,3 +54,26 @@ test("retention row deletion groups contiguous rows and deletes from the bottom"
   receiver.deleteSheetRows_(sheet, [2, 3, 4, 8, 10, 11]);
   assert.deepEqual(calls, [[10, 2], [8, 1], [2, 3]]);
 });
+
+test("retention identifies expired event and upload-batch rows by date", () => {
+  const receiver = loadReceiver();
+  const cutoff = Date.parse("2026-06-01T00:00:00.000Z");
+  const values = [
+    ["2026-05-01T00:00:00.000Z"],
+    ["2026-06-01T00:00:00.000Z"],
+    ["2026-07-01T00:00:00.000Z"],
+    ["invalid"]
+  ];
+  assert.deepEqual(Array.from(receiver.expiredSheetRows_(values, 0, cutoff)), [2]);
+});
+
+test("retention removes orphaned reservations and uses written time when present", () => {
+  const receiver = loadReceiver();
+  const cutoff = Date.parse("2026-06-01T00:00:00.000Z");
+  const values = [
+    ["reserved", "2026-05-01T00:00:00.000Z", "batch-1", ""],
+    ["written", "2026-05-01T00:00:00.000Z", "batch-2", "2026-07-01T00:00:00.000Z"],
+    ["written", "2026-04-01T00:00:00.000Z", "batch-3", "2026-05-02T00:00:00.000Z"]
+  ];
+  assert.deepEqual(Array.from(receiver.expiredIndexRows_(values, cutoff)), [2, 4]);
+});

@@ -33,12 +33,12 @@ The script creates these tabs if missing:
 
 `Received At`, `Event Timestamp`, `Event ID`, `Session ID`, `Event Type`, `Severity`, `Result`, `Surface`, `Rule Source`, `Duration Ms`, `Extension Version`, `Error Code`, `Error Message`, `Metadata JSON`, `Batch ID`.
 
-Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. Page URLs, profile emails, message text, and matched text are not accepted or stored.
+Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. The schema has no page-URL, profile-email, message-text, or matched-text field; unknown fields are rejected. The extension sanitizes bounded error and metadata strings before upload.
 
 `Event_ID_Index_keywordHighlighter` is used for deduplication so retrying the same batch does not duplicate rows. It stores event ID reservation and write status under a script lock so interrupted uploads can be retried safely.
 
 The receiver accepts at most 25,000 new events and 10,000 new shortcut events per UTC day. Events beyond either limit are rejected as `RATE_LIMITED`. Duplicate retries of already-written events remain idempotent and do not consume quota.
 
-`purgeExpiredEvents()` runs daily and removes all event rows and their deduplication IDs after 90 days. Run the function manually after deployment to verify its authorization and inspect the execution log.
+`purgeExpiredEvents()` runs daily and removes event rows, their deduplication IDs, and upload-batch audit rows after 90 days. Run the function manually after deployment to verify its authorization and inspect the execution log.
 
 When the receiver first sees the previous 17-column event sheet, it clears the legacy URL and profile-email columns and removes those columns before continuing with the 15-column schema.

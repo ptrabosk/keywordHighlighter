@@ -576,6 +576,14 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.doesNotMatch(source, /console\.error/);
 });
 
+test("scheduled uploads always apply age-based local retention", () => {
+  const backgroundSource = fs.readFileSync(path.join(__dirname, "../highlighter/background.js"), "utf8");
+  const runUpload = backgroundSource.match(/async function runUpload\(reason\) \{([\s\S]*?)\n\}/);
+  assert.ok(runUpload, "runUpload function is present");
+  assert.match(runUpload[1], /await pruneLogs\(\)/);
+  assert.doesNotMatch(runUpload[1], /pruneInfoAtBytes/);
+});
+
 test("Apps Script and extension logging event type contracts stay in sync", () => {
   const source = fs.readFileSync(path.join(__dirname, "../google-apps-script/Code.gs"), "utf8");
   const match = source.match(/const KW_EVENT_TYPES = \[([\s\S]*?)\];/);

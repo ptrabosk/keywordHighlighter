@@ -426,34 +426,38 @@ function purgeExpiredEvents() {
   try {
     const spreadsheet = getSpreadsheet_();
     const eventsSheet = ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
+    const batchesSheet = ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
     const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
-    const lastRow = eventsSheet.getLastRow();
-    if (lastRow < 2) return { deletedEvents: 0, deletedIndexRows: 0 };
-
     const cutoff = Date.now() - KW_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-    const values = eventsSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    const lastRow = eventsSheet.getLastRow();
     const eventRows = [];
-    const eventIds = Object.create(null);
-    values.forEach(function(row, index) {
-      const receivedAt = row[0] instanceof Date ? row[0].getTime() : Date.parse(row[0]);
-      if (isFinite(receivedAt) && receivedAt < cutoff) {
-        eventRows.push(index + 2);
-        eventIds[String(row[2])] = true;
-      }
-    });
+    if (lastRow >= 2) {
+      const values = eventsSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+      expiredSheetRows_(values, 0, cutoff).forEach(function(row) { eventRows.push(row); });
+    }
 
     const indexRows = [];
     const indexLastRow = indexSheet.getLastRow();
-    if (indexLastRow >= 2 && Object.keys(eventIds).length) {
-      const indexIds = indexSheet.getRange(2, 1, indexLastRow - 1, 1).getValues();
-      indexIds.forEach(function(row, index) {
-        if (eventIds[String(row[0])]) indexRows.push(index + 2);
-      });
+    if (indexLastRow >= 2) {
+      const indexDates = indexSheet.getRange(2, 2, indexLastRow - 1, 4).getValues();
+      expiredIndexRows_(indexDates, cutoff).forEach(function(row) { indexRows.push(row); });
+    }
+
+    const batchRows = [];
+    const batchesLastRow = batchesSheet.getLastRow();
+    if (batchesLastRow >= 2) {
+      const batchDates = batchesSheet.getRange(2, 2, batchesLastRow - 1, 1).getValues();
+      expiredSheetRows_(batchDates, 0, cutoff).forEach(function(row) { batchRows.push(row); });
     }
 
     deleteSheetRows_(eventsSheet, eventRows);
     deleteSheetRows_(indexSheet, indexRows);
-    return { deletedEvents: eventRows.length, deletedIndexRows: indexRows.length };
+    deleteSheetRows_(batchesSheet, batchRows);
+    return {
+      deletedEvents: eventRows.length,
+      deletedIndexRows: indexRows.length,
+      deletedBatchRows: batchRows.length
+    };
   } finally {
     lock.releaseLock();
   }
@@ -461,6 +465,26 @@ function purgeExpiredEvents() {
 
 function purgeExpiredShortcutEvents() {
   return purgeExpiredEvents();
+}
+
+function expiredSheetRows_(values, dateColumn, cutoff) {
+  const rows = [];
+  values.forEach(function(row, index) {
+    const value = row[dateColumn];
+    const timestamp = value instanceof Date ? value.getTime() : Date.parse(value);
+    if (isFinite(timestamp) && timestamp < cutoff) rows.push(index + 2);
+  });
+  return rows;
+}
+
+function expiredIndexRows_(values, cutoff) {
+  const rows = [];
+  values.forEach(function(row, index) {
+    const value = row[3] || row[1];
+    const timestamp = value instanceof Date ? value.getTime() : Date.parse(value);
+    if (isFinite(timestamp) && timestamp < cutoff) rows.push(index + 2);
+  });
+  return rows;
 }
 
 function deleteSheetRows_(sheet, rows) {
