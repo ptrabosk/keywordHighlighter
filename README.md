@@ -20,7 +20,7 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 - Checks the signed-in Chrome profile locally and enables the extension only for an exact `@attentivemobile.com` address. If the check fails, no page text is processed and no telemetry is written.
 - Shows a first-run privacy disclosure and lets users allow or decline anonymous usage and diagnostic events. Declining leaves highlighting available and removes queued telemetry.
 - Records limited usage information only after the user allows it. Message text, page URLs, profile emails, field contents, and unrelated browsing activity are never recorded.
-- Provides a focused popup for custom keywords and an options page for advanced settings.
+- Provides a focused popup and options page for adding and editing custom keywords.
 - Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
 
 ## Package for Chrome Web Store
@@ -110,9 +110,9 @@ keywordHighlighter/
     |-- options.js
     |-- popup.css
     |-- privacy-ui.js
+    |-- custom-keywords-init.js
     |-- popup.html
     |-- popup.js
-    |-- settings-ui.js
     |-- settings.js
     |-- icons/
     |-- data/rules/
@@ -128,4 +128,4 @@ keywordHighlighter/
 - The extension validates the complete packaged registry at startup and reports an initialization error if its schema or a rule is invalid.
 - For overlapping matches, it keeps the earliest match, then the longest match, then the category priority.
 - `full_match`, `exact`, and `exact_set` rules require the complete selected target; `regex_search` and `bounded_phrase` rules may match within it.
-- If the supported Operations application changes its DOM, update the selector in the options page rather than changing code.
+- If the supported Operations application changes its DOM, update the selector in code rather than changing the custom-keyword editor.

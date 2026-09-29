@@ -1,7 +1,9 @@
+function createCustomKeywordUi({ surface = 'popup' } = {}) {
 const els = {
   form: document.querySelector('#keywordForm'),
   input: document.querySelector('#keywordInput'),
   text: document.querySelector('#keywordText'),
+  addKeyword: document.querySelector('#addKeyword'),
   keywords: document.querySelector('#keywords'),
   exportKeywords: document.querySelector('#exportKeywords'),
   importKeywords: document.querySelector('#importKeywords'),
@@ -15,13 +17,14 @@ const MAX_HOVER_TEXT_LENGTH = 256;
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 let featuresStarted = false;
+let editingKeyword = null;
 
 function logOperationalEvent(event) {
   try {
     chrome.runtime.sendMessage({
       type: 'highlighter:logEvent',
       event: {
-        surface: 'popup',
+        surface,
         ...event
       }
     }).catch(() => {});
@@ -40,13 +43,6 @@ function logOperationalFailure(eventType, errorCode, errorMessage, metadata = {}
     metadata
   });
 }
-
-init().catch((error) => {
-  logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Popup startup failed', {
-    operation: 'init'
-  });
-  console.error('[Offsight Highlighter] Popup failed to initialize:', error);
-});
 
 async function init() {
   const access = await AMH_ACCESS_POLICY.requestAccessStatus();
@@ -121,30 +117,60 @@ async function saveSettings() {
 
 async function addKeyword(event) {
   event.preventDefault();
+  const wasEditing = Boolean(editingKeyword);
   const keyword = normalizeKeyword(els.input.value);
   if (!keyword) {
     setStatus('Enter a keyword first.');
     return;
   }
-  if (settings.customKeywords.some((item) => item.toLowerCase() === keyword.toLowerCase())) {
+  if (settings.customKeywords.some((item) => item.toLowerCase() === keyword.toLowerCase() && item.toLowerCase() !== String(editingKeyword || '').toLowerCase())) {
     setStatus('That keyword is already in the list.');
     return;
   }
-  settings.customKeywords = [...settings.customKeywords, keyword].sort((a, b) => a.localeCompare(b));
-  settings.customKeywordTextByPattern = {
-    ...(settings.customKeywordTextByPattern || {}),
-    [keyword]: normalizeHoverText(els.text.value)
-  };
+  const nextText = normalizeHoverText(els.text.value);
+  if (editingKeyword) {
+    settings.customKeywords = settings.customKeywords
+      .filter((item) => item !== editingKeyword)
+      .concat(keyword)
+      .sort((a, b) => a.localeCompare(b));
+    const nextTextByPattern = { ...(settings.customKeywordTextByPattern || {}) };
+    delete nextTextByPattern[editingKeyword];
+    nextTextByPattern[keyword] = nextText;
+    settings.customKeywordTextByPattern = nextTextByPattern;
+    editingKeyword = null;
+    els.addKeyword.textContent = 'ADD KEYWORD';
+  } else {
+    settings.customKeywords = [...settings.customKeywords, keyword].sort((a, b) => a.localeCompare(b));
+    settings.customKeywordTextByPattern = {
+      ...(settings.customKeywordTextByPattern || {}),
+      [keyword]: nextText
+    };
+  }
   els.input.value = '';
   els.text.value = '';
   renderKeywords();
   await saveSettings();
+  setStatus(wasEditing ? 'Keyword updated.' : 'Keyword added.');
+}
+
+function editKeyword(keyword) {
+  editingKeyword = keyword;
+  els.input.value = keyword;
+  els.text.value = settings.customKeywordTextByPattern?.[keyword] || '';
+  els.addKeyword.textContent = 'SAVE KEYWORD';
+  els.input.focus();
 }
 
 async function removeKeyword(keyword) {
   settings.customKeywords = settings.customKeywords.filter((item) => item !== keyword);
   if (settings.customKeywordTextByPattern) {
     delete settings.customKeywordTextByPattern[keyword];
+  }
+  if (editingKeyword === keyword) {
+    editingKeyword = null;
+    els.input.value = '';
+    els.text.value = '';
+    els.addKeyword.textContent = 'ADD KEYWORD';
   }
   renderKeywords();
   await saveSettings();
@@ -221,12 +247,20 @@ function renderKeywords() {
     row.className = 'keyword';
     const label = document.createElement('span');
     label.textContent = keyword;
+    const actions = document.createElement('div');
+    actions.className = 'keyword__actions';
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'secondary';
+    edit.textContent = 'Edit';
+    edit.addEventListener('click', () => editKeyword(keyword));
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'secondary';
     remove.textContent = 'Remove';
     remove.addEventListener('click', () => removeKeyword(keyword));
-    row.append(label, remove);
+    actions.append(edit, remove);
+    row.append(label, actions);
     els.keywords.appendChild(row);
   }
 }
@@ -326,3 +360,10 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
+
+  return { init };
+}
+
+globalThis.AMH_CUSTOM_KEYWORDS_UI = Object.freeze({
+  create: createCustomKeywordUi
+});

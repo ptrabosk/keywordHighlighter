@@ -165,6 +165,12 @@ input[type="text"] {
   background: #efe1b8;
 }
 
+.keyword__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .keyword span {
   min-width: 0;
   overflow-wrap: anywhere;

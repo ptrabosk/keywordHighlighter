@@ -49,6 +49,6 @@ The publisher must also enter this same working URL in the Chrome Web Store Priv
 4. Open `https://ui.attentivemobile.com/concierge/` and open a conversation containing an inbound message.
 5. Confirm that configured phrases are highlighted, hover guidance appears, and the customer highlight count updates.
 6. Open the popup to add, remove, export, and import a custom keyword.
-7. Open extension options to change the selector, opacity, tooltip setting, and category settings.
+7. Open extension options to add, edit, remove, export, and import custom keywords.
 
 The extension requires an authorized test account and access to the supported Operations workspace. Provide those credentials through the private Chrome Web Store reviewer instructions field, never in this repository.

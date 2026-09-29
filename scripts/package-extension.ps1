@@ -23,8 +23,8 @@ $topLevelFiles = @(
   "options.html",
   "options.js",
   "options.css",
-  "settings-ui.js",
   "popup.js",
+  "custom-keywords-init.js",
   "popup.html",
   "popup.css"
 )

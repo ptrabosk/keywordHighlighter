@@ -57,8 +57,15 @@ test("popup and options pages disclose telemetry and provide consent controls", 
     assert.match(source, /allowTelemetry/);
     assert.match(source, /denyTelemetry/);
     assert.match(source, /github\.com\/ptrabosk\/keywordHighlighter\/blob\/main\/docs\/index\.html/);
+    assert.match(source, /keywordForm/);
+    assert.match(source, /keywordInput/);
+    assert.match(source, /keywordText/);
   }
+  const optionsSource = readExtensionFile("options.html");
+  assert.doesNotMatch(optionsSource, /id="selector"|id="categories"|settings-ui\.js|Targeting|Display|Categories/);
+  assert.doesNotMatch(readExtensionFile("popup.html"), /shortcut activity/i);
   assert.doesNotThrow(() => new vm.Script(readExtensionFile("privacy-ui.js"), { filename: "privacy-ui.js" }));
+  assert.doesNotThrow(() => new vm.Script(readExtensionFile("custom-keywords-init.js"), { filename: "custom-keywords-init.js" }));
 });
 
 test("service worker gates telemetry on the explicit privacy choice", () => {
@@ -69,10 +76,10 @@ test("service worker gates telemetry on the explicit privacy choice", () => {
   assert.match(source, /clearLoggingData/);
 });
 
-test("manifest identifies the 1.0.5 release", () => {
+test("manifest identifies the 1.0.6 release", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
-  assert.equal(manifest.version, "1.0.5");
+  assert.equal(manifest.version, "1.0.6");
 });
 
 test("manifest exposes the protected options page and narrow resource scope", () => {
