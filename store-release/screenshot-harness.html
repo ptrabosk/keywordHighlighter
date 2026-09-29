@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offsight Highlighter Store Screenshot</title>
+  <link rel="stylesheet" href="../highlighter/shared-keyword.css">
+  <link id="surfaceStyles" rel="stylesheet" href="../highlighter/options.css">
+  <style>
+    html, body { width: 100%; min-width: 0; max-width: none; }
+    body.popup-shot { display: grid; place-items: center; min-height: 100vh; background: linear-gradient(135deg, #f4f4f2 0%, #fff7ed 100%); }
+    body.popup-shot .shell { width: 400px; padding: 14px; }
+    body.popup-shot .card { padding: 22px; border-radius: 14px; box-shadow: 0 24px 70px rgba(17,17,17,.14); }
+    body.popup-shot h1 { font-size: 28px; line-height: 1.05; }
+    body.popup-shot .keyword-form { grid-template-columns: repeat(2,minmax(0,1fr)); margin-top: 22px; }
+    body.popup-shot .primary { grid-column: 1/-1; width: 100%; }
+    body.popup-shot .keywords { max-height: 160px; }
+    body.popup-shot .keyword { padding: 5px 8px; }
+    body.popup-shot .keyword .secondary { padding: 4px 8px; }
+    body.popup-shot .eyebrow { font-size: 10px; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <p class="eyebrow">Offsight Highlighter</p>
+      <h1>Custom Keywords</h1>
+      <p class="subtle" id="description">Add and edit words or phrases to highlight alongside the built-in rules.</p>
+      <form class="keyword-form">
+        <label class="field"><span>Keyword</span><input type="text" placeholder="STOP"></label>
+        <label class="field"><span>Hover text</span><input type="text" placeholder="Reminder text"></label>
+        <button type="button" class="primary">Add keyword</button>
+      </form>
+      <div class="keywords" aria-label="Example custom keywords">
+        <div class="keyword"><span>cancel subscription</span><div class="keyword__actions"><button class="secondary">Edit</button><button class="secondary">Remove</button></div></div>
+        <div class="keyword"><span>do not contact</span><div class="keyword__actions"><button class="secondary">Edit</button><button class="secondary">Remove</button></div></div>
+        <div class="keyword"><span>unsubscribe me</span><div class="keyword__actions"><button class="secondary">Edit</button><button class="secondary">Remove</button></div></div>
+      </div>
+      <div class="backup-actions"><button class="secondary">Export</button><button class="secondary">Import</button></div>
+    </section>
+  </main>
+  <script>
+    if (new URLSearchParams(location.search).get('surface') === 'popup') {
+      document.body.className = 'popup-shot';
+      document.querySelector('#description').textContent = 'Add words or phrases to highlight alongside the built-in rules.';
+    }
+  </script>
+</body>
+</html>
