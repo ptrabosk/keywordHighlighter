@@ -18,9 +18,12 @@ test("manifest content scripts parse as classic Chrome scripts", () => {
 
   assert.deepEqual(scriptPaths, [
     "settings.js",
+    "src/shared/extensionUtils.js",
     "src/access/policy.js",
+    "src/highlight/regexNormalization.js",
     "src/highlight/core.js",
     "src/highlight/shortcutTelemetry.js",
+    "src/content/diagnostics.js",
     "content.js"
   ]);
 

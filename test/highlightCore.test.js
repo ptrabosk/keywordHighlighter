@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import "../highlighter/settings.js";
+import "../highlighter/src/highlight/regexNormalization.js";
 import "../highlighter/src/highlight/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

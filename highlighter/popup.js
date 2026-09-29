@@ -1,3 +1,5 @@
+const { escapeHtml } = globalThis.AMH_EXTENSION_UTILS;
+
 function createCustomKeywordUi({ surface = 'popup' } = {}) {
 const els = {
   form: document.querySelector('#keywordForm'),
@@ -350,15 +352,6 @@ function setStatus(text) {
 
 function formatDateForFilename(date) {
   return date.toISOString().slice(0, 10);
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
 }
 
   return { init };

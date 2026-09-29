@@ -35,6 +35,13 @@ function collectRemovals(chunks, predicate, targetBytes) {
   return removeIds;
 }
 
+function estimateBytesAfterRemoval(chunks, removeIds) {
+  return chunks.reduce((total, entry) => total + byteSize({
+    ...entry.chunk,
+    events: entry.chunk.events.filter((event) => !removeIds.has(event.eventId))
+  }), 0);
+}
+
 export async function pruneLogs(options = {}) {
   return await withQueueWrite(async () => {
     const config = await getLoggingConfig();
@@ -61,20 +68,14 @@ export async function pruneLogs(options = {}) {
         .forEach((id) => removeIds.add(id));
     }
 
-    estimatedBytes = chunks.reduce((total, entry) => total + byteSize({
-      ...entry.chunk,
-      events: entry.chunk.events.filter((event) => !removeIds.has(event.eventId))
-    }), 0);
+    estimatedBytes = estimateBytesAfterRemoval(chunks, removeIds);
 
     if (estimatedBytes >= config.pruneWarningAtBytes) {
       collectRemovals(chunks, (event) => event.severity === "warning", targetBytes)
         .forEach((id) => removeIds.add(id));
     }
 
-    estimatedBytes = chunks.reduce((total, entry) => total + byteSize({
-      ...entry.chunk,
-      events: entry.chunk.events.filter((event) => !removeIds.has(event.eventId))
-    }), 0);
+    estimatedBytes = estimateBytesAfterRemoval(chunks, removeIds);
 
     if (estimatedBytes >= config.emergencyLimitBytes) {
       collectRemovals(chunks, (event) => event.severity !== "error", targetBytes)

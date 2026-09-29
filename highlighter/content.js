@@ -1,6 +1,9 @@
 (() => {
   'use strict';
 
+  const { escapeHtml, safeClassName } = globalThis.AMH_EXTENSION_UTILS;
+  const { installDiagnostics, persistStats } = globalThis.AMH_CONTENT_DIAGNOSTICS;
+
   if (document.documentElement.dataset.amhRuntimeLoaded === 'true') return;
   document.documentElement.dataset.amhRuntimeLoaded = 'true';
 
@@ -121,7 +124,7 @@
     installShortcutTelemetry();
     installMutationObserver();
     installMessageHandlers();
-    installDiagnostics();
+    installDiagnostics(state);
     scheduleAccessRecheck();
     scheduleRender(true);
   }
@@ -144,28 +147,6 @@
       document.documentElement.dataset.amhAccessDenied = 'true';
       document.documentElement.dataset.amhAccessReason = access.reason;
     }, 5 * 60 * 1000);
-  }
-
-  function installDiagnostics() {
-    window.addEventListener('error', (event) => {
-      const error = event.error;
-      console.warn('[Offsight Highlighter] Page error observed', {
-        message: event.message || error?.message || 'unknown error',
-        stack: error?.stack || '(no stack)',
-        source: event.filename || '(unknown)',
-        line: event.lineno || 0,
-        column: event.colno || 0,
-        highlighter: { ...state.debug }
-      });
-    }, true);
-    window.addEventListener('unhandledrejection', (event) => {
-      const reason = event.reason;
-      console.warn('[Offsight Highlighter] Unhandled rejection observed', {
-        message: reason?.message || String(reason || 'unknown rejection'),
-        stack: reason?.stack || '(no stack)',
-        highlighter: { ...state.debug }
-      });
-    }, true);
   }
 
   async function loadSettings() {
@@ -396,7 +377,7 @@
         }
       }
 
-      persistStats();
+      persistStats(state);
       refreshHighlightCountBadge();
       maybeLogRenderCompleted({
         durationMs: performance.now() - startedAt,
@@ -407,7 +388,7 @@
       state.debug.lastRenderDurationMs = performance.now() - startedAt;
     } catch (error) {
       state.targetSnapshots = new WeakMap();
-      persistStats();
+      persistStats(state);
       logOperationalFailure('render_failed', 'RENDER_FAILED', error?.message || 'Render failed', {
         operation: 'render',
         trigger: forceAll ? 'force' : 'scheduled',
@@ -993,11 +974,6 @@
     tooltip.style.top = `${top}px`;
   }
 
-  function persistStats() {
-    document.documentElement.dataset.amhStats = JSON.stringify(state.stats);
-    chrome.storage.local.set({ amhLastStats: state.stats }).catch(() => {});
-  }
-
   function maybeLogRenderCompleted({ durationMs, forceAll, changedElements, highlights }) {
     const now = Date.now();
     const shouldLog = forceAll || changedElements > 0 || highlights > 0 || now - state.lastRenderLogAt >= RENDER_LOG_INTERVAL_MS;
@@ -1021,14 +997,6 @@
     const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
     if (!match) return `rgba(168, 85, 247, ${alpha})`;
     return `rgba(${parseInt(match[1], 16)}, ${parseInt(match[2], 16)}, ${parseInt(match[3], 16)}, ${alpha})`;
-  }
-
-  function safeClassName(value) {
-    return String(value || 'unknown').replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
-  }
-
-  function escapeHtml(value) {
-    return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   }
 
   function clamp(value, min, max) {

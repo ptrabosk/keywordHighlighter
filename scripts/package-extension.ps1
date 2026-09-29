@@ -23,12 +23,13 @@ $topLevelFiles = @(
   "options.html",
   "options.js",
   "options.css",
+  "shared-keyword.css",
   "popup.js",
   "custom-keywords-init.js",
   "popup.html",
   "popup.css"
 )
-$runtimeDirectories = @("icons", "data\rules", "src\access", "src\highlight", "src\logging")
+$runtimeDirectories = @("icons", "data\rules", "src\access", "src\content", "src\highlight", "src\logging", "src\shared")
 $developmentKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5gYsvEBvl5KZHgGi7o7efwFPR+VxFJ1Y84Jmpj/kA4gXbTAeHpJ51aRM2vGl3c7yXMxNCWlYBi0ziXQs9WmAmtR7VvRz7i9913Ghic6euU7GoPujGRYivz7qwk1XPuv4O6g4Yq0JmH4yCRWPXxz+W2X2lED/gIpuvwRF42HhBpuKAEUr8eP1mLUbpyKIfCMQ1TuStScyC/P6sWUSTRWiMYUvoNhr+Kae89s0Ba5+1HPdVCCbXrvls80UsEC3h5pH2qpFsgddLFxkWnmos+p4PMKkSkHSNuOfuAjESE3sBtQtb2XH3m4lSlsYcilte5KXRkzYaqlUg+0ItvsevOtDNwIDAQAB"
 
 function Assert-ReleaseEndpoint([string]$EndpointUrl) {

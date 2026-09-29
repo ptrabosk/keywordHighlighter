@@ -1,5 +1,6 @@
 import { getLoggingConfig } from "./config.js";
 import { byteSize, utcNow } from "./sanitize.js";
+import { storageGet, storageRemove, storageSet } from "./storagePrimitives.js";
 import {
   CHUNK_PREFIX,
   MAX_CHUNK_BYTES,
@@ -10,17 +11,17 @@ import {
 
 let writeChain = Promise.resolve();
 
-export function chunkKey(chunkNumber) {
+function chunkKey(chunkNumber) {
   return `${CHUNK_PREFIX}${String(chunkNumber).padStart(6, "0")}`;
 }
 
-export function parseChunkNumber(key) {
+function parseChunkNumber(key) {
   if (!key.startsWith(CHUNK_PREFIX)) return null;
   const value = Number(key.slice(CHUNK_PREFIX.length));
   return Number.isInteger(value) ? value : null;
 }
 
-export function defaultQueueMeta() {
+function defaultQueueMeta() {
   return {
     schemaVersion: SCHEMA_VERSION,
     nextChunkNumber: 1,
@@ -28,23 +29,7 @@ export function defaultQueueMeta() {
   };
 }
 
-export async function storageGet(keys) {
-  const area = globalThis.chrome?.storage?.local;
-  if (!area?.get) return {};
-  return await area.get(keys);
-}
-
-export async function storageSet(items) {
-  const area = globalThis.chrome?.storage?.local;
-  if (!area?.set) return;
-  await area.set(items);
-}
-
-export async function storageRemove(keys) {
-  const area = globalThis.chrome?.storage?.local;
-  if (!area?.remove) return;
-  await area.remove(keys);
-}
+export { storageGet, storageRemove, storageSet };
 
 export async function clearLoggingData() {
   return await withQueueWrite(async () => {
@@ -100,7 +85,7 @@ export async function getQueueMeta() {
   };
 }
 
-export async function setQueueMeta(meta) {
+async function setQueueMeta(meta) {
   await storageSet({ [STORAGE_KEYS.queueMeta]: meta });
 }
 
@@ -117,7 +102,7 @@ export async function loadAllChunks() {
     .sort((a, b) => a.chunkNumber - b.chunkNumber);
 }
 
-export function normalizeChunk(chunk, chunkNumber) {
+function normalizeChunk(chunk, chunkNumber) {
   return {
     schemaVersion: SCHEMA_VERSION,
     chunkNumber,
@@ -126,11 +111,11 @@ export function normalizeChunk(chunk, chunkNumber) {
   };
 }
 
-export function estimateChunksBytes(chunks) {
+function estimateChunksBytes(chunks) {
   return chunks.reduce((total, entry) => total + byteSize(entry.chunk), 0);
 }
 
-export function oldestTimestamp(chunks) {
+function oldestTimestamp(chunks) {
   const timestamps = chunks.flatMap((entry) => entry.chunk.events.map((event) => event.timestamp).filter(Boolean));
   return timestamps.length ? timestamps.sort()[0] : undefined;
 }
@@ -275,7 +260,7 @@ export async function removeEventsById(eventIds = []) {
   });
 }
 
-export async function restoreBatch(batchId) {
+async function restoreEvents(predicate) {
   return await withQueueWrite(async () => {
     const chunks = await loadAllChunks();
     const updates = {};
@@ -284,7 +269,7 @@ export async function restoreBatch(batchId) {
     for (const entry of chunks) {
       let changed = false;
       entry.chunk.events = entry.chunk.events.map((event) => {
-        if (event.batchId !== batchId) return event;
+        if (!predicate(event)) return event;
         const next = { ...event, uploadState: "pending" };
         delete next.batchId;
         restored += 1;
@@ -299,28 +284,12 @@ export async function restoreBatch(batchId) {
   });
 }
 
+export async function restoreBatch(batchId) {
+  return await restoreEvents((event) => event.batchId === batchId);
+}
+
 export async function restoreUploadingEvents() {
-  return await withQueueWrite(async () => {
-    const chunks = await loadAllChunks();
-    const updates = {};
-    let restored = 0;
-
-    for (const entry of chunks) {
-      let changed = false;
-      entry.chunk.events = entry.chunk.events.map((event) => {
-        if (event.uploadState !== "uploading") return event;
-        const next = { ...event, uploadState: "pending" };
-        delete next.batchId;
-        restored += 1;
-        changed = true;
-        return next;
-      });
-      if (changed) updates[entry.key] = entry.chunk;
-    }
-
-    if (Object.keys(updates).length) await storageSet(updates);
-    return restored;
-  });
+  return await restoreEvents((event) => event.uploadState === "uploading");
 }
 
 export async function updateUploadStatus(patch) {

@@ -167,6 +167,11 @@ async function initializeLoggingServiceWorker() {
   return true;
 }
 
+function respondAsync(task, sendResponse, fallback) {
+  void task().then((response) => sendResponse?.(response)).catch(() => sendResponse?.(fallback));
+  return true;
+}
+
 chrome.runtime.onInstalled.addListener(async () => {
   await ensureDefaultSettings();
 });
@@ -183,52 +188,44 @@ globalThis.chrome?.runtime?.onSuspend?.addListener(() => {
 
 globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
   if (message?.type === "highlighter:getConsentStatus") {
-    void getConsentStatus().then((status) => sendResponse?.(status)).catch(() => {
-      sendResponse?.({ decided: false, telemetry: false, version: globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_VERSION });
-    });
-    return true;
+    return respondAsync(
+      getConsentStatus,
+      sendResponse,
+      { decided: false, telemetry: false, version: globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_VERSION }
+    );
   }
 
   if (message?.type === "highlighter:setConsent") {
-    void setConsent(message.telemetry === true).then(() => {
+    return respondAsync(async () => {
+      await setConsent(message.telemetry === true);
       if (message.telemetry === true) void initializeLoggingServiceWorker();
-      sendResponse?.({ ok: true });
-    }).catch(() => sendResponse?.({ ok: false }));
-    return true;
+      return { ok: true };
+    }, sendResponse, { ok: false });
   }
 
   if (message?.type === "highlighter:getAccessStatus") {
-    void (async () => {
+    return respondAsync(async () => {
       const status = await getAccessStatus();
       if (status.allowed) {
         void ensureDefaultSettings();
         void initializeLoggingServiceWorker();
       }
-      sendResponse?.(status);
-    })();
-    return true;
+      return status;
+    }, sendResponse, { allowed: false, reason: "access_check_failed" });
   }
 
   if (message?.type === "logging:event") {
-    void (async () => {
-      try {
-        if (!(await initializeLoggingServiceWorker())) {
-          sendResponse?.({ ok: false, reason: "access_denied" });
-          return;
-        }
-        const event = { ...(message.event || {}) };
-        await enqueueEvent(event);
-        const stats = await getQueueStats();
-        const config = await getLoggingConfig();
-        if (stats.pendingCount >= 100 || stats.estimatedBytes >= config.maxBatchBytes || message.event?.severity === "error") {
-          await runUpload(message.event?.severity === "error" ? "serious_error" : "threshold");
-        }
-        sendResponse?.({ ok: true });
-      } catch {
-        sendResponse?.({ ok: false });
+    return respondAsync(async () => {
+      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      const event = { ...(message.event || {}) };
+      await enqueueEvent(event);
+      const stats = await getQueueStats();
+      const config = await getLoggingConfig();
+      if (stats.pendingCount >= 100 || stats.estimatedBytes >= config.maxBatchBytes || message.event?.severity === "error") {
+        await runUpload(message.event?.severity === "error" ? "serious_error" : "threshold");
       }
-    })();
-    return true;
+      return { ok: true };
+    }, sendResponse, { ok: false });
   }
 
   if (message?.type === "logging:uploadRequested") {
@@ -238,72 +235,34 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
   }
 
   if (message?.type === "highlighter:getDiagnostics") {
-    void (async () => {
-      try {
-        if (!(await initializeLoggingServiceWorker())) {
-          sendResponse?.({ ok: false, reason: "access_denied" });
-          return;
-        }
-        sendResponse?.({ ok: true, diagnostics: await getDiagnostics() });
-      } catch {
-        sendResponse?.({ ok: false });
-      }
-    })();
-    return true;
+    return respondAsync(async () => {
+      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      return { ok: true, diagnostics: await getDiagnostics() };
+    }, sendResponse, { ok: false });
   }
 
   if (message?.type === "highlighter:runDiagnosticsUpload") {
-    void (async () => {
-      try {
-        if (!(await initializeLoggingServiceWorker())) {
-          sendResponse?.({ ok: false, reason: "access_denied" });
-          return;
-        }
-        await runUpload("diagnostics");
-        sendResponse?.({ ok: true, diagnostics: await getDiagnostics() });
-      } catch {
-        sendResponse?.({ ok: false });
-      }
-    })();
-    return true;
+    return respondAsync(async () => {
+      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await runUpload("diagnostics");
+      return { ok: true, diagnostics: await getDiagnostics() };
+    }, sendResponse, { ok: false });
   }
 
   if (message?.type === "highlighter:logEvent") {
-    void (async () => {
-      try {
-        if (!(await initializeLoggingServiceWorker())) {
-          sendResponse?.({ ok: false, reason: "access_denied" });
-          return;
-        }
-        const event = { ...(message.event || {}) };
-        await logEvent(event);
-        sendResponse?.({ ok: true });
-      } catch {
-        sendResponse?.({ ok: false });
-      }
-    })();
-    return true;
+    return respondAsync(async () => {
+      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await logEvent({ ...(message.event || {}) });
+      return { ok: true };
+    }, sendResponse, { ok: false });
   }
 
   if (message?.type === "highlighter:logFailure") {
-    void (async () => {
-      try {
-        if (!(await initializeLoggingServiceWorker())) {
-          sendResponse?.({ ok: false, reason: "access_denied" });
-          return;
-        }
-        await logFailure(
-          message.eventType,
-          message.errorCode,
-          message.errorMessage,
-          message.metadata || {}
-        );
-        sendResponse?.({ ok: true });
-      } catch {
-        sendResponse?.({ ok: false });
-      }
-    })();
-    return true;
+    return respondAsync(async () => {
+      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await logFailure(message.eventType, message.errorCode, message.errorMessage, message.metadata || {});
+      return { ok: true };
+    }, sendResponse, { ok: false });
   }
 
   return false;

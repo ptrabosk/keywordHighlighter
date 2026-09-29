@@ -10,8 +10,7 @@ async function isAbandonedSession(activeSession, now = Date.now()) {
   const config = await getLoggingConfig();
   return now - Date.parse(activeSession.lastActivityAt) > config.abandonedSessionMinutes * 60_000;
 }
-
-export async function getActiveSession() {
+async function getActiveSession() {
   try {
     const result = await storageGet(STORAGE_KEYS.activeSession);
     return result[STORAGE_KEYS.activeSession] || null;
@@ -19,7 +18,6 @@ export async function getActiveSession() {
     return null;
   }
 }
-
 export async function startSession(context = {}) {
   try {
     const previous = await getActiveSession();
@@ -57,23 +55,6 @@ export async function startSession(context = {}) {
   }
 }
 
-export async function updateSessionActivity(patch = {}) {
-  try {
-    const current = await getActiveSession();
-    if (!current) return null;
-
-    const next = {
-      ...current,
-      ...patch,
-      lastActivityAt: utcNow()
-    };
-    await storageSet({ [STORAGE_KEYS.activeSession]: next });
-    return next;
-  } catch {
-    return null;
-  }
-}
-
 export async function endSession(result = "success") {
   try {
     const current = await getActiveSession();
@@ -92,7 +73,3 @@ export async function endSession(result = "success") {
     // Best effort only; popup shutdown writes are not guaranteed.
   }
 }
-
-export const sessionTestHooks = {
-  isAbandonedSession
-};

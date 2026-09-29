@@ -1,6 +1,11 @@
 import { LOGGING_CONFIG } from "./config.js";
 import {
-  ERROR_CODES,
+  byteSize,
+  createUuid,
+  getExtensionVersion,
+  utcNow
+} from "./sanitizePrimitives.js";
+import {
   LOG_EVENT_TYPES,
   LOG_RESULTS,
   LOG_SEVERITIES,
@@ -23,54 +28,20 @@ const DROPPED_EVENT_TYPES = new Set([
   "cache_pruned"
 ]);
 
-export function byteSize(value) {
-  return new TextEncoder().encode(typeof value === "string" ? value : JSON.stringify(value)).length;
-}
+export { byteSize, createUuid, getExtensionVersion, utcNow };
 
-export function utcNow() {
-  return new Date().toISOString();
-}
-
-export function createUuid() {
-  if (globalThis.crypto?.randomUUID) {
-    return globalThis.crypto.randomUUID();
-  }
-
-  const bytes = new Uint8Array(16);
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(bytes);
-  } else {
-    for (let index = 0; index < bytes.length; index += 1) {
-      bytes[index] = Math.floor(Math.random() * 256);
-    }
-  }
-
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
-export function getExtensionVersion() {
-  try {
-    return globalThis.chrome?.runtime?.getManifest?.().version || "unknown";
-  } catch {
-    return "unknown";
-  }
-}
-
-export function truncateString(value, maxLength) {
+function truncateString(value, maxLength) {
   const text = String(value ?? "");
   return text.length > maxLength ? text.slice(0, maxLength) : text;
 }
 
-export function sanitizeSafeId(value, maxLength = 100) {
+function sanitizeSafeId(value, maxLength = 100) {
   if (value === undefined || value === null || value === "") return undefined;
   const text = truncateString(value, maxLength);
   return SAFE_ID_PATTERN.test(text) ? text : undefined;
 }
 
-export function sanitizeMetadata(metadata = {}) {
+function sanitizeMetadata(metadata = {}) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return undefined;
 
   const allowed = new Set(METADATA_ALLOWLIST);
@@ -91,7 +62,7 @@ export function sanitizeMetadata(metadata = {}) {
   return Object.keys(sanitized).length ? sanitized : undefined;
 }
 
-export function sanitizeErrorMessage(message, fallback = "Operation failed") {
+function sanitizeErrorMessage(message, fallback = "Operation failed") {
   const text = message ? String(message) : fallback;
   const redacted = text
     .replace(/https?:\/\/\S+/gi, "[url]")
@@ -101,21 +72,6 @@ export function sanitizeErrorMessage(message, fallback = "Operation failed") {
     .replace(/\b(customer|case|order)(?:[_\s-]*(?:id|number|no))?[:#=\s-]+[a-zA-Z0-9._:-]{4,}\b/gi, "$1 [redacted]")
     .replace(/\bat\s+\S+:\d+:\d+\b/g, "at [stack]");
   return truncateString(redacted, MAX_ERROR_MESSAGE_LENGTH);
-}
-
-export function sanitizeError(error, errorCode = ERROR_CODES.UNEXPECTED_ERROR, fallback = "Unexpected error") {
-  const errorClass = error?.name && /^[a-zA-Z0-9_.:-]+$/.test(error.name)
-    ? truncateString(error.name, 80)
-    : undefined;
-
-  return {
-    errorCode,
-    errorMessage: sanitizeErrorMessage(error?.message, fallback),
-    metadata: sanitizeMetadata({
-      operation: "unexpected",
-      failureCategory: errorClass
-    })
-  };
 }
 
 export function sanitizeEvent(input = {}) {

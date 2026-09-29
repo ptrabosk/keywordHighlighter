@@ -565,19 +565,6 @@ function sheetHealth_(spreadsheet, name, headers) {
   };
 }
 
-function toSet_(values) {
-  const set = Object.create(null);
-  values.forEach(function(value) {
-    if (value) set[value] = true;
-  });
-  return {
-    has: function(value) {
-      return set[value] === true;
-    },
-    size: Object.keys(set).length
-  };
-}
-
 function uniqueValues_(values) {
   const set = Object.create(null);
   const output = [];
