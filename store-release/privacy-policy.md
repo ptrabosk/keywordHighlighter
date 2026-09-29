@@ -29,6 +29,6 @@ If the user declines or later disables usage and diagnostic sharing, highlightin
 
 Uploads use HTTPS, strict field validation, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project.
 
-For privacy questions and deletion requests, contact [privacy@attentive.com](mailto:privacy@attentive.com). This policy must be hosted at a stable public HTTPS URL before publishing.
+For privacy questions and deletion requests, contact [info@offsightoperations.com](mailto:[info@offsightoperations.com). This policy must be hosted at a stable public HTTPS URL before publishing.
 
 The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.
