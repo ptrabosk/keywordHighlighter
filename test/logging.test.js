@@ -592,7 +592,7 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
 
   assert.match(backgroundSource, /highlighter:getDiagnostics/);
   assert.match(backgroundSource, /highlighter:runDiagnosticsUpload/);
-  assert.match(backgroundSource, /highlighter:getAccessStatus/);
+  assert.doesNotMatch(backgroundSource, /getProfileUserInfo|highlighter:getAccessStatus|identity\.email/);
   assert.doesNotMatch(backgroundSource, /profileEmail/);
   assert.doesNotMatch(backgroundSource, /event\.pageUrl/);
   assert.match(contentSource, /RENDER_LOG_INTERVAL_MS/);
@@ -601,7 +601,7 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /render_failed/);
   assert.match(contentSource, /clearAllHighlights/);
   assert.match(contentSource, /!state\.settings\.enabled/);
-  assert.match(contentSource, /AMH_ACCESS_POLICY\.requestAccessStatus/);
+  assert.doesNotMatch(contentSource, /AMH_ACCESS_POLICY|amhAccessDenied|amhAccessReason/);
   assert.doesNotMatch(contentSource, /pageUrl:/);
 });
 

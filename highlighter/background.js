@@ -1,68 +1,14 @@
 import "./settings.js";
-import "./src/access/policy.js";
 import { getLoggingConfig } from "./src/logging/config.js";
 import { logEvent, logFailure } from "./src/logging/logger.js";
 import { pruneLogs } from "./src/logging/prune.js";
 import { startSession, endSession } from "./src/logging/session.js";
-import { clearLoggingData, enqueueEvent, getQueueStats, restoreUploadingEvents } from "./src/logging/storageQueue.js";
+import { enqueueEvent, getQueueStats, restoreUploadingEvents } from "./src/logging/storageQueue.js";
 import { ERROR_CODES } from "./src/logging/types.js";
 import { shouldUploadOnStartup, uploadPendingLogs } from "./src/logging/uploader.js";
 
 const UPLOAD_ALARM_NAME = "keywordHighlighterLogUpload";
-const ACCESS_CACHE_TTL_MS = 60 * 1000;
-let accessCache = null;
 let loggingInitialized = false;
-
-async function getConsentStatus() {
-  const key = globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_KEY;
-  const result = await chrome.storage.local.get(key);
-  const consent = result[key];
-  const valid = consent?.version === globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_VERSION &&
-    typeof consent.telemetry === "boolean";
-  return {
-    decided: valid,
-    telemetry: valid && consent.telemetry === true,
-    version: globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_VERSION
-  };
-}
-
-async function setConsent(telemetry) {
-  const key = globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_KEY;
-  const value = {
-    version: globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_VERSION,
-    telemetry: telemetry === true,
-    updatedAt: new Date().toISOString()
-  };
-  await chrome.storage.local.set({ [key]: value });
-  if (!value.telemetry) {
-    loggingInitialized = false;
-    await clearLoggingData();
-  }
-  return value;
-}
-
-async function getAccessStatus() {
-  if (accessCache && accessCache.expiresAt > Date.now()) return accessCache.value;
-
-  let email = "";
-  let reason = "access_denied";
-  try {
-    const profile = await chrome.identity.getProfileUserInfo({ accountStatus: "ANY" });
-    email = String(profile?.email || "").trim();
-    reason = email ? "organization_check_failed" : "organization_profile_missing";
-  } catch {
-    reason = "identity_unavailable";
-  }
-
-  const allowed = Boolean(globalThis.AMH_ACCESS_POLICY?.isOrganizationEmail(email));
-  const value = { allowed, reason: allowed ? "allowed" : reason };
-  accessCache = { value, expiresAt: Date.now() + ACCESS_CACHE_TTL_MS };
-  return value;
-}
-
-async function isOrganizationUser() {
-  return (await getAccessStatus()).allowed;
-}
 
 function summarizeLoggingConfig(config) {
   const endpointUrl = config.endpointUrl || "";
@@ -108,21 +54,18 @@ async function getDiagnostics() {
 }
 
 async function ensureDefaultSettings() {
-  if (!(await isOrganizationUser())) return;
   try {
     const existing = await chrome.storage.sync.get(globalThis.SETTINGS_KEY);
     if (!existing[globalThis.SETTINGS_KEY]) {
       await chrome.storage.sync.set({ [globalThis.SETTINGS_KEY]: globalThis.DEFAULT_SETTINGS });
     }
   } catch (error) {
-    if (await isOrganizationUser()) {
-      await logFailure(
-        "settings_save_failed",
-        ERROR_CODES.SETTINGS_SAVE_FAILED,
-        "Default settings could not be initialized",
-        { operation: "initializeDefaults" }
-      );
-    }
+    await logFailure(
+      "settings_save_failed",
+      ERROR_CODES.SETTINGS_SAVE_FAILED,
+      "Default settings could not be initialized",
+      { operation: "initializeDefaults" }
+    );
   }
 }
 
@@ -136,9 +79,6 @@ async function ensureUploadAlarm() {
 }
 
 async function runUpload(reason) {
-  const consent = await getConsentStatus();
-  if (!consent.telemetry) return;
-  if (!(await isOrganizationUser())) return;
   try {
     await restoreUploadingEvents();
     const config = await getLoggingConfig();
@@ -154,8 +94,7 @@ async function runUpload(reason) {
 }
 
 async function initializeLoggingServiceWorker() {
-  const consent = await getConsentStatus();
-  if (!consent.telemetry || loggingInitialized || !(await isOrganizationUser())) return false;
+  if (loggingInitialized) return true;
   await getLoggingConfig();
   await ensureUploadAlarm();
   await restoreUploadingEvents();
@@ -187,36 +126,9 @@ globalThis.chrome?.runtime?.onSuspend?.addListener(() => {
 });
 
 globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "highlighter:getConsentStatus") {
-    return respondAsync(
-      getConsentStatus,
-      sendResponse,
-      { decided: false, telemetry: false, version: globalThis.AMH_ACCESS_POLICY.PRIVACY_CONSENT_VERSION }
-    );
-  }
-
-  if (message?.type === "highlighter:setConsent") {
-    return respondAsync(async () => {
-      await setConsent(message.telemetry === true);
-      if (message.telemetry === true) void initializeLoggingServiceWorker();
-      return { ok: true };
-    }, sendResponse, { ok: false });
-  }
-
-  if (message?.type === "highlighter:getAccessStatus") {
-    return respondAsync(async () => {
-      const status = await getAccessStatus();
-      if (status.allowed) {
-        void ensureDefaultSettings();
-        void initializeLoggingServiceWorker();
-      }
-      return status;
-    }, sendResponse, { allowed: false, reason: "access_check_failed" });
-  }
-
   if (message?.type === "logging:event") {
     return respondAsync(async () => {
-      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await initializeLoggingServiceWorker();
       const event = { ...(message.event || {}) };
       await enqueueEvent(event);
       const stats = await getQueueStats();
@@ -236,14 +148,14 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
 
   if (message?.type === "highlighter:getDiagnostics") {
     return respondAsync(async () => {
-      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await initializeLoggingServiceWorker();
       return { ok: true, diagnostics: await getDiagnostics() };
     }, sendResponse, { ok: false });
   }
 
   if (message?.type === "highlighter:runDiagnosticsUpload") {
     return respondAsync(async () => {
-      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await initializeLoggingServiceWorker();
       await runUpload("diagnostics");
       return { ok: true, diagnostics: await getDiagnostics() };
     }, sendResponse, { ok: false });
@@ -251,7 +163,7 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
 
   if (message?.type === "highlighter:logEvent") {
     return respondAsync(async () => {
-      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await initializeLoggingServiceWorker();
       await logEvent({ ...(message.event || {}) });
       return { ok: true };
     }, sendResponse, { ok: false });
@@ -259,7 +171,7 @@ globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendRespon
 
   if (message?.type === "highlighter:logFailure") {
     return respondAsync(async () => {
-      if (!(await initializeLoggingServiceWorker())) return { ok: false, reason: "access_denied" };
+      await initializeLoggingServiceWorker();
       await logFailure(message.eventType, message.errorCode, message.errorMessage, message.metadata || {});
       return { ok: true };
     }, sendResponse, { ok: false });

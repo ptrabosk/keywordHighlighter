@@ -19,7 +19,6 @@ test("manifest content scripts parse as classic Chrome scripts", () => {
   assert.deepEqual(scriptPaths, [
     "settings.js",
     "src/shared/extensionUtils.js",
-    "src/access/policy.js",
     "src/highlight/regexNormalization.js",
     "src/highlight/core.js",
     "src/highlight/shortcutTelemetry.js",
@@ -36,7 +35,7 @@ test("production manifest uses minimum Store permissions and no development host
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
   const serialized = JSON.stringify(manifest);
 
-  assert.deepEqual(manifest.permissions, ["storage", "alarms", "identity.email"]);
+  assert.deepEqual(manifest.permissions, ["storage", "alarms"]);
   assert.equal(serialized.includes("localhost"), false);
   assert.equal(serialized.includes("127.0.0.1"), false);
   assert.equal(Object.hasOwn(manifest, "key"), false);
@@ -53,30 +52,26 @@ test("service worker dependency graph contains no unsupported dynamic imports", 
   assert.doesNotMatch(moduleSources, /\bimport\s*\(/);
 });
 
-test("popup and options pages disclose telemetry and provide consent controls", () => {
+test("popup and options pages provide keyword controls without an in-product disclosure", () => {
   for (const page of ["popup.html", "options.html"]) {
     const source = readExtensionFile(page);
-    assert.match(source, /Privacy and usage data/);
-    assert.match(source, /allowTelemetry/);
-    assert.match(source, /denyTelemetry/);
-    assert.match(source, /github\.com\/ptrabosk\/keywordHighlighter\/blob\/main\/docs\/index\.html/);
+    assert.doesNotMatch(source, /privacyConsent|allowTelemetry|denyTelemetry|privacy-ui\.js/);
     assert.match(source, /keywordForm/);
     assert.match(source, /keywordInput/);
     assert.match(source, /keywordText/);
+    assert.match(source, /accept="text\/csv,\.csv"/);
+    assert.ok(source.indexOf("src/shared/keywordCsv.js") < source.indexOf("popup.js"));
   }
   const optionsSource = readExtensionFile("options.html");
   assert.doesNotMatch(optionsSource, /id="selector"|id="categories"|settings-ui\.js|Targeting|Display|Categories/);
   assert.doesNotMatch(readExtensionFile("popup.html"), /shortcut activity/i);
-  assert.doesNotThrow(() => new vm.Script(readExtensionFile("privacy-ui.js"), { filename: "privacy-ui.js" }));
   assert.doesNotThrow(() => new vm.Script(readExtensionFile("custom-keywords-init.js"), { filename: "custom-keywords-init.js" }));
 });
 
-test("service worker gates telemetry on the explicit privacy choice", () => {
+test("service worker retains telemetry without an in-product consent dependency", () => {
   const source = readExtensionFile("background.js");
-  assert.match(source, /highlighter:getConsentStatus/);
-  assert.match(source, /highlighter:setConsent/);
-  assert.match(source, /if \(!consent\.telemetry/);
-  assert.match(source, /clearLoggingData/);
+  assert.doesNotMatch(source, /highlighter:getConsentStatus|highlighter:setConsent|consent\.telemetry/);
+  assert.match(source, /initializeLoggingServiceWorker/);
 });
 
 test("manifest identifies the 1.0.6 release", () => {
@@ -85,15 +80,15 @@ test("manifest identifies the 1.0.6 release", () => {
   assert.equal(manifest.version, "1.0.6");
 });
 
-test("manifest exposes the protected options page and narrow resource scope", () => {
+test("manifest exposes the options page and narrow resource scope", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.deepEqual(manifest.options_ui, { page: "options.html", open_in_tab: true });
   assert.deepEqual(manifest.web_accessible_resources[0].matches, [
-    "https://ui.attentivemobile.com/concierge/*"
+    "https://ui.attentivemobile.com/*"
   ]);
-  assert.equal(readExtensionFile("options.html").includes("src/access/policy.js"), true);
-  assert.equal(readExtensionFile("popup.html").includes("src/access/policy.js"), true);
+  assert.equal(readExtensionFile("options.html").includes("src/access/policy.js"), false);
+  assert.equal(readExtensionFile("popup.html").includes("src/access/policy.js"), false);
 });
 
 test("manifest JSON resources exist and are parseable", () => {

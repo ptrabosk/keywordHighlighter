@@ -13,20 +13,6 @@
       <p class="eyebrow">Offsight Highlighter</p>
       <h1>Custom Keywords</h1>
       <p class="subtle">Add and edit words or phrases to highlight alongside the built-in rules.</p>
-      <p id="accessNotice" class="access-notice" hidden>Use your Attentive Mobile account to use this extension.</p>
-
-      <section id="privacyConsent" class="privacy-card" hidden>
-        <h2>Privacy and usage data</h2>
-        <p>The extension checks your Chrome profile email locally to verify your organization. It does not upload that email or message text.</p>
-        <p>You may optionally allow anonymous usage and diagnostic events: timestamps, random IDs, extension version, surface, error details, and highlight counts. Events are sent over HTTPS to the publisher's Google Apps Script receiver and deleted after 90 days.</p>
-        <p><a href="https://github.com/ptrabosk/keywordHighlighter/blob/main/docs/index.html" target="_blank" rel="noreferrer">Read the privacy policy</a></p>
-        <p id="privacyStatus" class="privacy-status" role="status"></p>
-        <div class="privacy-actions">
-          <button id="allowTelemetry" type="button" class="primary">Allow usage diagnostics</button>
-          <button id="denyTelemetry" type="button" class="secondary">Use without usage diagnostics</button>
-        </div>
-      </section>
-
       <form id="keywordForm" class="keyword-form">
         <label class="field" for="keywordInput">
           <span>Keyword</span>
@@ -43,7 +29,7 @@
       <div class="backup-actions">
         <button id="exportKeywords" type="button" class="secondary">Export</button>
         <button id="importKeywords" type="button" class="secondary">Import</button>
-        <input id="importFile" type="file" accept="application/json,.json" hidden>
+        <input id="importFile" type="file" accept="text/csv,.csv" hidden>
       </div>
     </section>
 
@@ -53,8 +39,7 @@
   </main>
   <script src="settings.js"></script>
   <script src="src/shared/extensionUtils.js"></script>
-  <script src="src/access/policy.js"></script>
-  <script src="privacy-ui.js"></script>
+  <script src="src/shared/keywordCsv.js"></script>
   <script src="popup.js"></script>
   <script src="options.js"></script>
 </body>

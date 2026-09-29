@@ -28,13 +28,6 @@
     return;
   }
 
-  if (!globalThis.AMH_ACCESS_POLICY) {
-    const message = 'access policy did not load before content.js. Reload the extension and refresh the page.';
-    document.documentElement.dataset.amhInitError = message;
-    console.error('[Offsight Highlighter] Failed to initialize:', new Error(message));
-    return;
-  }
-
   const core = globalThis.AMH_HIGHLIGHT_CORE;
   const shortcutTelemetry = globalThis.AMH_SHORTCUT_TELEMETRY;
   const RENDER_LOG_INTERVAL_MS = 5 * 60 * 1000;
@@ -52,8 +45,6 @@
     tooltip: null,
     targetSnapshots: new WeakMap(),
     escalationTargetSnapshots: new WeakMap(),
-    accessAllowed: false,
-    accessRecheckTimer: null,
     stats: {
       loadedRules: 0,
       activeRules: 0,
@@ -108,13 +99,6 @@
   });
 
   async function init() {
-    const access = await AMH_ACCESS_POLICY.requestAccessStatus();
-    if (!access.allowed) {
-      document.documentElement.dataset.amhAccessDenied = 'true';
-      document.documentElement.dataset.amhAccessReason = access.reason;
-      return;
-    }
-    state.accessAllowed = true;
     state.settings = core.mergeSettings(DEFAULT_SETTINGS, await loadSettings());
     const [rules, hoverText] = await Promise.all([loadRules(), loadHoverText()]);
     state.rules = rules;
@@ -125,28 +109,7 @@
     installMutationObserver();
     installMessageHandlers();
     installDiagnostics(state);
-    scheduleAccessRecheck();
     scheduleRender(true);
-  }
-
-  function scheduleAccessRecheck() {
-    window.clearInterval(state.accessRecheckTimer);
-    state.accessRecheckTimer = window.setInterval(async () => {
-      const access = await AMH_ACCESS_POLICY.requestAccessStatus();
-      if (access.allowed || !state.accessAllowed) return;
-
-      state.accessAllowed = false;
-      window.clearInterval(state.accessRecheckTimer);
-      state.accessRecheckTimer = null;
-      state.observer?.disconnect();
-      state.observer = null;
-      window.clearTimeout(state.renderTimer);
-      state.renderTimer = null;
-      clearAllHighlights();
-      refreshHighlightCountBadge();
-      document.documentElement.dataset.amhAccessDenied = 'true';
-      document.documentElement.dataset.amhAccessReason = access.reason;
-    }, 5 * 60 * 1000);
   }
 
   async function loadSettings() {
@@ -332,11 +295,6 @@
     state.renderTimer = null;
 
     try {
-      if (!state.accessAllowed) {
-        clearAllHighlights();
-        refreshHighlightCountBadge();
-        return;
-      }
       const activeRules = core.getActiveRules(state.rules, state.settings);
       state.stats.activeRules = activeRules.length;
       state.stats.invalidRules = state.rules.filter((rule) => !rule.executable).length;

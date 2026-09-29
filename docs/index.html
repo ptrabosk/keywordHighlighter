@@ -25,28 +25,29 @@
   <main>
     <article>
       <h1>Offsight Highlighter Privacy Policy</h1>
-      <p class="updated">Last updated: September 28, 2026</p>
+      <p class="updated">Last updated: September 29, 2026</p>
 
-      <p>Offsight Highlighter checks the signed-in Chrome profile locally and enables its features only for accounts with the exact <code>attentivemobile.com</code> domain. It highlights configured rule matches on its supported work page. Usage and diagnostic collection is optional and requires an affirmative choice in the extension UI.</p>
+      <p>Offsight Highlighter highlights configured rule matches on its supported work page without requesting or inspecting the user's Chrome profile identity. This page contains the extension's complete data-use disclosure.</p>
 
       <h2>Data collected</h2>
-      <p>After the user allows usage and diagnostic sharing, the extension may collect limited usage information associated with highlighted messages:</p>
+      <p>The extension collects limited operational information about the highlighting feature:</p>
       <ul>
         <li>the number of rendered rule highlights, capped at 1,000;</li>
-        <li>an event timestamp, random event and session identifiers, extension version, and the supported page surface.</li>
+        <li>an event timestamp, random event and session identifiers, extension version, and the supported page surface;</li>
+        <li>bounded technical event fields such as event type, severity, result, duration, sanitized error code/message, and allowlisted numeric or status metadata.</li>
       </ul>
-      <p>The extension does not collect message text, matched text, page URLs, profile emails, rule names, selected text, field contents, text entered into editable fields, or unrelated browsing activity. The profile email is used only for the local organization check and is not uploaded.</p>
+      <p>The extension reads supported page content locally to perform its highlighting feature, but does not transmit or store message text, matched text, page URLs, account identifiers, rule names, selected text, field contents, text entered into editable fields, or unrelated browsing activity. Custom keywords and their hover guidance are user settings stored by Chrome for the extension's settings feature; they are not included in telemetry. The extension does not request or inspect the user's Chrome profile identity.</p>
       <p>The extension may also collect privacy-limited technical diagnostics needed to diagnose initialization, rule loading, rendering, settings, storage, and upload failures. Error strings are sanitized before storage.</p>
 
       <h2>Use, storage, and sharing</h2>
-      <p>Information is used only to operate, secure, troubleshoot, and evaluate the extension. It is queued in Chrome extension storage and sent over HTTPS to a Google Apps Script endpoint that writes to a restricted Google Sheet controlled by the extension publisher. Data is not sold, used for advertising, or shared with unrelated third parties.</p>
+      <p>Information is used only to provide, secure, troubleshoot, and measure the performance and reliability of the extension's highlighting feature. It is queued in Chrome extension storage and sent over HTTPS to a Google Apps Script endpoint that writes to a restricted Google Sheet controlled by the extension publisher. Google Apps Script and Google Sheets are the only service providers receiving operational telemetry. Data is not sold, used for advertising, or shared with unrelated third parties.</p>
       <p>Normal local events are retained for up to 7 days while awaiting upload. Uploaded events and their deduplication identifiers are automatically deleted after 90 days. Google may process data as the infrastructure provider under its applicable terms.</p>
-      <p>If sharing is declined or disabled, highlighting remains available for authorized users, no new telemetry is queued, and locally queued telemetry is deleted.</p>
+      <p>This privacy policy is the extension's complete data-use disclosure.</p>
 
       <h2>Security and deletion requests</h2>
-      <p>Uploads use HTTPS, strict field validation, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project.</p>
+      <p>Uploads use HTTPS, strict field validation, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project. The publisher does not permit people to read telemetry except when the user expressly authorizes support access to specific data, when needed for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.</p>
       <p>For privacy questions and deletion requests, contact <a href="mailto:privacy@attentive.com">privacy@attentive.com</a>. This policy must be hosted at a stable public HTTPS URL before publishing.</p>
-      <p>The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.</p>
+      <p>The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements. User data is used only to provide or improve the extension's single purpose, is transferred only when necessary for that purpose or for security or legal compliance, is never used or transferred for personalized advertising, and is not sold to data brokers or other information resellers.</p>
     </article>
     <footer>Offsight Highlighter</footer>
   </main>

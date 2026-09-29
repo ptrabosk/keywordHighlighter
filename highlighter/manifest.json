@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Offsight Highlighter",
-  "description": "Highlights configured rule matches in inbound Operations messages.",
+  "description": "Highlights configured rule matches in inbound Operations messages; processes supported page content locally.",
   "version": "1.0.6",
   "homepage_url": "https://github.com/ptrabosk/keywordHighlighter",
   "icons": {
@@ -24,8 +24,7 @@
   },
   "permissions": [
     "storage",
-    "alarms",
-    "identity.email"
+    "alarms"
   ],
   "host_permissions": [
     "https://ui.attentivemobile.com/concierge/*",
@@ -40,7 +39,6 @@
       "js": [
         "settings.js",
         "src/shared/extensionUtils.js",
-        "src/access/policy.js",
         "src/highlight/regexNormalization.js",
         "src/highlight/core.js",
         "src/highlight/shortcutTelemetry.js",
@@ -60,7 +58,7 @@
         "data/rules/rule_hover_text.json"
       ],
       "matches": [
-        "https://ui.attentivemobile.com/concierge/*"
+        "https://ui.attentivemobile.com/*"
       ]
     }
   ]

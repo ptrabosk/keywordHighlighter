@@ -11,12 +11,15 @@
 input[type="text"] {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 11px 12px;
   color: var(--text);
-  background: #fffdf5;
+  background: #ffffff;
   font: inherit;
 }
+
+input[type="text"]::placeholder { color: #a1a1a1; }
+input[type="text"]:hover { border-color: var(--line-strong); }
 
 .keywords {
   display: grid;
@@ -31,8 +34,8 @@ input[type="text"] {
   gap: 12px;
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #efe1b8;
+  border-radius: 9px;
+  background: #f7f7f5;
 }
 
 .keyword__actions {
@@ -44,12 +47,12 @@ input[type="text"] {
 .keyword span {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .empty {
   margin: 0;
   border: 1px dashed var(--line);
-  border-radius: 8px;
+  border-radius: 9px;
   color: var(--muted);
 }

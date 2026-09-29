@@ -1,4 +1,5 @@
 const { escapeHtml } = globalThis.AMH_EXTENSION_UTILS;
+const { parseKeywordCsv, serializeKeywordCsv } = globalThis.AMH_KEYWORD_CSV;
 
 function createCustomKeywordUi({ surface = 'popup' } = {}) {
 const els = {
@@ -10,7 +11,6 @@ const els = {
   exportKeywords: document.querySelector('#exportKeywords'),
   importKeywords: document.querySelector('#importKeywords'),
   importFile: document.querySelector('#importFile'),
-  accessNotice: document.querySelector('#accessNotice'),
   status: document.querySelector('#status')
 };
 
@@ -47,22 +47,6 @@ function logOperationalFailure(eventType, errorCode, errorMessage, metadata = {}
 }
 
 async function init() {
-  const access = await AMH_ACCESS_POLICY.requestAccessStatus();
-  if (!access.allowed) {
-    blockAccess();
-    return;
-  }
-  const consent = await AMH_PRIVACY_UI.init((nextConsent) => {
-    if (nextConsent.decided) {
-      enableControls();
-      return startFeatures();
-    }
-    blockForConsent();
-  });
-  if (!consent.decided) {
-    blockForConsent();
-    return;
-  }
   await startFeatures();
 }
 
@@ -179,18 +163,15 @@ async function removeKeyword(keyword) {
 }
 
 function exportKeywords() {
-  const payload = {
-    schemaVersion: 1,
-    exportedAt: new Date().toISOString(),
-    extensionName: 'Offsight Highlighter',
-    customKeywords: settings.customKeywords || [],
-    customKeywordTextByPattern: settings.customKeywordTextByPattern || {}
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const csv = serializeKeywordCsv((settings.customKeywords || []).map((keyword) => ({
+    keyword,
+    hoverText: settings.customKeywordTextByPattern?.[keyword] || ''
+  })));
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `offsight-highlighter-keywords-${formatDateForFilename(new Date())}.json`;
+  link.download = `offsight-highlighter-keywords-${formatDateForFilename(new Date())}.csv`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -204,8 +185,7 @@ async function importKeywords(event) {
   if (!file) return;
 
   try {
-    const payload = JSON.parse(await file.text());
-    const imported = parseKeywordImport(payload);
+    const imported = parseKeywordImport(await file.text());
     settings = mergeSettings(DEFAULT_SETTINGS, {
       ...settings,
       customKeywords: imported.customKeywords,
@@ -218,20 +198,29 @@ async function importKeywords(event) {
     logOperationalFailure('settings_save_failed', 'KEYWORD_IMPORT_FAILED', 'Keyword backup could not be imported', {
       operation: 'customKeywordsImport'
     });
-    setStatus('Import failed. Choose a valid keyword backup JSON file.');
+    setStatus('Import failed. Choose a CSV file with keyword and hover text headers.');
   }
 }
 
-function parseKeywordImport(payload) {
-  const source = payload && typeof payload === 'object' && payload.amhSettings ? payload.amhSettings : payload;
-  if (!source || typeof source !== 'object' || !Array.isArray(source.customKeywords)) {
-    throw new Error('Missing customKeywords array');
+function parseKeywordImport(csvText) {
+  const importedByKeyword = new Map();
+  for (const row of parseKeywordCsv(csvText)) {
+    const keyword = normalizeKeyword(row.keyword);
+    if (!keyword) continue;
+    const key = keyword.toLocaleLowerCase();
+    const existing = importedByKeyword.get(key);
+    importedByKeyword.set(key, {
+      keyword: existing?.keyword || keyword,
+      hoverText: normalizeHoverText(row.hoverText)
+    });
   }
-  const customKeywords = Array.from(new Set(source.customKeywords.map(normalizeKeyword).filter(Boolean)))
+  const customKeywords = Array.from(importedByKeyword.values(), (entry) => entry.keyword)
     .sort((a, b) => a.localeCompare(b));
   return {
     customKeywords,
-    customKeywordTextByPattern: normalizeCustomKeywordTextMap(customKeywords, source.customKeywordTextByPattern || {})
+    customKeywordTextByPattern: Object.fromEntries(
+      Array.from(importedByKeyword.values(), (entry) => [entry.keyword, entry.hoverText])
+    )
   };
 }
 
@@ -290,28 +279,6 @@ function mergeSettings(base, override) {
     merged.categories.user_added.color = base.categories.user_added.color;
   }
   return merged;
-}
-
-function blockAccess() {
-  setControlsDisabled(true);
-  els.accessNotice.hidden = false;
-  setStatus('This extension is limited to Attentive Mobile accounts.');
-}
-
-function blockForConsent() {
-  setControlsDisabled(true);
-}
-
-function enableControls() {
-  setControlsDisabled(false);
-}
-
-function setControlsDisabled(disabled) {
-  els.form.querySelectorAll('input, button').forEach((control) => {
-    control.disabled = disabled;
-  });
-  els.exportKeywords.disabled = disabled;
-  els.importKeywords.disabled = disabled;
 }
 
 function normalizeKeyword(value) {

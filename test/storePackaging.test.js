@@ -48,7 +48,7 @@ test("Store packager creates a production-only ZIP with injected release configu
     const manifestText = JSON.stringify(manifest);
     const configText = fs.readFileSync(path.join(extractDirectory, "src/logging/config.js"), "utf8");
 
-    assert.deepEqual(manifest.permissions, ["storage", "alarms", "identity.email"]);
+    assert.deepEqual(manifest.permissions, ["storage", "alarms"]);
     assert.equal(manifest.version, "1.0.6");
     assert.deepEqual(manifest.options_ui, { page: "options.html", open_in_tab: true });
     assert.doesNotMatch(manifestText, /localhost|127\.0\.0\.1|"tabs"/);
@@ -61,9 +61,10 @@ test("Store packager creates a production-only ZIP with injected release configu
     assert.equal(fs.existsSync(path.join(extractDirectory, "options.html")), true);
     assert.equal(fs.existsSync(path.join(extractDirectory, "options.js")), true);
     assert.equal(fs.existsSync(path.join(extractDirectory, "custom-keywords-init.js")), true);
+    assert.equal(fs.existsSync(path.join(extractDirectory, "src/shared/keywordCsv.js")), true);
     assert.equal(fs.existsSync(path.join(extractDirectory, "settings-ui.js")), false);
-    assert.equal(fs.existsSync(path.join(extractDirectory, "src/access/policy.js")), true);
-    assert.equal(fs.existsSync(path.join(extractDirectory, "privacy-ui.js")), true);
+    assert.equal(fs.existsSync(path.join(extractDirectory, "src/access/policy.js")), false);
+    assert.equal(fs.existsSync(path.join(extractDirectory, "privacy-ui.js")), false);
   } finally {
     fs.rmSync(outputDirectory, { recursive: true, force: true });
   }

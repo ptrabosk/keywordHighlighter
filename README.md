@@ -15,11 +15,10 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 - Highlights active matches by action/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `close`, and user-added patterns; validated `no_action` rules remain inactive.
 - Shows generated hover tooltips from `highlighter/data/rules/rule_hover_text.json`.
 - Lets users add custom patterns and hover text from the popup.
-- Lets users export and import custom keyword backups as JSON.
+- Lets users export and import custom keyword backups as CSV.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
-- Checks the signed-in Chrome profile locally and enables the extension only for an exact `@attentivemobile.com` address. If the check fails, no page text is processed and no telemetry is written.
-- Shows a first-run privacy disclosure and lets users allow or decline anonymous usage and diagnostic events. Declining leaves highlighting available and removes queued telemetry.
-- Records limited usage information only after the user allows it. Message text, page URLs, profile emails, field contents, and unrelated browsing activity are never recorded.
+- Documents local data practices and operational telemetry in the published privacy policy.
+- Records limited usage information as described in the published privacy policy. Message text, page URLs, profile emails, field contents, and unrelated browsing activity are never recorded.
 - Provides a focused popup and options page for adding and editing custom keywords.
 - Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
 
@@ -62,8 +61,8 @@ Custom keywords and their hover text are stored in Chrome sync storage under `am
 
 Use the popup buttons:
 
-- **Export** downloads a JSON backup with `customKeywords` and `customKeywordTextByPattern`.
-- **Import** restores those values from a backup JSON file.
+- **Export** downloads a CSV file with `keyword` and `hover text` columns.
+- **Import** restores keywords and hover guidance from a CSV whose first row is exactly `keyword,hover text`.
 
 ## Logging setup
 
@@ -109,7 +108,6 @@ keywordHighlighter/
     |-- options.html
     |-- options.js
     |-- popup.css
-    |-- privacy-ui.js
     |-- custom-keywords-init.js
     |-- popup.html
     |-- popup.js
@@ -118,7 +116,6 @@ keywordHighlighter/
     |-- data/rules/
     |   |-- opt_out_rules.json
     |   `-- rule_hover_text.json
-    |-- src/access/
     |-- src/highlight/
     `-- src/logging/
 ```
