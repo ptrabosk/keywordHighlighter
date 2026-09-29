@@ -48,13 +48,13 @@ test("recognizes only trusted, non-repeating Shift+D/N/B/C keydowns", () => {
   assert.equal(telemetry.normalizeShortcutEvent(keyEvent("D", { isTrusted: false })), null);
 });
 
-test("allows extra modifiers but ignores editable fields", () => {
+test("rejects extra modifiers and ignores editable fields", () => {
   const telemetry = loadShortcutTelemetry();
   assert.equal(telemetry.normalizeShortcutEvent(keyEvent("d", {
     ctrlKey: true,
     altKey: true,
     metaKey: true,
-  })), "Shift+D");
+  })), null);
 
   for (const target of [
     { tagName: "INPUT" },
