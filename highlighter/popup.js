@@ -6,6 +6,7 @@ const els = {
   exportKeywords: document.querySelector('#exportKeywords'),
   importKeywords: document.querySelector('#importKeywords'),
   importFile: document.querySelector('#importFile'),
+  accessNotice: document.querySelector('#accessNotice'),
   status: document.querySelector('#status')
 };
 
@@ -13,6 +14,7 @@ const MAX_KEYWORD_LENGTH = 128;
 const MAX_HOVER_TEXT_LENGTH = 256;
 
 let settings = structuredClone(DEFAULT_SETTINGS);
+let featuresStarted = false;
 
 function logOperationalEvent(event) {
   try {
@@ -43,10 +45,32 @@ init().catch((error) => {
   logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Popup startup failed', {
     operation: 'init'
   });
-  console.error('[Offisght Operations Rule Highlighter] Popup failed to initialize:', error);
+  console.error('[Offsight Highlighter] Popup failed to initialize:', error);
 });
 
 async function init() {
+  const access = await AMH_ACCESS_POLICY.requestAccessStatus();
+  if (!access.allowed) {
+    blockAccess();
+    return;
+  }
+  const consent = await AMH_PRIVACY_UI.init((nextConsent) => {
+    if (nextConsent.decided) {
+      enableControls();
+      return startFeatures();
+    }
+    blockForConsent();
+  });
+  if (!consent.decided) {
+    blockForConsent();
+    return;
+  }
+  await startFeatures();
+}
+
+async function startFeatures() {
+  if (featuresStarted) return;
+  featuresStarted = true;
   const startedAt = performance.now();
   settings = mergeSettings(DEFAULT_SETTINGS, await loadSettings());
   renderKeywords();
@@ -130,7 +154,7 @@ function exportKeywords() {
   const payload = {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
-    extensionName: 'Offisght Operations Rule Highlighter',
+    extensionName: 'Offsight Highlighter',
     customKeywords: settings.customKeywords || [],
     customKeywordTextByPattern: settings.customKeywordTextByPattern || {}
   };
@@ -138,7 +162,7 @@ function exportKeywords() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `offisght-operations-highlighter-keywords-${formatDateForFilename(new Date())}.json`;
+  link.download = `offsight-highlighter-keywords-${formatDateForFilename(new Date())}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -230,6 +254,28 @@ function mergeSettings(base, override) {
     merged.categories.user_added.color = base.categories.user_added.color;
   }
   return merged;
+}
+
+function blockAccess() {
+  setControlsDisabled(true);
+  els.accessNotice.hidden = false;
+  setStatus('This extension is limited to Attentive Mobile accounts.');
+}
+
+function blockForConsent() {
+  setControlsDisabled(true);
+}
+
+function enableControls() {
+  setControlsDisabled(false);
+}
+
+function setControlsDisabled(disabled) {
+  els.form.querySelectorAll('input, button').forEach((control) => {
+    control.disabled = disabled;
+  });
+  els.exportKeywords.disabled = disabled;
+  els.importKeywords.disabled = disabled;
 }
 
 function normalizeKeyword(value) {

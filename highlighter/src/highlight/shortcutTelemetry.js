@@ -34,7 +34,11 @@
     const groupIds = new Set();
     let ungroupedCount = 0;
 
-    for (const element of root.querySelectorAll('.amh-highlight')) {
+    const elements = [
+      ...root.querySelectorAll('.amh-highlight'),
+      ...root.querySelectorAll('.amh-escalation-highlight')
+    ];
+    for (const element of elements) {
       if (!rendered(element)) continue;
       const groupId = element.dataset?.amhMatchGroupId;
       if (groupId) groupIds.add(groupId);

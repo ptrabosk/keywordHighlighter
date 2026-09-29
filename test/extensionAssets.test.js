@@ -18,6 +18,7 @@ test("manifest content scripts parse as classic Chrome scripts", () => {
 
   assert.deepEqual(scriptPaths, [
     "settings.js",
+    "src/access/policy.js",
     "src/highlight/core.js",
     "src/highlight/shortcutTelemetry.js",
     "content.js"
@@ -32,7 +33,7 @@ test("production manifest uses minimum Store permissions and no development host
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
   const serialized = JSON.stringify(manifest);
 
-  assert.deepEqual(manifest.permissions, ["storage", "alarms", "identity"]);
+  assert.deepEqual(manifest.permissions, ["storage", "alarms", "identity.email"]);
   assert.equal(serialized.includes("localhost"), false);
   assert.equal(serialized.includes("127.0.0.1"), false);
   assert.equal(Object.hasOwn(manifest, "key"), false);
@@ -49,18 +50,40 @@ test("service worker dependency graph contains no unsupported dynamic imports", 
   assert.doesNotMatch(moduleSources, /\bimport\s*\(/);
 });
 
-test("popup and options pages omit the shortcut activity disclaimer", () => {
+test("popup and options pages disclose telemetry and provide consent controls", () => {
   for (const page of ["popup.html", "options.html"]) {
     const source = readExtensionFile(page);
-    assert.doesNotMatch(source, /Shortcut activity/i);
-    assert.doesNotMatch(source, /telemetry-notice/);
+    assert.match(source, /Privacy and usage data/);
+    assert.match(source, /allowTelemetry/);
+    assert.match(source, /denyTelemetry/);
+    assert.match(source, /github\.com\/ptrabosk\/keywordHighlighter\/blob\/main\/docs\/index\.html/);
   }
+  assert.doesNotThrow(() => new vm.Script(readExtensionFile("privacy-ui.js"), { filename: "privacy-ui.js" }));
 });
 
-test("manifest identifies the 1.0.4 release", () => {
+test("service worker gates telemetry on the explicit privacy choice", () => {
+  const source = readExtensionFile("background.js");
+  assert.match(source, /highlighter:getConsentStatus/);
+  assert.match(source, /highlighter:setConsent/);
+  assert.match(source, /if \(!consent\.telemetry/);
+  assert.match(source, /clearLoggingData/);
+});
+
+test("manifest identifies the 1.0.5 release", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
-  assert.equal(manifest.version, "1.0.4");
+  assert.equal(manifest.version, "1.0.5");
+});
+
+test("manifest exposes the protected options page and narrow resource scope", () => {
+  const manifest = JSON.parse(readExtensionFile("manifest.json"));
+
+  assert.deepEqual(manifest.options_ui, { page: "options.html", open_in_tab: true });
+  assert.deepEqual(manifest.web_accessible_resources[0].matches, [
+    "https://ui.attentivemobile.com/concierge/*"
+  ]);
+  assert.equal(readExtensionFile("options.html").includes("src/access/policy.js"), true);
+  assert.equal(readExtensionFile("popup.html").includes("src/access/policy.js"), true);
 });
 
 test("manifest JSON resources exist and are parseable", () => {
@@ -122,7 +145,16 @@ test("customer highlight count badge is URL-gated and uses logical rendered grou
   assert.match(contentSource, /countVisibleHighlightsForBadge/);
   assert.match(contentSource, /amh-highlight-count/);
   assert.match(contentSource, /existingBadges\.forEach\(\(badge\) => badge\.remove\(\)\)/);
-  assert.match(cssSource, /\.amh-customer-heading-row[\s\S]*justify-content:\s*space-between/);
-  assert.match(cssSource, /\.amh-highlight-count[\s\S]*right:\s*38px/);
+  assert.doesNotMatch(cssSource, /\.amh-customer-heading-row/);
+  assert.match(cssSource, /\.amh-highlight-count[\s\S]*margin-left:\s*8px/);
   assert.match(cssSource, /\.amh-highlight-count[\s\S]*border-radius:\s*6px/);
+});
+
+test("mutation observer gates rerenders on message text changes", () => {
+  const contentSource = readExtensionFile("content.js");
+
+  assert.match(contentSource, /mutation\.type === 'characterData'/);
+  assert.match(contentSource, /node\.nodeType === Node\.TEXT_NODE/);
+  assert.match(contentSource, /node\.textContent\?\.trim\(\)/);
+  assert.match(contentSource, /node\.closest\(extensionSelector\)/);
 });

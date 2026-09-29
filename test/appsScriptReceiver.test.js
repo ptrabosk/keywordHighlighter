@@ -23,10 +23,13 @@ test("receiver validates shortcut metadata as an exact two-field contract", () =
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+D", highlightCount: 1, text: "no" }), false);
 });
 
-test("receiver uses the 17-column event schema without Page Host", () => {
-  assert.doesNotMatch(source, /"Page Host"/);
-  assert.match(source, /"Surface",\s*"Page URL",\s*"Profile Email"/);
+test("receiver uses the 15-column event schema without URL or profile data", () => {
+  assert.match(source, /"Surface",\s*"Rule Source"/);
   assert.match(source, /"Metadata JSON",\s*"Batch ID"/);
+  assert.match(source, /function migrateLegacyEventsSheet_/);
+  assert.match(source, /clearContent\(\)/);
+  assert.match(source, /deleteColumns\(9, 2\)/);
+  assert.doesNotMatch(source, /event\.pageUrl|event\.profileEmail/);
 });
 
 test("receiver enforces total and shortcut daily quotas independently", () => {

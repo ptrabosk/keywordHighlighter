@@ -1,4 +1,4 @@
-# Offisght Operations Rule Highlighter
+# Offsight Highlighter
 
 A Manifest V3 Chrome extension that highlights inbound message text using the schema-v2 deterministic action registry in `highlighter/data/rules/opt_out_rules.json`.
 
@@ -11,13 +11,15 @@ A Manifest V3 Chrome extension that highlights inbound message text using the sc
 div[class*="type-INBOUND"] p[class*="variant-caption"]
 ```
 
-- Validates and loads all 202 built-in rules from `highlighter/data/rules/opt_out_rules.json`.
+- Validates and loads all 220 built-in rules from `highlighter/data/rules/opt_out_rules.json`.
 - Highlights active matches by action/category: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `close`, and user-added patterns; validated `no_action` rules remain inactive.
 - Shows generated hover tooltips from `highlighter/data/rules/rule_hover_text.json`.
 - Lets users add custom patterns and hover text from the popup.
 - Lets users export and import custom keyword backups as JSON.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.
-- Records limited usage information when a rule highlight is rendered, along with the logical highlight count. Message text, field contents, and unrelated browsing activity are never recorded.
+- Checks the signed-in Chrome profile locally and enables the extension only for an exact `@attentivemobile.com` address. If the check fails, no page text is processed and no telemetry is written.
+- Shows a first-run privacy disclosure and lets users allow or decline anonymous usage and diagnostic events. Declining leaves highlighting available and removes queued telemetry.
+- Records limited usage information only after the user allows it. Message text, page URLs, profile emails, field contents, and unrelated browsing activity are never recorded.
 - Provides a focused popup for custom keywords and an options page for advanced settings.
 - Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
 
@@ -37,11 +39,11 @@ The ZIP is written under ignored `dist/`. The shared ingestion token is extracta
 
 For localhost QA, create a separate unpacked development package with `npm run package:dev`, then extract the resulting development ZIP and load that folder. The production package never includes localhost access. Set the same endpoint/token environment variables first if the development build should upload logs; otherwise it runs with uploads unconfigured.
 
-See `docs/store-release/store-listing.md` and `docs/store-release/privacy-policy.md` before submission.
+Use `store-release/store-listing.md` as the finalized listing and reviewer-instructions source. Host `docs/index.html` at the public HTTPS URL entered in the Store privacy-policy field before submission.
 
 ## Local install
 
-Use only the `highlighter` folder as the Chrome extension package.
+Use only the `highlighter` folder as the Chrome extension package. The tracked logging configuration contains safe placeholders, so a clean checkout can be loaded unpacked without additional generated files.
 
 For local install:
 
@@ -88,8 +90,16 @@ keywordHighlighter/
 |-- google-apps-script/
 |   |-- Code.gs
 |   `-- README.md
+|-- docs/
+|   |-- index.html
+|   `-- store-assets/
+|-- scripts/
+|   `-- package-extension.ps1
+|-- store-release/
+|   |-- privacy-policy.md
+|   `-- store-listing.md
 |-- test/
-|   `-- logging.test.js
+|   `-- *.test.js
 `-- highlighter/
     |-- manifest.json
     |-- background.js
@@ -99,6 +109,7 @@ keywordHighlighter/
     |-- options.html
     |-- options.js
     |-- popup.css
+    |-- privacy-ui.js
     |-- popup.html
     |-- popup.js
     |-- settings-ui.js
@@ -107,6 +118,8 @@ keywordHighlighter/
     |-- data/rules/
     |   |-- opt_out_rules.json
     |   `-- rule_hover_text.json
+    |-- src/access/
+    |-- src/highlight/
     `-- src/logging/
 ```
 

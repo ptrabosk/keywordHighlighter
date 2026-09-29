@@ -1,6 +1,6 @@
 {
-  "name": "offisght-operations-rule-highlighter-extension",
-  "version": "1.0.0",
+  "name": "offsight-operations-rule-highlighter-extension",
+  "version": "1.0.5",
   "private": true,
   "type": "module",
   "scripts": {

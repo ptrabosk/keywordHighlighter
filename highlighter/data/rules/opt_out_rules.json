@@ -49,6 +49,7 @@
       "target": "raw_customer",
       "match_type": "regex_search",
       "pattern": "\\U0001f595",
+      "max_customer_message_chars": 500,
       "rule_id": "R0007"
     },
     {
@@ -56,13 +57,14 @@
       "target": "raw_customer",
       "match_type": "regex_search",
       "pattern": "^(?:(?:\\U0001f6d1|\\U0000270b\\U0000fe0f?[\\U0001f3fb-\\U0001f3ff]?|\\U0001f645[\\U0001f3fb-\\U0001f3ff]?(?:\\U0000200d[\\U00002640\\U00002642]\\U0000fe0f?)?|\\U0001f6ab|\\U0001f515)(?:\\s*(?:\\U0001f6d1|\\U0000270b\\U0000fe0f?[\\U0001f3fb-\\U0001f3ff]?|\\U0001f645[\\U0001f3fb-\\U0001f3ff]?(?:\\U0000200d[\\U00002640\\U00002642]\\U0000fe0f?)?|\\U0001f6ab|\\U0001f515)){0,7})$",
+      "max_customer_message_chars": 500,
       "rule_id": "R0008"
     },
     {
-      "action": "close",
+      "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "full_match",
-      "pattern": "^no$",
+      "pattern": "^(?:no|n[\\W_]+no|nah\\s+stop)$",
       "flags": "i",
       "rule_id": "R0009"
     },
@@ -80,6 +82,7 @@
       "match_type": "regex_search",
       "pattern": "^(?:^\\s*auto\\s+generated\\s+text\\s+(?:i(?:['\\u2019`]|\\s)?ll|i\\s+will)\\s+call\\s+you\\s+later[.!?,;:]*\\s*$)$|^(?:^\\s*auto\\s+message\\s+your\\s+message\\s+(?:can(?:['\\u2019`]|\\s)?t|can\\s*not|cannot)\\s+be\\s+sent\\s+because\\s+the\\s+file\\s+format\\s+is\\s+currently\\s+not\\s+supported[.!?,;:]*\\s*$)$|^(?:(?<![a-z0-9])(?:thanks for reaching out i can t chat at the moment but (?:i(?:['\\u2019`]|\\s)?ll|i\\s+will) text you back as soon as i can thanks sent from text free)(?![a-z0-9]))$|^(?:(?<![a-z0-9])(?:thanks for reaching out i can t chat at the moment but (?:i(?:['\\u2019`]|\\s)?ll|i\\s+will) text you back as soon as i can thanks)(?![a-z0-9]))$|^(?:^(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) not receiving notifications if this is urgent reply “urgent” to send a notification through with your original message$)$|^(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) not receiving notifications if this is urgent reply urgent to send a notification through with your original message)$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0011"
     },
     {
@@ -109,15 +112,17 @@
       "match_type": "regex_search",
       "pattern": "\\b(?:spam|spams|spammer|spamming)\\b",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0015"
     },
     {
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "^(?:remove\\ me)$|(?:DNC)|^(?:\\b(?:don'?t|do\\s*not|(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)|donot)\\s+(?:text|send|contact|message|bother|talk|call|write|call\\s+or\\s+text)(?:\\s+me)?(?:\\s+(?:any\\s+more|anymore|again))?(?:\\s+(?:texts?|messages?|text\\s+messages))?\\b)$|(?:\\bend[\\W_]+(?:(?:any|all)[\\W_]+(?:communication|communications|texts?|text[\\W_]+messages?|messages?)|communication|communications|texts?|text[\\W_]+messages?|messages?|this|contact(?:ing)?)(?:[\\W_]+(?:me|you|us|again|anymore))*\\b)|^(?:\\b(?:(?:please|kindly)\\s+end|end)\\b)$|(?:take\\ me\\ off)|(?:do\\ not\\ text)|(?:do\\ not\\ text\\ me)|(?:\\b(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+text\\s+me\\b)|(?:^(?:get out|get out of here|get the hell out)$)|(?:stop2end)|^(?:go\\ away)$|(?:halt\\ texts\\ /\\ messages\\ /\\ text\\ messages)|(?:never\\ send\\ /\\ text\\ /\\ contact\\ /\\ message\\ /\\ bother\\ /\\ talk)|(?:\\btake[\\W_]+my[\\W_]+number[\\W_]+off(?:[\\W_]+(?:me|you|us|again|anymore))*\\b)|(?:\\b(don'?t text|do\\s*not text|no text|i do\\s*not want text|i don'?t want text|i do\\s*not want to text|i don'?t want to text|not accepting texts|call me instead|use voice call|send email|email me instead|i don'?t like to get text|i really don'?t like to get text)\\b)|(?:\\b(delete me|delete my data|delete my information|delete my address|delete my mail|delete all .*mail|erase my data|take me off|don'?t use my data|do\\s*not use my data|stop using my data|get rid of it|delete i mean no|delete this message)\\b)|^(?:^(?:stop|unsubscribe|unsub|opt out|opt-out|delete me|don'?t send|do\\s*not send|stop texting|stop messaging|no more messages|no more texts|don'?t reach out|ban me|shut up|shush|sh+|close)$)$|(?:\\b(unsubscribe|unsub|opt out|opt-out|dnc|do\\s*not call list|put me on.*do\\s*not call)\\b)|(?:\\b(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:text|message|contact|advertise|promote|show)\\b[^\\n.!?]*)|(?:\\bturn\\s+(?:that|this|it)\\s+off\\b)|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:(?:talk|speak|message|email|text)\\s+to\\s+me|text\\s+me))|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+(?:texts?|text\\s+messages?|messages?|emails?|calls?|further\\s+communication|communication))|^(?:(?:never|didn(?:['\\u2019`]|\\s)?t|did\\s+not)\\s+(?:opted\\s+in|signed\\s+up|subscribed?))$|(?:(?:stop|(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)|do\\s*not)\\s+(?:texting|text|emailing|email|messaging|message)(?:\\s+me)?)|^(?:(?<![a-z0-9])(?:beat it)(?![a-z0-9]))$|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not) text until you resolve my issue)|(?:(?<![a-z0-9])(?:i (didn't|didnt) (opt in|sign up))(?![a-z0-9]))|(?:(?<![a-z0-9])(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want to receive (messages|texts))(?![a-z0-9]))|(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want to hear from you)|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) removing your number)|(?:(?<![a-z0-9])(?:if you (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) do this right now, stop texting me)(?![a-z0-9]))|(?:(?<![a-z0-9])(?:leave me( the fuck)? alone)(?![a-z0-9]))|(?:(?<![a-z0-9])(?:no need to text me)(?![a-z0-9]))|(?:unsubsidized me)|(?:(?<![a-z0-9])(?:you (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) have to text me)(?![a-z0-9]))|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not) send me emails or texts)|(?:\\b(?:do\\s*not|(?:don(?:['\\u2019`]|\\s)?t|do\\s*not))\\s+(?:contact|text|message|email|call)\\b)|(?:\\bpull me from (?:text|texts|messages|group|thread)\\b)|(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want (anything from you|further communication))|(?:if you (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) do this right now, stop texting me)|(?:no\\s+longer\\s+want(?:\\s+to\\s+receive)?\\s+(?:messages?|texts?|emails?|calls?))|^(?:please remove)$|(?:\\bremove\\s+me\\s+from\\s+your\\s+(?:email|text|message|messaging|mailing|mail)\\s+list\\b)|(?:stop\\s+(?:bothering|harassing|spamming)\\s+me)|(?:stop\\s+(?:the\\s+spam|with\\s+(?:the|these)\\s+(?:texts|messages)))|(?:\\b(?:please\\s+)?(?:remove|take)\\s+my\\s+number\\s+(?:off|from)\\s+(?:your\\s+)?(?:distribution|mailing|text|sms)\\s+list\\b)|(?:\\b(?:please\\s+)?(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+inundate\\s+me\\s+with\\s+(?:texts?|messages?|sms)\\b)|(?:\\bcan\\s+you\\s+not\\s+message\\s+me\\b[^\\n.!?]*)|(?:\\bi\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+(?:any\\s+)?(?:more\\s+)?(?:mail|texts?|messages?|sms)\\b)|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not) (text|send|contact|message|bother|talk|call|write|call or text)( me)?(any more|anymore|again)?)|(?:(never) (send|text|contact|message|bother|talk))|(?:(please|kindly) end)|(?:end (any|all) (communication|communications|texts|text messages|messages))|(?:\\bno more texts?\\b)|(?:halt\\s+(texts|messages|text messages))|(?:leave\\ me\\ alone)|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(text|send|contact|message|bother|talk|call|write|call or text)(\\s+me)?(\\s+(any more|anymore|again))?)|(?:\\bend\\s+(any|all)\\s+(communication|communications|texts|text messages|messages)\\b)",
+      "pattern": "^(?:remove\\ me)$|(?:DNC)|^(?:\\b(?:don'?t|do\\s*not|(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)|donot)\\s+(?:text|send|contact|message|bother|talk|call|write|call\\s+or\\s+text)(?:\\s+me)?(?:\\s+(?:any\\s+more|anymore|again))?(?:\\s+(?:texts?|messages?|text\\s+messages))?\\b)$|(?:\\bend[\\W_]+(?:(?:any|all)[\\W_]+(?:communication|communications|texts?|text[\\W_]+messages?|messages?)|communication|communications|texts?|text[\\W_]+messages?|messages?|this|contact(?:ing)?)(?:[\\W_]+(?:me|you|us|again|anymore))*\\b)|^(?:\\b(?:(?:please|kindly)\\s+end|end)\\b)$|(?:take\\ me\\ off)|(?:do\\ not\\ text)|(?:do\\ not\\ text\\ me)|(?:\\b(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+text\\s+me\\b)|(?:^(?:get out|get out of here|get the hell out)$)|(?:stop2end)|^(?:go\\ away)$|(?:halt\\ texts\\ /\\ messages\\ /\\ text\\ messages)|(?:never\\ send\\ /\\ text\\ /\\ contact\\ /\\ message\\ /\\ bother\\ /\\ talk)|(?:\\btake[\\W_]+my[\\W_]+number[\\W_]+off(?:[\\W_]+(?:me|you|us|again|anymore))*\\b)|(?:\\b(don'?t text|do\\s*not text|no text|i do\\s*not want text|i don'?t want text|i do\\s*not want to text|i don'?t want to text|not accepting texts|call me instead|use voice call|send email|email me instead|i don'?t like to get text|i really don'?t like to get text)\\b)|(?:\\b(delete me|delete my data|delete my information|delete my address|delete my mail|delete all .*mail|erase my data|take me off|don'?t use my data|do\\s*not use my data|stop using my data|get rid of it|delete i mean no|delete this message)\\b)|^(?:^(?:stop|unsubscribe|unsub|opt out|opt-out|delete me|don'?t send|do\\s*not send|stop texting|stop messaging|no more messages|no more texts|don'?t reach out|ban me|shut up|shush|sh+|close)$)$|(?:\\b(unsubscribe|unsub|opt out|opt-out|dnc|do\\s*not call list|put me on.*do\\s*not call)\\b)|(?:\\b(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:text|message|contact|advertise|promote|show)\\b[^\\n.!?]*)|(?:\\bturn\\s+(?:that|this|it)\\s+off\\b)|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:(?:talk|speak|message|email|text)\\s+to\\s+me|text\\s+me))|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+(?:texts?|text\\s+messages?|messages?|emails?|calls?|further\\s+communication|communication))|^(?:(?:never|didn(?:['\\u2019`]|\\s)?t|did\\s+not)\\s+(?:opted\\s+in|signed\\s+up|subscribed?))$|(?:(?:stop|(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)|do\\s*not)\\s+(?:texting|text|emailing|email|messaging|message)(?:\\s+me)?)|^(?:(?<![a-z0-9])(?:beat it)(?![a-z0-9]))$|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not) text until you resolve my issue)|(?:(?<![a-z0-9])(?:i (didn't|didnt) (opt in|sign up))(?![a-z0-9]))|(?:(?<![a-z0-9])(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want to receive (messages|texts))(?![a-z0-9]))|(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want to hear from you)|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) removing your number)|(?:(?<![a-z0-9])(?:if you (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) do this right now, stop texting me)(?![a-z0-9]))|(?:(?<![a-z0-9])(?:leave me alone)(?![a-z0-9]))|(?:(?<![a-z0-9])(?:no need to text me)(?![a-z0-9]))|(?:unsubsidized me)|(?:(?<![a-z0-9])(?:you (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) have to text me)(?![a-z0-9]))|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not) send me emails or texts)|(?:\\b(?:do\\s*not|(?:don(?:['\\u2019`]|\\s)?t|do\\s*not))\\s+(?:contact|text|message|email|call)\\b)|(?:\\bpull me from (?:text|texts|messages|group|thread)\\b)|(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want (anything from you|further communication))|(?:if you (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) do this right now, stop texting me)|(?:no\\s+longer\\s+want(?:\\s+to\\s+receive)?\\s+(?:messages?|texts?|emails?|calls?))|^(?:please remove)$|(?:\\bremove\\s+me\\s+from\\s+your\\s+(?:email|text|message|messaging|mailing|mail)\\s+list\\b)|(?:stop\\s+(?:bothering|harassing|spamming)\\s+me)|(?:stop\\s+(?:the\\s+spam|with\\s+(?:the|these)\\s+(?:texts|messages)))|(?:\\b(?:please\\s+)?(?:remove|take)\\s+my\\s+number\\s+(?:off|from)\\s+(?:your\\s+)?(?:distribution|mailing|text|sms)\\s+list\\b)|(?:\\b(?:please\\s+)?(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+inundate\\s+me\\s+with\\s+(?:texts?|messages?|sms)\\b)|(?:\\bcan\\s+you\\s+not\\s+message\\s+me\\b[^\\n.!?]*)|(?:\\bi\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+(?:any\\s+)?(?:more\\s+)?(?:mail|texts?|messages?|sms)\\b)|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not) (text|send|contact|message|bother|talk|call|write|call or text)( me)?(any more|anymore|again)?)|(?:(never) (send|text|contact|message|bother|talk))|(?:(please|kindly) end)|(?:end (any|all) (communication|communications|texts|text messages|messages))|(?:\\bno more texts?\\b)|(?:halt\\s+(texts|messages|text messages))|(?:leave\\ me\\ alone)|(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(text|send|contact|message|bother|talk|call|write|call or text)(\\s+me)?(\\s+(any more|anymore|again))?)|(?:\\bend\\s+(any|all)\\s+(communication|communications|texts|text messages|messages)\\b)",
       "flags": "i",
       "guard": "unsubscribe_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0016"
     },
     {
@@ -133,6 +138,7 @@
       "match_type": "regex_search",
       "pattern": "(?:this\\ phone\\ number\\ is\\ no\\ longer\\ in\\ service)|(?:(?<![a-z0-9])(?:not accepting (messages|texts|emails))(?![a-z0-9]))|(?:(?<![a-z0-9])(?:this is a kosher talk only device and does\\s*not accept text messages)(?![a-z0-9]))|(?:this phone can\\s*not receive sms mms messages)|(?:\\b(?:(?:can(?:['\\u2019`]|\\s)?t|can\\s*not|(?:can(?:['\\u2019`]|\\s)?t|can\\s*not|cannot)))\\s+receive (?:messages?|texts?|emails?|calls?)\\b)|(?:^this is an automatic message this is a kosher talk only device and does\\s*not accept text messages please call instead$)|(?:^this phone does\\s*not accept text messages please call instead this is an automatic reply$)|(?:\\b(?:this\\s+)?(?:phone|number|device)\\s+(?:(?:doesn(?:['\\u2019`]|\\s)?t|does\\s*not)|does\\s+not|(?:can(?:['\\u2019`]|\\s)?t|can\\s*not|cannot)|can\\s+not|(?:can(?:['\\u2019`]|\\s)?t|can\\s*not|cannot))\\s+(?:receive|accept|support)\\s+(?:texts?|messages?|sms)\\b)|(?:\\bnot\\s+accepting\\s+(?:messages|texts?|emails?)\\b)",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0018"
     },
     {
@@ -141,6 +147,7 @@
       "match_type": "regex_search",
       "pattern": "\\b(?:stop spying|stop being creepy|this is creepy|(?:you|yall|y'all) are spying|(?:you|yall|y'all) are creepy|you re creepy)\\b",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0019"
     },
     {
@@ -149,6 +156,7 @@
       "match_type": "bounded_phrase",
       "pattern": "fuck off",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0020"
     },
     {
@@ -157,6 +165,7 @@
       "match_type": "bounded_phrase",
       "pattern": "fuck u",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0021"
     },
     {
@@ -165,6 +174,7 @@
       "match_type": "bounded_phrase",
       "pattern": "fuck yall",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0022"
     },
     {
@@ -173,6 +183,7 @@
       "match_type": "bounded_phrase",
       "pattern": "fuck you",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0023"
     },
     {
@@ -181,6 +192,7 @@
       "match_type": "bounded_phrase",
       "pattern": "fucking stop",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0024"
     },
     {
@@ -189,6 +201,7 @@
       "match_type": "bounded_phrase",
       "pattern": "go fuck yourself",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0025"
     },
     {
@@ -197,6 +210,7 @@
       "match_type": "bounded_phrase",
       "pattern": "shut the fuck up",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0026"
     },
     {
@@ -205,6 +219,7 @@
       "match_type": "bounded_phrase",
       "pattern": "stfu",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0027"
     },
     {
@@ -212,6 +227,8 @@
       "target": "normalized_customer",
       "match_type": "bounded_phrase",
       "pattern": "stop bitch",
+      "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0028"
     },
     {
@@ -220,6 +237,7 @@
       "match_type": "bounded_phrase",
       "pattern": "stop fucking texting me",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0029"
     },
     {
@@ -228,6 +246,7 @@
       "match_type": "bounded_phrase",
       "pattern": "sybau",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0030"
     },
     {
@@ -237,6 +256,7 @@
       "pattern": "(?:sue\\ your)|^(?:sued)$|(?:BBB)|(?:fcc)|(?:federal\\ communications\\ commission)|(?:florida\\ telephone\\ solicitation\\ act)|(?:ftsa)|(?:suing)|(?:telephone\\ consumer\\ protection\\ act)|(?:\\b(bring|file)\\s+a\\s+suit\\b)|(?:\\b(bring|file)\\s+suit\\b)|(?:\\bTCPA\\b)|(?:(?:sue you|reporting you|legal\\s+action|attorney|lawyer|complaint|\\b(?:bbb|better business bureau)\\b))|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) going to sue you)|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) reporting you to the bbb)|(?:report(ed)?)|(?:\\b(?:sue|suing|sued|lawsuit|legal action|attorney|lawyer|complaint)\\b)|(?:\\b(?:law|lawyer)\\b)|(?:\\breport(?:ing|ed)?\\b(?:\\s+(?:you|u))?)|(?:\\bFCC\\b)|(?:\\bfederal communications commission\\b)|(?:\\bflorida telephone solicitation act\\b)|(?:\\bftsa\\b)|(?:\\bsuing\\b)|(?:\\btelephone consumer protection act\\b)",
       "flags": "i",
       "guard": "legal_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0031"
     },
     {
@@ -245,6 +265,7 @@
       "match_type": "regex_search",
       "pattern": "(?:^(?![\\s\\S]*(?:\\b(?:stop|revoke|end|unsubscribe|unsub|cancel)\\b|\\bopt[\\W_]*out\\b))[\\s\\S]*\\bsend\\s+this\\s+text\\s+to\\s+subscribe\\s+to\\s+periodic\\s+auto\\s+texts\\s+for\\b[\\s\\S]*\\(ref:\\s*[^)]+\\)\\s*$)|(?:^send this text to subscribe to recurring automated personalized marketing alerts e g cart reminders from darc sport ref f jgm$)|^(?:^send this loop automated personalized marketing alerts e g cart reminders from .+ ref [a-z0-9]+$)$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0032"
     },
     {
@@ -264,19 +285,19 @@
       "rule_id": "R0034"
     },
     {
-      "action": "fuzzy_opt_out",
+      "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "\\bi\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\b",
+      "pattern": "\\bi\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+(?:(?:anything|nothing)\\b[^\\n.!?]{0,100}\\bfrom\\b|[^\\n.!?]{0,100}\\bstuff\\b)",
       "flags": "i",
-      "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0035"
     },
     {
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "full_match",
-      "pattern": "^(?:alto)$|^(?:^\\s*(?:end|ends|ending|ended)[.!?,;:]*\\s*$)$|^(?:pare)$|^(?:^\\s*(?:finish|finished|finishes|finishing)[.!?,;:]*\\s*$)$|^(?:^\\s*(?:pause|paused|pausing)[.!?,;:]*\\s*$)$|^(?:\\bopted(\\s*|\\-?)out\\b)$|^(?:\\bopts\\b)$|^(?:\\brevoke\\b)$|^(?:^\\s*cncl[.!?,;:]*\\s*$)$|^(?:^\\s*dnc[.!?,;:]*\\s*$)$|^(?:^\\s*quiet[.!?,;:]*\\s*$)$|^(?:^\\s*remove[.!?,;:]*\\s*$)$|^(?:^\\s*rmv[.!?,;:]*\\s*$)$|^(?:^\\s*wtop[.!?,;:]*\\s*$)$|^(?:^opt$)$|^(?:^unsubscribe$)$|^(?:shush|stfu)$|^(?:remeuva)$|^(?:\\b(?:stop|stopped|stops|stopping)\\b)$|^(?:s\\s*t\\s*o\\s*p)$|^(?:(?:sto|stop))$|^(?:stop2unsubscribe)$|^(?:\\b(s|a|d)top\\b)$|^(?:\\bstop2cancel\\b)$|^(?:\\bstopannul\\b)$|^(?:\\bunenroll\\b)$|^(?:bye)$|^(?:delete)$|^(?:detener)$|^(?:drop)$|^(?:exit)$|^(?:leave)$|^(?:mute)$|^(?:off)$|^(?:out)$|^(?:unfollow)$|^(?:withdraw)$|(?:s\\ t\\ o\\ p)|^(?:sto)$|(?:stpo)|(?:ended)|(?:^\\s*shush[.!?,;:]*\\s*$)|(?:^\\s*end[.!?,;:]*\\s*$)|(?:^stop$)|(?:st(i|o|p)p)|(?:\\bunsub(?:scribe)?\\b)|(?:terminate)|(?:arop)|(?:atop)|(?:banned)|(?:c3rvca)|(?:canceled)|(?:canceling)|(?:cancellation)|(?:cancelled)|(?:cancelling)|(?:cancle)|(?:dtop)|(?:op\\ out)|(?:u1rpua)|(?:u1rpuca)|(?:u3rvca)|(?:unsiscrube)|(?:unsubscrbe)|(?:unsubscride)|(?:unsubsrcibe)|(?:ztop)",
+      "pattern": "^(?:alto)$|^(?:^\\s*(?:end|ends|ending|ended)[.!?,;:]*\\s*$)$|^(?:pare)$|^(?:^\\s*(?:finish|finished|finishes|finishing)[.!?,;:]*\\s*$)$|^(?:^\\s*(?:pause|paused|pausing)[.!?,;:]*\\s*$)$|^(?:\\bopted(\\s*|\\-?)out\\b)$|^(?:\\bopts\\b)$|^(?:\\brevoke\\b)$|^(?:^\\s*cncl[.!?,;:]*\\s*$)$|^(?:^\\s*dnc[.!?,;:]*\\s*$)$|^(?:^\\s*quiet[.!?,;:]*\\s*$)$|^(?:^\\s*remove[.!?,;:]*\\s*$)$|^(?:^\\s*rmv[.!?,;:]*\\s*$)$|^(?:^\\s*wtop[.!?,;:]*\\s*$)$|^(?:^opt$)$|^(?:^unsubscribe$)$|^(?:shush)$|^(?:remeuva)$|^(?:\\b(?:stop|stopped|stops|stopping)\\b)$|^(?:s\\s*t\\s*o\\s*p)$|^(?:(?:sto|stop))$|^(?:stop2unsubscribe)$|^(?:\\b(s|a|d)top\\b)$|^(?:\\bstop2cancel\\b)$|^(?:\\bstopannul\\b)$|^(?:\\bunenroll\\b)$|^(?:bye)$|^(?:delete)$|^(?:detener)$|^(?:drop)$|^(?:exit)$|^(?:leave)$|^(?:mute)$|^(?:off)$|^(?:out)$|^(?:unfollow)$|^(?:withdraw)$|(?:s\\ t\\ o\\ p)|^(?:sto)$|(?:stpo)|(?:ended)|(?:^\\s*shush[.!?,;:]*\\s*$)|(?:^\\s*end[.!?,;:]*\\s*$)|(?:^stop$)|(?:st(i|o|p)p)|(?:\\bunsub(?:scribe)?\\b)|(?:terminate)|(?:arop)|(?:atop)|(?:banned)|(?:c3rvca)|(?:canceled)|(?:canceling)|(?:cancellation)|(?:cancelled)|(?:cancelling)|(?:cancle)|(?:dtop)|(?:op\\ out)|(?:u1rpua)|(?:u1rpuca)|(?:u3rvca)|(?:unsiscrube)|(?:unsubscrbe)|(?:unsubscride)|(?:unsubsrcibe)|(?:ztop)",
       "flags": "i",
       "rule_id": "R0036"
     },
@@ -286,6 +307,7 @@
       "match_type": "regex_search",
       "pattern": "\\b(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+your\\s+promo\\b",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0037"
     },
     {
@@ -310,6 +332,7 @@
       "match_type": "regex_search",
       "pattern": "\\bspam\\b",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0040"
     },
     {
@@ -319,15 +342,17 @@
       "pattern": "\\b(?:blocking\\ all\\ texts|blocking\\ you|block\\ texts|uninstalled|uninstaller|block\\ you|uninstall|(?:i(?:['\\u2019`]|\\s)?ll|i\\s+will)\\ block|blocking)\\b",
       "flags": "i",
       "guard": "block_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0041"
     },
     {
       "action": "opt_out",
       "target": "raw_customer",
-      "match_type": "full_match",
-      "pattern": "\\b(wrong number|wrong\\s*#(?=\\W|$)|wrong person|you (?:have|got) the wrong (?:number|person)|not me|this is\\s*not me|this is\\s*not (?:her|his) number|this is\\s*not .*account|new phone number|new number|change my number|change phone number|change my phone number|change number|change my text subscription number|this phone number is no longer in service|not my number|this is\\s*not [a-z]+|i'?ve had this number for years|someone else had this number)",
+      "match_type": "regex_search",
+      "pattern": "(?:\\byou\\s+(?:have|got)\\s+the\\s+wrong\\s+number\\b(?!\\s+of\\b))|(?:^\\s*\\b(wrong number|wrong\\s*#(?=\\W|$)|wrong person|you (?:have|got) the wrong (?:number|person)|not me|this is\\s*not me|this is\\s*not (?:her|his) number|this is\\s*not .*account|new phone number|new number|change my number|change phone number|change my phone number|change number|change my text subscription number|this phone number is no longer in service|not my number|this is\\s*not [a-z]+|i'?ve had this number for years|someone else had this number)\\s*[.!?,;:]*\\s*$)",
       "flags": "i",
       "guard": "wrong_number_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0042"
     },
     {
@@ -336,20 +361,25 @@
       "match_type": "regex_search",
       "pattern": "\\b(?:fuck\\s+(?:you|ya|yall|u|off)|fuxk\\s+you|go\\s+fuck\\s+yourself|get\\s+the\\s+fuck\\s+out|eat\\s+shit|shut\\s+the\\s+fuck\\s+up|f\\s+u|stfu|sybau)\\b",
       "flags": "i",
+      "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0043"
     },
     {
-      "action": "fuzzy_opt_out",
+      "action": "opt_out",
       "target": "normalized_customer",
-      "match_type": "full_match",
-      "pattern": "(?:i\\s+)?(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want(?:\\s+(?:this|these|anything))?",
+      "match_type": "regex_search",
+      "pattern": "\\bi\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\b[^\\n.!?]{0,100}\\bshit\\b",
+      "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0044"
     },
     {
-      "action": "fuzzy_opt_out",
+      "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "full_match",
-      "pattern": "(?:i\\s+)?(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+want\\s+any",
+      "pattern": "^(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)\\s+out$",
+      "flags": "i",
       "rule_id": "R0045"
     },
     {
@@ -366,6 +396,7 @@
       "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?ll|i\\s+will) never come back)(?![a-z0-9])",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0047"
     },
     {
@@ -375,6 +406,7 @@
       "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?ll|i\\s+will) never shop here again)(?![a-z0-9])",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0048"
     },
     {
@@ -384,6 +416,7 @@
       "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) done with this brand)(?![a-z0-9])",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0049"
     },
     {
@@ -393,6 +426,7 @@
       "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) not a customer anymore)(?![a-z0-9])",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0050"
     },
     {
@@ -402,6 +436,7 @@
       "pattern": "i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want any more",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0051"
     },
     {
@@ -411,6 +446,7 @@
       "pattern": "i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want more",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0052"
     },
     {
@@ -420,6 +456,7 @@
       "pattern": "i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want this brand",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0053"
     },
     {
@@ -428,14 +465,16 @@
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:(?:quit|stop)\\s+(?:playing|lying))(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0054"
     },
     {
-      "action": "fuzzy_opt_out",
+      "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:stop wasting my time)(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0055"
     },
     {
@@ -445,6 +484,7 @@
       "pattern": "(?:i\\s+(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)) want( any| it| these| this)?",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0056"
     },
     {
@@ -454,6 +494,7 @@
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) done with this brand",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0057"
     },
     {
@@ -463,6 +504,7 @@
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) not a customer anymore",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0058"
     },
     {
@@ -472,6 +514,7 @@
       "pattern": "\\bdone\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0059"
     },
     {
@@ -481,6 +524,7 @@
       "pattern": "\\bnever come back\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0060"
     },
     {
@@ -490,6 +534,7 @@
       "pattern": "\\bnot a customer anymore\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0061"
     },
     {
@@ -499,6 +544,7 @@
       "pattern": "\\bnot subscribing\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0062"
     },
     {
@@ -508,6 +554,7 @@
       "pattern": "\\bsick of (?:you|us|this|these|all this)\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0063"
     },
     {
@@ -517,6 +564,7 @@
       "pattern": "\\btired of (?:you|us|this|these|all this)\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0064"
     },
     {
@@ -573,6 +621,7 @@
       "match_type": "regex_search",
       "pattern": "^(?:^subscribe$)$|^(?:^start$)$|^(?:^unstop$)$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0071"
     },
     {
@@ -613,6 +662,7 @@
       "match_type": "regex_search",
       "pattern": "check out my bet on fanduel sportsbook",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0076"
     },
     {
@@ -621,6 +671,7 @@
       "match_type": "regex_search",
       "pattern": "claim 5 free shein products now click the link to help and lets both win big",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0077"
     },
     {
@@ -637,6 +688,7 @@
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:could you do me a huge favor please accept my invite so that i can get free gifts)(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0079"
     },
     {
@@ -733,6 +785,7 @@
       "match_type": "regex_search",
       "pattern": "lol",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0091"
     },
     {
@@ -741,6 +794,7 @@
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:michaels michaels)(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0092"
     },
     {
@@ -845,6 +899,7 @@
       "match_type": "regex_search",
       "pattern": "michaels",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0105"
     },
     {
@@ -853,6 +908,7 @@
       "match_type": "regex_search",
       "pattern": "sri",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0106"
     },
     {
@@ -862,6 +918,7 @@
       "pattern": "\\b(?:start|starts|started|starting)\\b",
       "flags": "i",
       "guard": "opt_in_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0107"
     },
     {
@@ -870,6 +927,7 @@
       "match_type": "regex_search",
       "pattern": "take10",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0108"
     },
     {
@@ -878,6 +936,7 @@
       "match_type": "regex_search",
       "pattern": "test",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0109"
     },
     {
@@ -886,6 +945,7 @@
       "match_type": "regex_search",
       "pattern": "^(?:thank u|thanks|thx)$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0110"
     },
     {
@@ -910,6 +970,7 @@
       "match_type": "regex_search",
       "pattern": "welcome15",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0113"
     },
     {
@@ -926,6 +987,7 @@
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want (this|these) anymore)(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0115"
     },
     {
@@ -934,6 +996,7 @@
       "match_type": "regex_search",
       "pattern": "i (?:don(?:['\\u2019`]|\\s)?t|do\\s*not) want to be here",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0116"
     },
     {
@@ -943,6 +1006,7 @@
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) blocking you",
       "flags": "i",
       "guard": "block_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0117"
     },
     {
@@ -951,6 +1015,7 @@
       "match_type": "regex_search",
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) deleting you",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0118"
     },
     {
@@ -960,6 +1025,7 @@
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) tired of yall",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0119"
     },
     {
@@ -969,6 +1035,7 @@
       "pattern": "(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) tired of you",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0120"
     },
     {
@@ -978,6 +1045,7 @@
       "pattern": "once i get my order (?:i(?:['\\u2019`]|\\s)?m|i\\s+am) going to block you",
       "flags": "i",
       "guard": "block_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0121"
     },
     {
@@ -987,6 +1055,7 @@
       "pattern": "fu",
       "flags": "i",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0122"
     },
     {
@@ -1088,8 +1157,9 @@
       "action": "tmt",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "(?:(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:text|message|contact)\\s+(?:me\\s+)?so\\s+much)|(?:(?:send\\s+)?less\\s+(?:texts|text\\s+messages|messages|msgs))|(?:(?:text|message|contact)\\s+me\\s+less)|(?:(?:text|message|contact|send)\\s+me\\s+less\\s+often)|(?:\\b(?:send )?fewer (?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\blower (?:the )?frequency\\b)|(?:\\bnot as many (?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\breduce (?:the )?(?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\breduce (?:the )?frequency\\b)|(?:\\bsend (?:me )?(?:texts?|text messages?|messages?|msgs?) less\\b)|(?:\\bsend me less\\b)|(?:\\bslow down (?:on )?(?:the )?(?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\bso many (?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\bstop (?:texting|messaging|contacting) (?:me )?so much\\b)|(?:\\btoo many (?:texts?|text messages?|messages?|msgs?)\\b)|(?:not\\s+so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs))|(?:junk)",
+      "pattern": "(?:(?:please\\s+)?(?:don(?:['\\u2019`]|\\s)?t|do\\s*not)\\s+(?:text|message|contact)\\s+(?:me\\s+)?(?:so|as)\\s+much)|(?:(?:send\\s+)?less\\s+(?:texts|text\\s+messages|messages|msgs))|(?:(?:text|message|contact)\\s+me\\s+less)|(?:(?:text|message|contact|send)\\s+me\\s+less\\s+often)|(?:\\b(?:send )?fewer (?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\blower (?:the )?frequency\\b)|(?:\\bnot as many (?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\breduce (?:the )?(?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\breduce (?:the )?frequency\\b)|(?:\\bsend (?:me )?(?:texts?|text messages?|messages?|msgs?) less\\b)|(?:\\bsend me less\\b)|(?:\\bslow down (?:on )?(?:the )?(?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\bso many (?:texts?|text messages?|messages?|msgs?)\\b)|(?:\\bstop (?:texting|messaging|contacting) (?:me )?so much\\b)|(?:\\btoo many (?:texts?|text messages?|messages?|msgs?)\\b)|(?:not\\s+so\\s+many\\s+(?:texts|text\\s+messages|messages|msgs))|(?:junk)",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0135"
     },
     {
@@ -1098,6 +1168,7 @@
       "match_type": "exact",
       "pattern": "f u",
       "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0136"
     },
     {
@@ -1107,6 +1178,7 @@
       "pattern": "\\bnot\\s+doing\\s+business\\b",
       "flags": "i",
       "guard": "not_interested_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0137"
     },
     {
@@ -1126,8 +1198,10 @@
     {
       "action": "opt_out",
       "target": "normalized_customer",
-      "match_type": "detector",
-      "detector": "under_13",
+      "match_type": "regex_search",
+      "pattern": "^(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)(?:\\s+(?:only|just))?\\s+(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\\s*(?:years?\\s*old|yrs?\\s*old|yo|y/o))?)$",
+      "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0140"
     },
     {
@@ -1445,6 +1519,29 @@
       "rule_id": "R0169"
     },
     {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "(AUTOMATED MESSAGE) *Text messages are no longer monitored*\n*If this is an emergency, please call 911 or go to your nearest emergency room. You can also call 988 for immediate suicide and crisis support/resources.\nEmail Dr. Manuel's Scheduling Team at [dr.manuel.scheduling@gmail.com](mailto:dr.manuel.scheduling@gmail.com) if you need support outside of the Jane calendar system.\nPlease note that Dr. Manuel has a 48-hour cancellation policy. Appointments that are not cancelled at least 48 hours before the scheduled appointment through Jane will result in a charge of the full session fee.\n-Team at Dr. Manuel's Office",
+        "(AUTOMATED MESSAGE) *Text messages are no longer monitored*\n*If this is an emergency, please call 911 or go to your nearest emergency room. You can also call 988 for immediate suicide and crisis support/resources.\nEmail Dr. Manuel's Scheduling Team at dr.manuel.scheduling@gmail.com if you need support outside of the Jane calendar system.\nPlease note that Dr. Manuel has a 48-hour cancellation policy. Appointments that are not cancelled at least 48 hours before the scheduled appointment through Jane will result in a charge of the full session fee.\n-Team at Dr. Manuel's Office",
+        "im driving sent from",
+        "im driving with focus turned on",
+        "driving cant text"
+      ],
+      "rule_id": "R0218"
+    },
+    {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)\n\nBeep! Beep!I am currently driving, so I’ve activated my “Do Not Disturb” to keep myself and those with me safe. 💜 Thanks for texting though! I’ll check your message when we are no longer behind the wheel. 🛺💨💨",
+        "Beep! Beep!I am currently driving, so I’ve activated my “Do Not Disturb” to keep myself and those with me safe. 💜 Thanks for texting though! I’ll check your message when we are no longer behind the wheel. 🛺💨💨"
+      ],
+      "rule_id": "R0219"
+    },
+    {
       "action": "fuzzy_opt_out",
       "target": "normalized_customer",
       "match_type": "bounded_phrase",
@@ -1455,8 +1552,10 @@
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "\\b(?:go\\ fuck\\ yourself|shut\\ the\\ fuck\\ up|go\\ to\\ hell|fuck\\ yall|fuck\\ off|fuck\\ you|fuck\\ u|sybau|stfu|fu|fuxk\\ you)\\b",
+      "pattern": "\\b(?:fuck\\s+(?:you|ya|yall|u|off)|fuxk\\s+you|go\\s+fuck\\s+yourself|get\\s+the\\s+fuck\\s+out|eat\\s+shit|shut\\s+the\\s+fuck\\s+up|go\\s+to\\s+hell|f\\s+u|stfu|sybau|fu)\\b",
       "flags": "i",
+      "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0171"
     },
     {
@@ -1465,6 +1564,7 @@
       "match_type": "regex_search",
       "pattern": "\\b(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)\\s+done\\b",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0172"
     },
     {
@@ -1473,6 +1573,7 @@
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:no longer needed)(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0173"
     },
     {
@@ -1481,6 +1582,7 @@
       "match_type": "regex_search",
       "pattern": "(?:i(?:['\\u2019`]|\\s)?ll|i\\s+will) never shop here again",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0174"
     },
     {
@@ -1489,6 +1591,7 @@
       "match_type": "regex_search",
       "pattern": "no longer want( it| this| these)?",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0175"
     },
     {
@@ -1496,6 +1599,7 @@
       "target": "normalized_customer",
       "match_type": "regex_search",
       "pattern": "not\\s+a\\s+customer\\s+anymore",
+      "max_customer_message_chars": 500,
       "rule_id": "R0176"
     },
     {
@@ -1504,6 +1608,7 @@
       "match_type": "regex_search",
       "pattern": "(?<![a-z0-9])(?:10 shein freebies and a 50 allowance for the lucky just click and claim-so easy)(?![a-z0-9])",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0177"
     },
     {
@@ -1520,6 +1625,7 @@
       "match_type": "regex_search",
       "pattern": "^thanks$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0179"
     },
     {
@@ -1528,6 +1634,7 @@
       "match_type": "regex_search",
       "pattern": "^thx$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0180"
     },
     {
@@ -1573,8 +1680,9 @@
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "(?:\\bmy age is\\s*(?:[0-9]|1[0-2])\\b|\\b(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)(?:\\s+(?:only|just))?\\s*(?:[0-9]|1[0-2])\\s*(?:years?\\s*old|yrs?\\s*old|yo|y/o)\\b)|(?:\\bmy age is\\s*(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b|\\b(?:i(?:['\\u2019`]|\\s)?m|i\\s+am)(?:\\s+(?:only|just))?\\s*(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\s*(?:years?\\s*old|yrs?\\s*old|yo|y/o)\\b)|(?:elementary school)|(?:first grader)|(?:grade [1-6])|(?:grade school)|(?:i\\s+am in [1-6](?:st|nd|rd|th) grade)|(?:i\\s+am in grade [1-6])|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) in [1-6](?:st|nd|rd|th) grade)|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) in grade [1-6])|(?:primary school)|(?:second grader)|(?:sixth grader)|(?:third grader)|(?:under 13)|(?:younger than 13)",
+      "pattern": "^(?:my\\s+age\\s+is(?:\\s+(?:only|just))?\\s+(?:[0-9]|1[0-2]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\\s*(?:years?\\s*old|yrs?\\s*old|yo|y/o))?)$",
       "flags": "i",
+      "max_customer_message_chars": 500,
       "rule_id": "R0186"
     },
     {
@@ -1598,6 +1706,39 @@
         "stpo",
         "stop cancel",
         "reply stop",
+        "reply stop to opt out",
+        "reply stop to optout",
+        "reply stop to unsubscribe",
+        "reply stop to cancel",
+        "reply stop to end",
+        "reply with stop to opt out",
+        "reply with stop to unsubscribe",
+        "reply with stop to cancel",
+        "reply with stop to end",
+        "respond stop to opt out",
+        "respond stop to unsubscribe",
+        "respond stop to cancel",
+        "respond stop to end",
+        "respond with stop to opt out",
+        "respond with stop to unsubscribe",
+        "respond with stop to cancel",
+        "respond with stop to end",
+        "text stop to opt out",
+        "text stop to unsubscribe",
+        "text stop to cancel",
+        "text stop to end",
+        "text with stop to opt out",
+        "text with stop to unsubscribe",
+        "text with stop to cancel",
+        "text with stop to end",
+        "send stop to opt out",
+        "send stop to unsubscribe",
+        "send stop to cancel",
+        "send stop to end",
+        "send with stop to opt out",
+        "send with stop to unsubscribe",
+        "send with stop to cancel",
+        "send with stop to end",
         "stoppp",
         "stopstop",
         "stop end",
@@ -1825,6 +1966,8 @@
         "stop dammit",
         "stop yall suck"
       ],
+      "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0194"
     },
     {
@@ -1835,6 +1978,8 @@
         "leave me the fuck alone",
         "fuck of"
       ],
+      "guard": "offensive_intent",
+      "max_customer_message_chars": 500,
       "rule_id": "R0195"
     },
     {
@@ -1899,8 +2044,8 @@
     {
       "action": "close",
       "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "^(?:im driving sent from|im driving with focus turned on|driving cant text)",
+      "match_type": "detector",
+      "detector": "driving_auto_reply",
       "rule_id": "R0201"
     },
     {
@@ -1912,7 +2057,184 @@
         "cancel"
       ],
       "rule_id": "R0202"
+    },
+    {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "eoswelcome10",
+        "welcome25",
+        "mobile30"
+      ],
+      "rule_id": "R0203"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "please stop",
+        "stop please"
+      ],
+      "rule_id": "R0204"
+    },
+    {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "you too",
+        "got it thanks",
+        "ok ok",
+        "ok ty",
+        "kk",
+        "same",
+        "no problem"
+      ],
+      "rule_id": "R0205"
+    },
+    {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "thank you very much",
+        "nice work",
+        "great thank you"
+      ],
+      "rule_id": "R0206"
+    },
+    {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "y y",
+        "by",
+        "we",
+        "as",
+        "my",
+        "pp"
+      ],
+      "rule_id": "R0207"
+    },
+    {
+      "action": "close",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "pew pew sent with lasers"
+      ],
+      "rule_id": "R0208"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "coupon code",
+        "any discounts",
+        "any discount codes",
+        "free 1 day shipping"
+      ],
+      "rule_id": "R0209"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "i need help",
+        "doesnt work",
+        "not working",
+        "command not supported please try another command",
+        "wheres my package",
+        "the code isnt working"
+      ],
+      "rule_id": "R0210"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "not right now",
+        "not yet",
+        "not at the moment",
+        "not now"
+      ],
+      "rule_id": "R0211"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "no just looking",
+        "sounds interesting",
+        "just looking",
+        "very cool"
+      ],
+      "rule_id": "R0212"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "good morning",
+        "hola"
+      ],
+      "rule_id": "R0213"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "si",
+        "yea"
+      ],
+      "rule_id": "R0214"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "please",
+        "no no",
+        "how",
+        "i dont know"
+      ],
+      "rule_id": "R0215"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "thank you for your help"
+      ],
+      "rule_id": "R0216"
+    },
+    {
+      "action": "reply",
+      "target": "normalized_customer",
+      "match_type": "exact_set",
+      "patterns": [
+        "call me"
+      ],
+      "rule_id": "R0217"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "reply\\s+stop\\s+to\\s+opt\\s+out\\b",
+      "flags": "i",
+      "rule_id": "R0220"
     }
   ]
 }
-

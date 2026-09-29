@@ -1,0 +1,16 @@
+# Store submission checklist
+
+The repository contains the extension package source, finalized listing copy, reviewer instructions, illustrative screenshots, and the hosted-policy source at `docs/index.html`.
+
+Before submitting the ZIP, the publisher must complete these account and deployment steps:
+
+1. Publish `docs/index.html` at a stable public HTTPS URL and confirm it opens without authentication. Enter that URL in the Chrome Web Store Privacy tab.
+2. Deploy `google-apps-script/Code.gs` as an Apps Script web app using the setup in its README. Confirm the `/exec` endpoint and Sheet access work.
+3. Generate a new ingestion key, set the Apps Script property, and pass the same key through `KEYWORD_HIGHLIGHTER_API_KEY` only while running `npm run package:store`.
+4. Set `KEYWORD_HIGHLIGHTER_ENDPOINT_URL` to the deployed `/exec` URL and verify that the Store ZIP contains no placeholders.
+5. Complete Chrome Web Store Privacy declarations for website content, email address used locally for authorization, synchronized settings, optional operational telemetry, the Google Apps Script recipient, retention, and Limited Use compliance.
+6. Provide a private authorized `@attentivemobile.com` reviewer account and Operations workspace access in the Chrome Web Store reviewer-instructions field.
+7. Capture fresh popup and options screenshots from the final packaged build. The checked-in PNGs are illustrative and predate the current privacy-consent card; do not upload them unchanged.
+8. Upload the ZIP produced by `npm run package:store`, add the final screenshots, select the appropriate distribution, and submit for review.
+
+The repository cannot create the publisher's Google deployment, verify a corporate test account, or complete the Chrome Web Store dashboard on the publisher's behalf.

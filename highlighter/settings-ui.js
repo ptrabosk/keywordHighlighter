@@ -15,6 +15,29 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
   };
 
   let settings = structuredClone(DEFAULT_SETTINGS);
+  let settingsStarted = false;
+
+  function blockAccess() {
+    setSettingsDisabled(true, true);
+    if (els.status) els.status.textContent = 'This extension is limited to Attentive Mobile accounts.';
+    const notice = document.querySelector('#accessNotice');
+    if (notice) notice.hidden = false;
+  }
+
+  function blockForConsent() {
+    setSettingsDisabled(true, false);
+  }
+
+  function enableSettings() {
+    setSettingsDisabled(false, false);
+  }
+
+  function setSettingsDisabled(disabled, includePrivacyControls) {
+    document.querySelectorAll('input, textarea, button').forEach((control) => {
+      const isPrivacyControl = control.id === 'allowTelemetry' || control.id === 'denyTelemetry';
+      if (includePrivacyControls || !isPrivacyControl) control.disabled = disabled;
+    });
+  }
 
   function logOperationalEvent(event) {
     try {
@@ -45,10 +68,36 @@ function createSettingsUi({ statusSaved = 'Saved.', statusReset = 'Defaults rest
     logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Options startup failed', {
       operation: 'init'
     });
-    console.error('[Offisght Operations Rule Highlighter] Settings UI failed to initialize:', error);
+    console.error('[Offsight Highlighter] Settings UI failed to initialize:', error);
   });
 
   async function init() {
+    const consent = await AMH_PRIVACY_UI.init(async (nextConsent) => {
+      if (!nextConsent.decided) {
+        blockForConsent();
+        return;
+      }
+      const nextAccess = await AMH_ACCESS_POLICY.requestAccessStatus();
+      if (nextAccess.allowed) {
+        enableSettings();
+        await startSettings();
+      }
+    });
+    const access = await AMH_ACCESS_POLICY.requestAccessStatus();
+    if (!access.allowed) {
+      blockAccess();
+      return;
+    }
+    if (!consent.decided) {
+      blockForConsent();
+      return;
+    }
+    await startSettings();
+  }
+
+  async function startSettings() {
+    if (settingsStarted) return;
+    settingsStarted = true;
     const startedAt = performance.now();
     settings = mergeSettings(DEFAULT_SETTINGS, await loadSettings());
     render();

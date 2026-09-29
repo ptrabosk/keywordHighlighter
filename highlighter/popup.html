@@ -3,15 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Offisght Operations Rule Highlighter</title>
+  <title>Offsight Highlighter</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main class="shell">
     <section class="card">
-      <p class="eyebrow">Offisght Operations</p>
+      <p class="eyebrow">Offsight Highlighter</p>
       <h1>Custom Keywords</h1>
       <p class="subtle">Add words or phrases to highlight alongside the built-in rules.</p>
+      <p id="accessNotice" class="access-notice" hidden>Use your Attentive Mobile account to use this extension.</p>
+
+      <section id="privacyConsent" class="privacy-card" hidden>
+        <h2>Privacy and usage data</h2>
+        <p>The extension checks your Chrome profile email locally to verify your organization. It does not upload that email or message text.</p>
+        <p>You may optionally allow anonymous usage and diagnostic events: timestamps, random IDs, extension version, surface, error details, and highlight counts. Events are sent over HTTPS to the publisher's Google Apps Script receiver and deleted after 90 days.</p>
+        <p><a href="https://github.com/ptrabosk/keywordHighlighter/blob/main/docs/index.html" target="_blank" rel="noreferrer">Read the privacy policy</a></p>
+        <p id="privacyStatus" class="privacy-status" role="status"></p>
+        <div class="privacy-actions">
+          <button id="allowTelemetry" type="button" class="primary">Allow usage diagnostics</button>
+          <button id="denyTelemetry" type="button" class="secondary">Use without usage diagnostics</button>
+        </div>
+      </section>
 
       <form id="keywordForm" class="keyword-form">
         <label class="field" for="keywordInput">
@@ -39,6 +52,8 @@
     </footer>
   </main>
   <script src="settings.js"></script>
+  <script src="src/access/policy.js"></script>
+  <script src="privacy-ui.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

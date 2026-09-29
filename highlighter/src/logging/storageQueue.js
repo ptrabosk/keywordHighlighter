@@ -46,6 +46,20 @@ export async function storageRemove(keys) {
   await area.remove(keys);
 }
 
+export async function clearLoggingData() {
+  return await withQueueWrite(async () => {
+    const chunks = await loadAllChunks();
+    const keys = [
+      ...chunks.map((entry) => entry.key),
+      STORAGE_KEYS.queueMeta,
+      STORAGE_KEYS.activeSession,
+      STORAGE_KEYS.uploadStatus
+    ];
+    if (keys.length) await storageRemove(keys);
+    return chunks.reduce((count, entry) => count + entry.chunk.events.length, 0);
+  });
+}
+
 export async function removeMatchingIds(chunks, removeIds) {
   if (!removeIds.size) return 0;
 

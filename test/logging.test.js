@@ -12,6 +12,7 @@ import { sanitizeEvent } from "../highlighter/src/logging/sanitize.js";
 import { endSession, startSession } from "../highlighter/src/logging/session.js";
 import {
   enqueueEvent,
+  clearLoggingData,
   getQueueStats,
   getUploadStatus,
   loadAllChunks,
@@ -114,6 +115,8 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
     result: "success",
     surface: "content",
     pageHost: "https://ui.attentivemobile.com/concierge/conversation/123",
+    pageUrl: "https://ui.attentivemobile.com/concierge/conversation/123",
+    profileEmail: "employee@attentivemobile.com",
     ruleSource: "consolidated_rules",
     metadata: {
       operation: "x".repeat(150),
@@ -128,6 +131,8 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
   assert.equal(sanitized.extensionVersion, "1.0.0");
   assert.equal(sanitized.surface, "content");
   assert.equal(sanitized.pageHost, undefined);
+  assert.equal(sanitized.pageUrl, undefined);
+  assert.equal(sanitized.profileEmail, undefined);
   assert.equal(sanitized.ruleSource, "consolidated_rules");
   assert.equal(sanitized.metadata.operation.length, 100);
   assert.equal(sanitized.metadata.ignored, undefined);
@@ -152,6 +157,8 @@ test("shortcut events accept only normalized shortcuts and a bounded highlight c
     severity: "info",
     result: "success",
     pageHost: "https://ui.attentivemobile.com/concierge/",
+    pageUrl: "https://ui.attentivemobile.com/concierge/",
+    profileEmail: "employee@attentivemobile.com",
     metadata: {
       shortcut: "Shift+D",
       highlightCount: 2,
@@ -207,15 +214,18 @@ test("logging keeps only the requested event contract and diagnostics", () => {
   }
 });
 
-test("tracked logging config template contains placeholders and runtime config is ignored", () => {
+test("tracked logging config contains safe placeholders for clean checkouts", () => {
   const configSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.example.js"), "utf8");
+  const runtimeConfigSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.js"), "utf8");
   const gitignoreSource = fs.readFileSync(path.join(__dirname, "../.gitignore"), "utf8");
 
   assert.match(configSource, /YOUR_DEPLOYMENT_ID/);
   assert.match(configSource, /REPLACE_WITH_LOCAL_API_KEY/);
   assert.doesNotMatch(configSource, /script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec/);
   assert.doesNotMatch(configSource, /\bimport\s*\(/);
-  assert.match(gitignoreSource, /highlighter\/src\/logging\/config\.js/);
+  assert.match(runtimeConfigSource, /YOUR_DEPLOYMENT_ID/);
+  assert.match(runtimeConfigSource, /REPLACE_WITH_LOCAL_API_KEY/);
+  assert.doesNotMatch(gitignoreSource, /highlighter\/src\/logging\/config\.js/);
   assert.match(gitignoreSource, /highlighter\/src\/logging\/config\.local\.js/);
 });
 
@@ -288,6 +298,21 @@ test("selects oldest pending batch, marks uploading, and respects limits", async
   const stats = await getQueueStats();
   assert.equal(stats.pendingCount, 2);
   assert.equal(stats.uploadingCount, 3);
+});
+
+test("clearing logging data removes queued events and session state", async () => {
+  resetEnvironment();
+  await enqueueEvent(event({ eventId: "consent-revoked-1" }));
+  await storageSet({ activeSession: { sessionId: "session-1" }, uploadStatus: { consecutiveFailures: 2 } });
+
+  const removed = await clearLoggingData();
+
+  assert.equal(removed, 1);
+  assert.equal((await getQueueStats()).eventCount, 0);
+  const cleared = await storageGet(["activeSession", "uploadStatus", "logQueueMeta"]);
+  assert.equal(cleared.activeSession, undefined);
+  assert.equal(cleared.uploadStatus, undefined);
+  assert.equal(cleared.logQueueMeta, undefined);
 });
 
 test("removes accepted and rejected events without failing on duplicate acknowledgements", async () => {
@@ -543,9 +568,9 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /KW_DAILY_SHORTCUT_LIMIT = 10000/);
   assert.match(source, /function consumeQuota_/);
   assert.match(source, /RATE_LIMITED/);
-  assert.match(source, /KW_SHORTCUT_RETENTION_DAYS = 90/);
-  assert.match(source, /function purgeExpiredShortcutEvents/);
-  assert.match(source, /ensureShortcutRetentionTrigger_/);
+  assert.match(source, /KW_RETENTION_DAYS = 90/);
+  assert.match(source, /function purgeExpiredEvents/);
+  assert.match(source, /ensureRetentionTrigger_/);
   assert.match(source, /createTextFinder/);
   assert.match(source, /matchEntireCell\(true\)/);
   assert.doesNotMatch(source, /console\.error/);
@@ -567,13 +592,17 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
 
   assert.match(backgroundSource, /highlighter:getDiagnostics/);
   assert.match(backgroundSource, /highlighter:runDiagnosticsUpload/);
-  assert.doesNotMatch(backgroundSource, /apiKey:\s*config\.apiKey/);
+  assert.match(backgroundSource, /highlighter:getAccessStatus/);
+  assert.doesNotMatch(backgroundSource, /profileEmail/);
+  assert.doesNotMatch(backgroundSource, /event\.pageUrl/);
   assert.match(contentSource, /RENDER_LOG_INTERVAL_MS/);
   assert.doesNotMatch(contentSource, /function pageHost/);
   assert.match(contentSource, /maybeLogRenderCompleted/);
   assert.match(contentSource, /render_failed/);
   assert.match(contentSource, /clearAllHighlights/);
   assert.match(contentSource, /!state\.settings\.enabled/);
+  assert.match(contentSource, /AMH_ACCESS_POLICY\.requestAccessStatus/);
+  assert.doesNotMatch(contentSource, /pageUrl:/);
 });
 
 test("content highlighter matches full message elements before wrapping text nodes", () => {
@@ -582,12 +611,24 @@ test("content highlighter matches full message elements before wrapping text nod
   assert.match(contentSource, /function collectTextNodeSegments\(element\)/);
   assert.match(contentSource, /segments\.map\(\(segment\) => segment\.text\)\.join\(''\)/);
   assert.match(contentSource, /core\.collectMatches\(text, activeRules, state\.settings\)/);
+  assert.match(contentSource, /const matchesByNode = mapMatchesToTextNodeSegments\(segments, matches, text\)/);
+  assert.match(contentSource, /for \(const \[node, nodeMatches\] of matchesByNode\)/);
   assert.match(contentSource, /function mapMatchesToTextNodeSegments\(segments, matches, fullText\)/);
   assert.match(contentSource, /matchedText: fullText\.slice\(match\.start, match\.end\)/);
   assert.match(contentSource, /isMultiPart: intersectingSegments\.length > 1/);
   assert.match(contentSource, /function getHighlightClassName\(match\)/);
   assert.match(contentSource, /applyTooltipData\(span, match\.rule, match\.matchedText\)/);
   assert.doesNotMatch(contentSource, /function highlightTextNode\(node, activeRules\)/);
+});
+
+test("tooltips render generated rule and custom guidance", () => {
+  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
+
+  assert.match(contentSource, /target\.dataset\.amhTooltipTitle/);
+  assert.match(contentSource, /target\.dataset\.amhTooltipText/);
+  assert.match(contentSource, /target\.dataset\.amhTooltipName/);
+  assert.match(contentSource, /escapeHtml\(text\)/);
+  assert.doesNotMatch(contentSource, /if \(tag === 'opt_out'\) return 'OPT OUT'/);
 });
 
 test("content highlighter only includes Hot Topic brand message targets", () => {
@@ -614,4 +655,12 @@ test("content highlighter treats Hot Topic brand/customer context as one message
   assert.match(contentSource, /\[data-speaker="Brand"\] p\[class\*="variant-caption"\]/);
   assert.match(contentSource, /start: 0,\s*end: text\.length,\s*length: text\.length/s);
   assert.match(contentSource, /mergeContextualMatches/);
+});
+
+test("highlight cleanup does not clear host inline colors", () => {
+  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
+
+  assert.doesNotMatch(contentSource, /element\.style\.backgroundColor\s*=\s*['"]['"]/);
+  assert.doesNotMatch(contentSource, /element\.style\.boxShadow\s*=\s*['"]['"]/);
+  assert.match(contentSource, /amh-highlight-background/);
 });

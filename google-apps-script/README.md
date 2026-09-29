@@ -10,7 +10,7 @@ This Apps Script receives privacy-safe operational logs from the Chrome extensio
 4. In Apps Script, open **Project Settings > Script Properties** and add:
    - `KEYWORD_HIGHLIGHTER_LOG_API_KEY`: a locally generated shared key.
    - `KEYWORD_HIGHLIGHTER_SPREADSHEET_ID`: the ID from the Google Sheet URL.
-5. Run `setupLoggingSheets()` once and approve spreadsheet and trigger access. This also installs the daily shortcut-retention job.
+5. Run `setupLoggingSheets()` once and approve spreadsheet and trigger access. This also installs the daily event-retention job.
 6. Deploy with **Deploy > New deployment > Web app**.
 7. Set **Execute as** to **Me**.
 8. Set **Who has access** to **Anyone**.
@@ -31,12 +31,14 @@ The script creates these tabs if missing:
 
 `Events_keywordHighlighter` uses this header order:
 
-`Received At`, `Event Timestamp`, `Event ID`, `Session ID`, `Event Type`, `Severity`, `Result`, `Surface`, `Page URL`, `Profile Email`, `Rule Source`, `Duration Ms`, `Extension Version`, `Error Code`, `Error Message`, `Metadata JSON`, `Batch ID`.
+`Received At`, `Event Timestamp`, `Event ID`, `Session ID`, `Event Type`, `Severity`, `Result`, `Surface`, `Rule Source`, `Duration Ms`, `Extension Version`, `Error Code`, `Error Message`, `Metadata JSON`, `Batch ID`.
 
-Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. `Page Host` is intentionally not stored; troubleshooting context is carried by the sanitized page URL, profile email, and bounded metadata.
+Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. Page URLs, profile emails, message text, and matched text are not accepted or stored.
 
 `Event_ID_Index_keywordHighlighter` is used for deduplication so retrying the same batch does not duplicate rows. It stores event ID reservation and write status under a script lock so interrupted uploads can be retried safely.
 
 The receiver accepts at most 25,000 new events and 10,000 new shortcut events per UTC day. Events beyond either limit are rejected as `RATE_LIMITED`. Duplicate retries of already-written events remain idempotent and do not consume quota.
 
-`purgeExpiredShortcutEvents()` runs daily and removes shortcut rows and their deduplication IDs after 90 days. Other event retention is unchanged. Run the function manually after deployment to verify its authorization and inspect the execution log.
+`purgeExpiredEvents()` runs daily and removes all event rows and their deduplication IDs after 90 days. Run the function manually after deployment to verify its authorization and inspect the execution log.
+
+When the receiver first sees the previous 17-column event sheet, it clears the legacy URL and profile-email columns and removes those columns before continuing with the 15-column schema.

@@ -46,7 +46,6 @@ export const METADATA_ALLOWLIST = Object.freeze([
   "failureCategory",
   "shortcut",
   "highlightCount",
-  "pageUrl",
   "ruleCount",
   "matchedCount",
   "renderedCount",

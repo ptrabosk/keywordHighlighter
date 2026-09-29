@@ -7,21 +7,28 @@
   if (typeof DEFAULT_SETTINGS === 'undefined' || typeof SETTINGS_KEY === 'undefined') {
     const message = 'settings.js did not load before content.js. Reload the unpacked extension and refresh the page.';
     document.documentElement.dataset.amhInitError = message;
-    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', new Error(message));
+    console.error('[Offsight Highlighter] Failed to initialize:', new Error(message));
     return;
   }
 
   if (!globalThis.AMH_HIGHLIGHT_CORE) {
     const message = 'highlight core did not load before content.js. Reload the unpacked extension and refresh the page.';
     document.documentElement.dataset.amhInitError = message;
-    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', new Error(message));
+    console.error('[Offsight Highlighter] Failed to initialize:', new Error(message));
     return;
   }
 
   if (!globalThis.AMH_SHORTCUT_TELEMETRY) {
     const message = 'shortcut telemetry did not load before content.js. Reload the extension and refresh the page.';
     document.documentElement.dataset.amhInitError = message;
-    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', new Error(message));
+    console.error('[Offsight Highlighter] Failed to initialize:', new Error(message));
+    return;
+  }
+
+  if (!globalThis.AMH_ACCESS_POLICY) {
+    const message = 'access policy did not load before content.js. Reload the extension and refresh the page.';
+    document.documentElement.dataset.amhInitError = message;
+    console.error('[Offsight Highlighter] Failed to initialize:', new Error(message));
     return;
   }
 
@@ -42,6 +49,8 @@
     tooltip: null,
     targetSnapshots: new WeakMap(),
     escalationTargetSnapshots: new WeakMap(),
+    accessAllowed: false,
+    accessRecheckTimer: null,
     stats: {
       loadedRules: 0,
       activeRules: 0,
@@ -62,17 +71,12 @@
     nextMatchGroupId: 1
   };
 
-  function pageUrl() {
-    return String(window.location.href || '').slice(0, 2000);
-  }
-
   function logOperationalEvent(event) {
     try {
       chrome.runtime.sendMessage({
         type: 'highlighter:logEvent',
         event: {
           surface: 'content',
-          pageUrl: pageUrl(),
           ...event
         }
       }).catch(() => {});
@@ -97,10 +101,17 @@
     logOperationalFailure('unexpected_exception', 'UNEXPECTED_ERROR', 'Content script startup failed', {
       operation: 'init'
     });
-    console.error('[Offisght Operations Rule Highlighter] Failed to initialize:', error);
+    console.error('[Offsight Highlighter] Failed to initialize:', error);
   });
 
   async function init() {
+    const access = await AMH_ACCESS_POLICY.requestAccessStatus();
+    if (!access.allowed) {
+      document.documentElement.dataset.amhAccessDenied = 'true';
+      document.documentElement.dataset.amhAccessReason = access.reason;
+      return;
+    }
+    state.accessAllowed = true;
     state.settings = core.mergeSettings(DEFAULT_SETTINGS, await loadSettings());
     const [rules, hoverText] = await Promise.all([loadRules(), loadHoverText()]);
     state.rules = rules;
@@ -111,13 +122,34 @@
     installMutationObserver();
     installMessageHandlers();
     installDiagnostics();
+    scheduleAccessRecheck();
     scheduleRender(true);
+  }
+
+  function scheduleAccessRecheck() {
+    window.clearInterval(state.accessRecheckTimer);
+    state.accessRecheckTimer = window.setInterval(async () => {
+      const access = await AMH_ACCESS_POLICY.requestAccessStatus();
+      if (access.allowed || !state.accessAllowed) return;
+
+      state.accessAllowed = false;
+      window.clearInterval(state.accessRecheckTimer);
+      state.accessRecheckTimer = null;
+      state.observer?.disconnect();
+      state.observer = null;
+      window.clearTimeout(state.renderTimer);
+      state.renderTimer = null;
+      clearAllHighlights();
+      refreshHighlightCountBadge();
+      document.documentElement.dataset.amhAccessDenied = 'true';
+      document.documentElement.dataset.amhAccessReason = access.reason;
+    }, 5 * 60 * 1000);
   }
 
   function installDiagnostics() {
     window.addEventListener('error', (event) => {
       const error = event.error;
-      console.warn('[Offisght Rule Highlighter] Page error observed', {
+      console.warn('[Offsight Highlighter] Page error observed', {
         message: event.message || error?.message || 'unknown error',
         stack: error?.stack || '(no stack)',
         source: event.filename || '(unknown)',
@@ -128,7 +160,7 @@
     }, true);
     window.addEventListener('unhandledrejection', (event) => {
       const reason = event.reason;
-      console.warn('[Offisght Rule Highlighter] Unhandled rejection observed', {
+      console.warn('[Offsight Highlighter] Unhandled rejection observed', {
         message: reason?.message || String(reason || 'unknown rejection'),
         stack: reason?.stack || '(no stack)',
         highlighter: { ...state.debug }
@@ -144,7 +176,7 @@
       logOperationalFailure('settings_load_failed', 'SETTINGS_LOAD_FAILED', 'Settings could not be loaded', {
         operation: 'settingsRead'
       });
-      console.warn('[Offisght Operations Rule Highlighter] Could not load settings:', error);
+      console.warn('[Offsight Highlighter] Could not load settings:', error);
       return {};
     }
   }
@@ -198,7 +230,7 @@
       logOperationalFailure('hover_text_load_failed', 'HOVER_TEXT_LOAD_FAILED', 'Hover text could not be loaded', {
         operation: 'hoverTextFetch'
       });
-      console.warn('[Offisght Operations Rule Highlighter] Could not load hover text:', error);
+      console.warn('[Offsight Highlighter] Could not load hover text:', error);
       return {};
     }
   }
@@ -225,19 +257,20 @@
   function installMutationObserver() {
     state.observer?.disconnect();
     state.observer = new MutationObserver((mutations) => {
-      state.debug.mutations += mutations.length;
       const relevantMutations = mutations.filter(isRelevantMutation);
       if (relevantMutations.length) {
+        state.debug.mutations += relevantMutations.length;
         const now = Date.now();
         if (state.debug.mutations >= DEBUG_MUTATION_THRESHOLD && now - state.debug.lastMutationLogAt >= DEBUG_LOG_INTERVAL_MS) {
           state.debug.lastMutationLogAt = now;
-          console.warn('[Offisght Rule Highlighter] High mutation activity', {
+          console.warn('[Offsight Highlighter] High mutation activity', {
             batchSize: relevantMutations.length,
             ignoredBatchSize: mutations.length - relevantMutations.length,
-            totalSinceLoad: state.debug.mutations,
+            relevantSinceLastWarning: state.debug.mutations,
             lastTrigger: state.debug.lastTrigger,
             pendingRender: Boolean(state.renderTimer)
           });
+          state.debug.mutations = 0;
         }
         scheduleRender();
       }
@@ -246,15 +279,23 @@
   }
 
   function isRelevantMutation(mutation) {
-    const extensionSelector = '.amh-extension-root, .amh-customer-heading-row, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count';
+    const extensionSelector = '.amh-extension-root, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count';
     const contentSelector = 'div[class*="type-INBOUND"], [class*="brand-message"], [data-speaker="Brand"], p[class*="variant-caption"]';
     const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
     if (target?.closest(extensionSelector)) return false;
-    if (target?.closest(contentSelector)) return true;
+    if (mutation.type === 'characterData') return Boolean(target?.closest(contentSelector));
+
     const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
     return nodes.some((node) => {
+      if (node.nodeType === Node.TEXT_NODE) return Boolean(node.nodeValue?.trim() && target?.closest(contentSelector));
       if (!(node instanceof Element) || node.closest(extensionSelector)) return false;
-      return Boolean(node.closest(contentSelector) || node.matches(contentSelector) || node.querySelector(contentSelector));
+      if (!node.textContent?.trim()) return false;
+      return Boolean(
+        target?.closest(contentSelector) ||
+        node.closest(contentSelector) ||
+        node.matches(contentSelector) ||
+        node.querySelector(contentSelector)
+      );
     });
   }
 
@@ -310,6 +351,11 @@
     state.renderTimer = null;
 
     try {
+      if (!state.accessAllowed) {
+        clearAllHighlights();
+        refreshHighlightCountBadge();
+        return;
+      }
       const activeRules = core.getActiveRules(state.rules, state.settings);
       state.stats.activeRules = activeRules.length;
       state.stats.invalidRules = state.rules.filter((rule) => !rule.executable).length;
@@ -368,7 +414,7 @@
         ruleCount: state.rules.length,
         matchedCount: state.stats.highlights
       });
-      console.warn('[Offisght Operations Rule Highlighter] Render failed and will retry on the next DOM update:', error);
+      console.warn('[Offsight Highlighter] Render failed and will retry on the next DOM update:', error);
     }
   }
 
@@ -395,20 +441,14 @@
     }
 
     const section = heading.parentElement;
-    let headingRow = section.querySelector(':scope > .amh-customer-heading-row');
-    if (!headingRow) {
-      headingRow = document.createElement('div');
-      headingRow.className = 'amh-customer-heading-row';
-      section.insertBefore(headingRow, heading);
-      headingRow.appendChild(heading);
-    }
+    let badge = section.querySelector(':scope > .amh-highlight-count');
 
     const count = state.settings.enabled ? countVisibleHighlightsForBadge() : 0;
     existingBadges.forEach((badge) => {
-      if (badge.parentElement !== headingRow) badge.remove();
+      if (badge.parentElement !== section) badge.remove();
     });
 
-    const badge = headingRow.querySelector(':scope > .amh-highlight-count') || document.createElement('span');
+    badge ||= document.createElement('span');
     if (!count) {
       badge.remove();
       return;
@@ -417,7 +457,7 @@
     if (!badge.parentElement) {
       badge.className = 'amh-highlight-count';
       badge.setAttribute('aria-live', 'polite');
-      headingRow.appendChild(badge);
+      heading.insertAdjacentElement('afterend', badge);
     }
     if (badge.textContent !== String(count)) badge.textContent = String(count);
     badge.setAttribute('aria-label', `${count} highlight${count === 1 ? '' : 's'}`);
@@ -437,7 +477,7 @@
     try {
       nodes = Array.from(document.querySelectorAll(selector));
     } catch (error) {
-      console.warn('[Offisght Operations Rule Highlighter] Invalid selector, using default:', selector, error);
+      console.warn('[Offsight Highlighter] Invalid selector, using default:', selector, error);
       nodes = Array.from(document.querySelectorAll(DEFAULT_SETTINGS.selector));
     }
     const brandNodes = Array.from(document.querySelectorAll(getBrandMessageSelector()))
@@ -453,7 +493,8 @@
   }
 
   function getEscalationBulletElements() {
-    return Array.from(document.querySelectorAll('p[class*="variant-caption"]')).filter((node) => {
+    const selector = 'div[class*="type-INBOUND"] p[class*="variant-caption"], [class*="brand-message"] p[class*="variant-caption"], [data-speaker="Brand"] p[class*="variant-caption"]';
+    return Array.from(document.querySelectorAll(selector)).filter((node) => {
       return node instanceof HTMLElement && isVisible(node) && /\u2022/.test(node.textContent || '');
     });
   }
@@ -476,9 +517,11 @@
     if (!matches.length) return;
 
     const winningMatch = matches[0];
-    const wholeMessageMatch = [{ start: 0, end: text.length, length: text.length, rule: winningMatch.rule }];
-
     applyMessageBlockHighlight(element, winningMatch.rule, text);
+    const matchesByNode = mapMatchesToTextNodeSegments(segments, matches, text);
+    for (const [node, nodeMatches] of matchesByNode) {
+      wrapTextNodeMatches(node, nodeMatches);
+    }
     state.stats.highlights += 1;
     logOperationalEvent({ eventType: 'highlight_detected', severity: 'info', result: 'success', metadata: {
       operation: 'message_highlight',
@@ -736,8 +779,6 @@
   function clearMessageBlockHighlights(root) {
     for (const element of root.querySelectorAll('.amh-message-highlight')) {
       element.classList.remove('amh-message-highlight', 'amh-highlight--hover');
-      element.style.backgroundColor = '';
-      element.style.boxShadow = '';
       element.style.removeProperty('--amh-highlight-background');
       element.style.removeProperty('--amh-highlight-border');
       for (const attribute of ['amhRuleName', 'amhRuleTag', 'amhRuleLabel', 'amhTooltipTitle', 'amhTooltipText', 'amhTooltipName', 'amhMatchedText']) {
@@ -920,14 +961,23 @@
   }
 
   function renderTooltipHtml(target) {
-    const tag = target.dataset.amhRuleTag || '';
-    if (tag === 'opt_out') return 'OPT OUT';
-    if (tag === 'fuzzy_opt_out') return 'FUZZY OPT OUT';
-    if (tag === 'tmt') return 'TMT';
-    if (tag === 'txt') return 'TXT';
-    if (tag === 'reply') return 'REPLY';
-    if (tag === 'close') return 'CLOSE';
-    return '';
+    const title = target.dataset.amhTooltipTitle || target.dataset.amhRuleLabel || target.dataset.amhRuleTag || '';
+    const text = target.dataset.amhTooltipText || '';
+    const name = target.dataset.amhTooltipName || target.dataset.amhRuleName || '';
+    if (!title && !text) return '';
+
+    return [
+      '<div class="amh-tooltip__top">',
+      `<span class="amh-tooltip__rule">${escapeHtml(name || title)}</span>`,
+      `<span class="amh-tooltip__tag">${escapeHtml(title)}</span>`,
+      '</div>',
+      text
+        ? '<div class="amh-tooltip__row amh-tooltip__row--stacked">' +
+          '<span class="amh-tooltip__label">Guidance</span>' +
+          `<span class="amh-tooltip__value">${escapeHtml(text)}</span>` +
+          '</div>'
+        : ''
+    ].join('');
   }
 
   function positionTooltip(event) {

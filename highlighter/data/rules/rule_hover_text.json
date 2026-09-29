@@ -55,7 +55,7 @@
       "name": "R0008"
     },
     "R0009": {
-      "title": "close",
+      "title": "opt_out",
       "text": "Matches a configured expression against the complete normalized customer.",
       "name": "R0009"
     },
@@ -185,7 +185,7 @@
       "name": "R0034"
     },
     "R0035": {
-      "title": "fuzzy_opt_out",
+      "title": "opt_out",
       "text": "Searches the normalized customer for a configured expression.",
       "name": "R0035"
     },
@@ -230,12 +230,12 @@
       "name": "R0043"
     },
     "R0044": {
-      "title": "fuzzy_opt_out",
+      "title": "opt_out",
       "text": "Matches a configured expression against the complete normalized customer.",
       "name": "R0044"
     },
     "R0045": {
-      "title": "fuzzy_opt_out",
+      "title": "opt_out",
       "text": "Matches a configured expression against the complete normalized customer.",
       "name": "R0045"
     },
@@ -285,7 +285,7 @@
       "name": "R0054"
     },
     "R0055": {
-      "title": "fuzzy_opt_out",
+      "title": "opt_out",
       "text": "Searches the normalized customer for a configured expression.",
       "name": "R0055"
     },
@@ -1023,6 +1023,96 @@
       "title": "opt_out",
       "text": "Matches the complete normalized customer against one of 2 configured phrases.",
       "name": "R0202"
+    },
+    "R0218": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0218"
+    },
+    "R0219": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0219"
+    },
+    "R0203": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0203"
+    },
+    "R0204": {
+      "title": "opt_out",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0204"
+    },
+    "R0205": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0205"
+    },
+    "R0206": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0206"
+    },
+    "R0207": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0207"
+    },
+    "R0208": {
+      "title": "close",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0208"
+    },
+    "R0209": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0209"
+    },
+    "R0210": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0210"
+    },
+    "R0211": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0211"
+    },
+    "R0212": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0212"
+    },
+    "R0213": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0213"
+    },
+    "R0214": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0214"
+    },
+    "R0215": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0215"
+    },
+    "R0216": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0216"
+    },
+    "R0217": {
+      "title": "reply",
+      "text": "Matches the complete normalized customer against configured phrases.",
+      "name": "R0217"
+    },
+    "R0220": {
+      "title": "opt_out",
+      "text": "Searches the normalized customer for a configured expression.",
+      "name": "R0220"
     }
   }
 }

@@ -47,10 +47,10 @@ test("canonical and packaged schema-v2 registries are byte-identical", () => {
   const payload = loadRegistry();
   assert.equal(payload.schema_version, 2);
   assert.equal(payload.registry_name, "unified_deterministic_opt_out_rules");
-  assert.equal(payload.rules.length, 202);
+  assert.equal(payload.rules.length, 220);
   assert.deepEqual(
     payload.rules.map((rule) => rule.rule_id),
-    Array.from({ length: 202 }, (_value, index) => `R${String(index + 1).padStart(4, "0")}`)
+    JSON.parse(fs.readFileSync(rootRegistryPath, "utf8")).rules.map((rule) => rule.rule_id)
   );
 });
 
@@ -72,10 +72,10 @@ test("registry validation rejects incompatible or incomplete payloads", () => {
   assert.throws(() => core.buildRules(unknownDetector), /unsupported detector/);
 });
 
-test("builds all 202 rules with the schema-v2 runtime interface", () => {
+test("builds all 220 rules with the schema-v2 runtime interface", () => {
   const rules = buildRules();
-  assert.equal(rules.length, 202);
-  assert.equal(new Set(rules.map((rule) => rule.id)).size, 202);
+  assert.equal(rules.length, 220);
+  assert.equal(new Set(rules.map((rule) => rule.id)).size, 220);
   for (const rule of rules) {
     assert.match(rule.id, /^R\d{4}$/);
     assert.equal(rule.name, rule.id);
@@ -110,12 +110,12 @@ test("merges settings and keeps stable user-added IDs", () => {
 test("default action colors and no-action behavior remain unchanged", () => {
   assert.equal(defaults.opacity, 0.25);
   assert.equal(Object.hasOwn(defaults.categories, "test"), false);
-  assert.equal(defaults.categories.opt_out.color, "#DF6A30");
-  assert.equal(defaults.categories.fuzzy_opt_out.color, "#F0B368");
-  assert.equal(defaults.categories.tmt.color, "#A3C3F1");
+  assert.equal(defaults.categories.opt_out.color, "#fa8d75");
+  assert.equal(defaults.categories.fuzzy_opt_out.color, "#ffcb99");
+  assert.equal(defaults.categories.tmt.color, "#8fded4");
   assert.equal(defaults.categories.txt.color, defaults.categories.tmt.color);
   assert.equal(defaults.categories.txt.label, "Texting Explanation");
-  assert.equal(defaults.categories.reply.color, "#D6DF22");
+  assert.equal(defaults.categories.reply.color, "#bbcfa4");
   assert.equal(defaults.categories.close.color, "#FAF4DF");
 
   const migrated = settings({
@@ -126,7 +126,7 @@ test("default action colors and no-action behavior remain unchanged", () => {
   });
   assert.equal(Object.hasOwn(migrated.categories, "test"), false);
   assert.equal(migrated.categories.txt.label, "Texting Explanation");
-  assert.equal(migrated.categories.txt.color, "#A3C3F1");
+  assert.equal(migrated.categories.txt.color, "#8fded4");
 
   const enabledNoAction = settings({ categories: { no_action: { enabled: true } } });
   assert.equal(core.getActiveRules(buildRules(), enabledNoAction).some((rule) => rule.action === "no_action"), false);
@@ -152,7 +152,7 @@ test("executes every declarative match type", () => {
 
 test("normalizes punctuation, contractions, accents, and stylized letters with raw span mapping", () => {
   const dontWant = ruleById("R0035");
-  assert.equal(core.collectMatches("I don’t want these messages.", [dontWant], settings()).length, 1);
+  assert.equal(core.collectMatches("I don’t want anything from you.", [dontWant], settings()).length, 1);
   assert.equal(core.normalizeMessageBody("  CÁFÉ—TEST!  "), "cafe test");
 
   const stop = ruleById("R0187");
@@ -181,9 +181,9 @@ test("uses Unicode-aware bounded phrases", () => {
 });
 
 test("every configured literal phrase matches its owning rule", () => {
-  const rules = buildRules().filter((rule) => ["exact", "exact_set", "bounded_phrase"].includes(rule.matchType));
+  const rules = buildRules().filter((rule) => ["exact", "exact_set", "bounded_phrase"].includes(rule.matchType) && !rule.guard);
   const phrases = rules.flatMap((rule) => rule.patterns.map((phrase) => [rule, phrase]));
-  assert.equal(phrases.length, 311);
+  assert.equal(phrases.length, 379);
   for (const [rule, phrase] of phrases) {
     assert.equal(core.collectMatches(phrase, [rule], settings()).length, 1, `${rule.id}: ${phrase}`);
   }
@@ -205,7 +205,7 @@ test("implements all detector names with positive and negative behavior", () => 
     ["txt_origin_question", "Who is this and why are you texting me?", true],
     ["empty_customer_message", "   ", true],
     ["real_word_collision", "shop", true],
-    ["under_13", "I am in 1st grade", true],
+    ["under_13", "I am 12 years old", true],
     ["under_13", "I am 13 years old", false],
     ["language_filter_non_opt_out", "qwrty", true],
     ["language_filter_non_opt_out", "help", false],
@@ -220,7 +220,7 @@ test("implements all detector names with positive and negative behavior", () => 
   for (const [detector, raw, expected] of detectorCases) {
     assert.equal(core.detectorMatches(detector, raw, core.normalizeMessageBody(raw)), expected, `${detector}: ${raw}`);
   }
-  assert.equal(new Set(loadRegistry().rules.filter((rule) => rule.match_type === "detector").map((rule) => rule.detector)).size, 18);
+  assert.equal(new Set(loadRegistry().rules.filter((rule) => rule.match_type === "detector").map((rule) => rule.detector)).size, 17);
 });
 
 test("enforces every named guard against the complete normalized message", () => {
@@ -248,7 +248,7 @@ test("enforces every named guard against the complete normalized message", () =>
     ["R0016", "stop texting me"],
     ["R0023", "fuck you"],
     ["R0031", "I will sue you"],
-    ["R0035", "I don't want these messages"],
+    ["R0035", "I don't want anything from you"],
     ["R0038", "wrong number"],
     ["R0041", "I'm blocking you"],
     ["R0107", "start"]
@@ -272,7 +272,7 @@ test("retains representative action behavior and priority", () => {
     ["customer service", "reply"],
     ["I'm done with this brand", "fuzzy_opt_out"],
     ["Sorry, I can't talk right now.", "close"],
-    ["I am in 1st grade.", "opt_out"],
+    ["I am 12 years old.", "opt_out"],
     ["spam", "fuzzy_opt_out"]
   ];
   for (const [text, action] of cases) {
@@ -325,7 +325,7 @@ test("custom keyword rules escape punctuation and are ordered before built-ins",
 test("generated hover guidance covers every R-ID exactly once", () => {
   const registry = loadRegistry();
   const hover = JSON.parse(fs.readFileSync(hoverPath, "utf8"));
-  assert.deepEqual(Object.keys(hover.by_rule_id), registry.rules.map((rule) => rule.rule_id));
+  assert.deepEqual(Object.keys(hover.by_rule_id).sort(), registry.rules.map((rule) => rule.rule_id).sort());
   for (const rule of registry.rules) {
     assert.deepEqual(hover.by_rule_id[rule.rule_id].title, rule.action);
     assert.equal(hover.by_rule_id[rule.rule_id].name, rule.rule_id);

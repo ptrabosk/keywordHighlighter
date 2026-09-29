@@ -85,6 +85,17 @@ test("counts rendered logical rule highlights once, including off-screen highlig
   assert.equal(telemetry.countRenderedHighlightGroups({ querySelectorAll: () => [] }, { view }), 0);
 });
 
+test("counts rendered escalation highlights for shortcut telemetry", () => {
+  const telemetry = loadShortcutTelemetry();
+  const escalation = highlight(null);
+  const root = {
+    querySelectorAll: (selector) => selector === ".amh-escalation-highlight" ? [escalation] : []
+  };
+  const view = { getComputedStyle: (element) => element.style };
+
+  assert.equal(telemetry.countRenderedHighlightGroups(root, { view }), 1);
+});
+
 test("content listener logs bounded metadata without intercepting host keyboard behavior", () => {
   const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
   assert.match(contentSource, /addEventListener\('keydown',[\s\S]*}, true\)/);

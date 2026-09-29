@@ -5,7 +5,7 @@
   const MAX_CUSTOM_KEYWORD_TEXT_LENGTH = 256;
   const EXPECTED_SCHEMA_VERSION = 2;
   const EXPECTED_REGISTRY_NAME = 'unified_deterministic_opt_out_rules';
-  const EXPECTED_RULE_COUNT = 202;
+  const EXPECTED_RULE_COUNT = 220;
   const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'no_action', 'txt', 'tmt', 'close']);
   const TARGETS = new Set(['raw_customer', 'normalized_customer', 'combined']);
   const MATCH_TYPES = new Set(['regex_search', 'full_match', 'bounded_phrase', 'exact', 'exact_set', 'detector']);
