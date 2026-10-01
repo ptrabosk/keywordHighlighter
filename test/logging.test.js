@@ -638,56 +638,30 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /loggedEvent\.pageUrl = window\.location\.href/);
 });
 
-test("content highlighter matches full message elements before wrapping text nodes", () => {
+test("tooltips show only the category label for messages and escalation notes", () => {
   const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
 
-  assert.match(contentSource, /function collectTextNodeSegments\(element\)/);
-  assert.match(contentSource, /segments\.map\(\(segment\) => segment\.text\)\.join\(''\)/);
-  assert.match(contentSource, /core\.collectMatches\(text, activeRules, state\.settings\)/);
-  assert.match(contentSource, /const matchesByNode = mapMatchesToTextNodeSegments\(segments, matches, text\)/);
-  assert.match(contentSource, /for \(const \[node, nodeMatches\] of matchesByNode\)/);
-  assert.match(contentSource, /function mapMatchesToTextNodeSegments\(segments, matches, fullText\)/);
-  assert.match(contentSource, /matchedText: fullText\.slice\(match\.start, match\.end\)/);
-  assert.match(contentSource, /isMultiPart: intersectingSegments\.length > 1/);
-  assert.match(contentSource, /function getHighlightClassName\(match\)/);
-  assert.match(contentSource, /applyTooltipData\(span, match\.rule, match\.matchedText\)/);
-  assert.doesNotMatch(contentSource, /function highlightTextNode\(node, activeRules\)/);
+  assert.match(contentSource, /element\.dataset\.amhTooltipTitle = category\.label \|\| rule\.tag/);
+  assert.match(contentSource, /span\.dataset\.amhTooltipTitle = match\.rule\.label/);
+  assert.match(contentSource, /TOOLTIP_TARGET_SELECTOR = '\.amh-escalation-highlight, \.amh-message-highlight'/);
+  // Rendered as text, never HTML, and no guidance or matched message text is kept.
+  assert.match(contentSource, /tooltip\.textContent = title/);
+  assert.doesNotMatch(contentSource, /innerHTML/);
+  assert.doesNotMatch(contentSource, /hoverText|rule_hover_text|amhTooltipText|amhTooltipName|amhMatchedText/);
+  // Leaving one message for another must un-hover the first.
+  assert.match(contentSource, /getTooltipTarget\(event\.relatedTarget\) === target/);
 });
 
-test("tooltips render generated rule and custom guidance", () => {
+// Classification behavior is unit-tested in highlightCore.test.js
+// (classifyMessage) and messageContext.test.js; this only checks the wiring.
+test("content highlighter delegates message classification and logs each message once", () => {
   const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
 
-  assert.match(contentSource, /target\.dataset\.amhTooltipTitle/);
-  assert.match(contentSource, /target\.dataset\.amhTooltipText/);
-  assert.match(contentSource, /target\.dataset\.amhTooltipName/);
-  assert.match(contentSource, /escapeHtml\(text\)/);
-  assert.doesNotMatch(contentSource, /if \(tag === 'opt_out'\) return 'OPT OUT'/);
-});
-
-test("content highlighter only includes Hot Topic brand message targets", () => {
-  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
-
-  assert.match(contentSource, /\.brand-message__text/);
-  assert.match(contentSource, /\[class\*="brand-message"\] p\[class\*="variant-caption"\]/);
-  assert.match(contentSource, /isHotTopicBrandPrompt\(node\.textContent \|\| ''\)/);
-  assert.match(contentSource, /function isHotTopicBrandElement\(element\)/);
-  assert.doesNotMatch(contentSource, /node\.closest\('div\[class\*="type-INBOUND"\], \[class\*="brand-message"\]'\)/);
-  assert.doesNotMatch(contentSource, /querySelectorAll\('p\[class\*="variant-caption"\]'\)\.filter\(\(node\) => node instanceof HTMLElement && isVisible\(node\)\)/);
-});
-
-test("content highlighter treats Hot Topic brand/customer context as one message match", () => {
-  const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
-
-  assert.match(contentSource, /function collectContextualMessageMatches\(element, text\)/);
-  assert.match(contentSource, /function getHotTopicContextualRule\(element, text\)/);
-  assert.match(contentSource, /HOT_TOPIC_BRAND_LOOKBACK_LIMIT = 3/);
-  assert.match(contentSource, /function getRecentBrandMessageTexts\(element, limit\)/);
-  assert.match(contentSource, /opt_outs_ml\.hot_topic_opt_out/);
-  assert.match(contentSource, /opt_outs_ml\.hot_topic_not_opt_out/);
-  assert.match(contentSource, /createHotTopicFallbackRule/);
-  assert.match(contentSource, /\[data-speaker="Brand"\] p\[class\*="variant-caption"\]/);
-  assert.match(contentSource, /start: 0,\s*end: text\.length,\s*length: text\.length/s);
-  assert.match(contentSource, /mergeContextualMatches/);
+  assert.match(contentSource, /node\.closest\('div\[class\*="type-INBOUND"\]'\)/);
+  assert.match(contentSource, /core\.classifyMessage\(texts, activeRules, state\.settings/);
+  assert.match(contentSource, /messageContext\.getRecentBrandMessageTexts\(block, HOT_TOPIC_BRAND_LOOKBACK_LIMIT\)/);
+  assert.match(contentSource, /clearMessageBlockHighlight\(block\)/);
+  assert.match(contentSource, /state\.loggedHighlightBlocks\.has\(block\)/);
 });
 
 test("highlight cleanup does not clear host inline colors", () => {

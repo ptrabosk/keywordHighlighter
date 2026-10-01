@@ -17,15 +17,15 @@ The extension reads supported workspace content, including inbound messages, loc
 Features:
 
 - Highlights deterministic rule matches directly in inbound message cards.
-- Shows rule guidance when you hover over a highlight.
-- Lets users add custom keywords and hover guidance.
-- Supports CSV export and import for custom keyword backups using `keyword` and `hover text` columns.
+- Shows the category label when you hover over a highlight.
+- Lets users add custom keywords.
+- Supports CSV export and import for custom keyword backups using a `keyword` column.
 - Updates as new messages arrive in the single-page application.
 - Runs only on `https://ui.attentivemobile.com/concierge/*`.
 
-The extension does not request or inspect Chrome profile identity. Operational events are not associated with an email address or Google account identifier. Custom keywords and hover guidance use Chrome Sync storage so they can follow the user across synchronized Chrome browsers; they are not included in telemetry. CSV imports and exports are processed locally.
+The extension does not request or inspect Chrome profile identity. Operational events are not associated with an email address or Google account identifier. Custom keywords use Chrome Sync storage so they can follow the user across synchronized Chrome browsers; they are not included in telemetry. CSV imports and exports are processed locally.
 
-The extension sends only bounded operational information over HTTPS: random identifiers, timestamps, extension version, supported surface, the current supported-page URL for highlight/shortcut/error events, sanitized diagnostics, highlight counts, and which supported shortcut (`Shift+D/N/B/C`) was pressed. It does not separately add arbitrary keystrokes, typed text, message text, matched text, field contents, or rule names to telemetry; any value embedded by the supported site in the full URL is included as part of that URL. URLs from other sites and unrelated browsing activity are not collected. Uploaded telemetry and related batch and deduplication records are deleted after 90 days. See the privacy policy for the complete data-use disclosure.
+The extension sends only bounded operational information over HTTPS: random identifiers, timestamps, extension version, supported surface, the current supported-page URL for highlight/shortcut/error events, sanitized diagnostics, highlight counts, and which supported shortcut (`Shift+D/N/B/C/E`) was pressed. It does not separately add arbitrary keystrokes, typed text, message text, matched text, field contents, or rule names to telemetry; any value embedded by the supported site in the full URL is included as part of that URL. URLs from other sites and unrelated browsing activity are not collected. Uploaded telemetry and related batch and deduplication records are deleted after 90 days. See the privacy policy for the complete data-use disclosure.
 
 ## Permission explanations
 
@@ -46,7 +46,7 @@ The publisher must also enter this same working URL in the Chrome Web Store Priv
 
 1. Install the submitted ZIP in Chrome.
 2. Open `https://ui.attentivemobile.com/concierge/` and open a conversation containing an inbound message.
-3. Confirm that configured phrases are highlighted, hover guidance appears, and the customer highlight count updates.
+3. Confirm that configured phrases are highlighted, the category label appears on hover, and the customer highlight count updates.
 4. Open the popup to add, remove, export, and import a custom keyword.
 5. Open extension options to add, edit, remove, export, and import custom keywords.
 

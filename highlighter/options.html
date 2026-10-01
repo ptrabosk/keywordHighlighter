@@ -18,10 +18,6 @@
           <span>Keyword</span>
           <input id="keywordInput" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="STOP">
         </label>
-        <label class="field" for="keywordText">
-          <span>Hover text</span>
-          <input id="keywordText" type="text" autocomplete="off" spellcheck="true" maxlength="256" placeholder="Reminder text">
-        </label>
         <button id="addKeyword" type="submit" class="primary">ADD KEYWORD</button>
       </form>
 
@@ -40,6 +36,8 @@
   <script src="settings.js"></script>
   <script src="src/shared/extensionUtils.js"></script>
   <script src="src/shared/keywordCsv.js"></script>
+  <script src="src/highlight/regexNormalization.js"></script>
+  <script src="src/highlight/core.js"></script>
   <script src="popup.js"></script>
   <script src="options.js"></script>
 </body>

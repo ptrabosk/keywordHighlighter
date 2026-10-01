@@ -63,23 +63,15 @@ h2 { font-size: 20px; }
 .privacy-status { font-weight: 700; }
 .privacy-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 
-.keyword-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 12px; align-items: end; margin-top: 28px; }
+.keyword-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; margin-top: 28px; }
 .keywords { gap: 8px; max-height: 360px; margin-top: 12px; overflow-y: auto; padding-right: 4px; }
 .backup-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 .keyword { padding: 7px 10px; }
 .empty { padding: 18px; }
 .actions { min-height: 28px; margin-top: 12px; }
 
-button { border: 1px solid transparent; border-radius: 9px; padding: 10px 14px; font: inherit; font-weight: 500; cursor: pointer; transition: background 120ms ease, border-color 120ms ease, transform 120ms ease; }
-button:hover { transform: translateY(-1px); }
-button:focus-visible, input:focus-visible { outline: 3px solid rgba(255, 203, 153, 0.65); outline-offset: 2px; }
-button:disabled { cursor: not-allowed; opacity: 0.5; transform: none; }
+button { padding: 10px 14px; }
 .keyword .secondary { padding: 5px 10px; }
-.primary { background: var(--accent); color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
-.primary:hover { background: var(--accent-strong); }
-.secondary { border-color: var(--accent); color: var(--text); background: var(--accent-wash); }
-.secondary:hover { border-color: var(--accent); background: var(--accent-wash); }
-#status { color: var(--muted); }
 
 @media (max-width: 700px) {
   .shell { width: min(100% - 20px, 560px); padding: 20px 0; }

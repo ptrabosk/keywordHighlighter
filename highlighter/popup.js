@@ -1,11 +1,10 @@
-const { escapeHtml } = globalThis.AMH_EXTENSION_UTILS;
+const { createOperationalLogger, loadSyncSettings } = globalThis.AMH_EXTENSION_UTILS;
 const { parseKeywordCsv, serializeKeywordCsv } = globalThis.AMH_KEYWORD_CSV;
 
 function createCustomKeywordUi({ surface = 'popup' } = {}) {
 const els = {
   form: document.querySelector('#keywordForm'),
   input: document.querySelector('#keywordInput'),
-  text: document.querySelector('#keywordText'),
   addKeyword: document.querySelector('#addKeyword'),
   keywords: document.querySelector('#keywords'),
   exportKeywords: document.querySelector('#exportKeywords'),
@@ -14,37 +13,18 @@ const els = {
   status: document.querySelector('#status')
 };
 
-const MAX_KEYWORD_LENGTH = 128;
-const MAX_HOVER_TEXT_LENGTH = 256;
+const core = globalThis.AMH_HIGHLIGHT_CORE;
+const { mergeSettings, normalizeKeyword } = core;
+const MIN_KEYWORD_LENGTH = core.MIN_CUSTOM_KEYWORD_LENGTH;
+const MAX_KEYWORDS = core.MAX_CUSTOM_KEYWORDS;
+// Chrome sync storage rejects a single item larger than this (key + JSON value).
+const SYNC_ITEM_BYTE_LIMIT = globalThis.chrome?.storage?.sync?.QUOTA_BYTES_PER_ITEM || 8192;
 
 let settings = structuredClone(DEFAULT_SETTINGS);
 let featuresStarted = false;
 let editingKeyword = null;
 
-function logOperationalEvent(event) {
-  try {
-    chrome.runtime.sendMessage({
-      type: 'highlighter:logEvent',
-      event: {
-        surface,
-        ...event
-      }
-    }).catch(() => {});
-  } catch (_error) {
-    // Logging must never affect popup behavior.
-  }
-}
-
-function logOperationalFailure(eventType, errorCode, errorMessage, metadata = {}) {
-  logOperationalEvent({
-    eventType,
-    severity: 'error',
-    result: 'failure',
-    errorCode,
-    errorMessage,
-    metadata
-  });
-}
+const { logOperationalEvent, logOperationalFailure } = createOperationalLogger({ surface });
 
 async function init() {
   await startFeatures();
@@ -68,16 +48,8 @@ async function startFeatures() {
   });
 }
 
-async function loadSettings() {
-  try {
-    const result = await chrome.storage.sync.get(SETTINGS_KEY);
-    return result[SETTINGS_KEY] || {};
-  } catch (error) {
-    logOperationalFailure('settings_load_failed', 'SETTINGS_LOAD_FAILED', 'Settings could not be loaded', {
-      operation: 'settingsRead'
-    });
-    throw error;
-  }
+function loadSettings() {
+  return loadSyncSettings(SETTINGS_KEY, logOperationalFailure);
 }
 
 async function saveSettings() {
@@ -104,36 +76,40 @@ async function saveSettings() {
 async function addKeyword(event) {
   event.preventDefault();
   const wasEditing = Boolean(editingKeyword);
+  if (!els.input.value.trim()) {
+    setStatus('Enter a keyword first.');
+    return;
+  }
   const keyword = normalizeKeyword(els.input.value);
   if (!keyword) {
-    setStatus('Enter a keyword first.');
+    setStatus(`Keywords need at least ${MIN_KEYWORD_LENGTH} characters.`);
     return;
   }
   if (settings.customKeywords.some((item) => item.toLowerCase() === keyword.toLowerCase() && item.toLowerCase() !== String(editingKeyword || '').toLowerCase())) {
     setStatus('That keyword is already in the list.');
     return;
   }
-  const nextText = normalizeHoverText(els.text.value);
-  if (editingKeyword) {
-    settings.customKeywords = settings.customKeywords
+  if (!wasEditing && settings.customKeywords.length >= MAX_KEYWORDS) {
+    setStatus(`You can save up to ${MAX_KEYWORDS} keywords. Remove one first.`);
+    return;
+  }
+  const nextSettings = {
+    ...settings,
+    customKeywords: settings.customKeywords
       .filter((item) => item !== editingKeyword)
       .concat(keyword)
-      .sort((a, b) => a.localeCompare(b));
-    const nextTextByPattern = { ...(settings.customKeywordTextByPattern || {}) };
-    delete nextTextByPattern[editingKeyword];
-    nextTextByPattern[keyword] = nextText;
-    settings.customKeywordTextByPattern = nextTextByPattern;
+      .sort((a, b) => a.localeCompare(b))
+  };
+  if (exceedsSyncItemLimit(nextSettings)) {
+    setStatus('Not enough sync storage for this keyword. Remove a keyword first.');
+    return;
+  }
+  settings = nextSettings;
+  if (wasEditing) {
     editingKeyword = null;
     els.addKeyword.textContent = 'ADD KEYWORD';
-  } else {
-    settings.customKeywords = [...settings.customKeywords, keyword].sort((a, b) => a.localeCompare(b));
-    settings.customKeywordTextByPattern = {
-      ...(settings.customKeywordTextByPattern || {}),
-      [keyword]: nextText
-    };
   }
   els.input.value = '';
-  els.text.value = '';
   renderKeywords();
   await saveSettings();
   setStatus(wasEditing ? 'Keyword updated.' : 'Keyword added.');
@@ -142,20 +118,15 @@ async function addKeyword(event) {
 function editKeyword(keyword) {
   editingKeyword = keyword;
   els.input.value = keyword;
-  els.text.value = settings.customKeywordTextByPattern?.[keyword] || '';
   els.addKeyword.textContent = 'SAVE KEYWORD';
   els.input.focus();
 }
 
 async function removeKeyword(keyword) {
   settings.customKeywords = settings.customKeywords.filter((item) => item !== keyword);
-  if (settings.customKeywordTextByPattern) {
-    delete settings.customKeywordTextByPattern[keyword];
-  }
   if (editingKeyword === keyword) {
     editingKeyword = null;
     els.input.value = '';
-    els.text.value = '';
     els.addKeyword.textContent = 'ADD KEYWORD';
   }
   renderKeywords();
@@ -163,10 +134,7 @@ async function removeKeyword(keyword) {
 }
 
 function exportKeywords() {
-  const csv = serializeKeywordCsv((settings.customKeywords || []).map((keyword) => ({
-    keyword,
-    hoverText: settings.customKeywordTextByPattern?.[keyword] || ''
-  })));
+  const csv = serializeKeywordCsv((settings.customKeywords || []).map((keyword) => ({ keyword })));
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -186,42 +154,45 @@ async function importKeywords(event) {
 
   try {
     const imported = parseKeywordImport(await file.text());
-    settings = mergeSettings(DEFAULT_SETTINGS, {
+    const nextSettings = mergeSettings(DEFAULT_SETTINGS, {
       ...settings,
-      customKeywords: imported.customKeywords,
-      customKeywordTextByPattern: imported.customKeywordTextByPattern
+      customKeywords: imported.customKeywords
     });
+    if (exceedsSyncItemLimit(nextSettings)) {
+      setStatus('Import is too large for sync storage. Remove some keywords from the CSV.');
+      return;
+    }
+    settings = nextSettings;
     renderKeywords();
     await saveSettings();
-    setStatus(`Imported ${settings.customKeywords.length} keyword${settings.customKeywords.length === 1 ? '' : 's'}.`);
+    const count = settings.customKeywords.length;
+    const skipped = imported.skippedShort + Math.max(0, imported.customKeywords.length - count);
+    const skippedNote = skipped
+      ? ` Skipped ${skipped}: keywords need ${MIN_KEYWORD_LENGTH}+ characters and the list holds up to ${MAX_KEYWORDS}.`
+      : '';
+    setStatus(`Imported ${count} keyword${count === 1 ? '' : 's'}.${skippedNote}`);
   } catch (error) {
     logOperationalFailure('settings_save_failed', 'KEYWORD_IMPORT_FAILED', 'Keyword backup could not be imported', {
       operation: 'customKeywordsImport'
     });
-    setStatus('Import failed. Choose a CSV file with keyword and hover text headers.');
+    setStatus('Import failed. Choose a CSV file whose first row is the keyword header.');
   }
 }
 
 function parseKeywordImport(csvText) {
   const importedByKeyword = new Map();
+  let skippedShort = 0;
   for (const row of parseKeywordCsv(csvText)) {
     const keyword = normalizeKeyword(row.keyword);
-    if (!keyword) continue;
+    if (!keyword) {
+      if (String(row.keyword || '').trim()) skippedShort += 1;
+      continue;
+    }
     const key = keyword.toLocaleLowerCase();
-    const existing = importedByKeyword.get(key);
-    importedByKeyword.set(key, {
-      keyword: existing?.keyword || keyword,
-      hoverText: normalizeHoverText(row.hoverText)
-    });
+    if (!importedByKeyword.has(key)) importedByKeyword.set(key, keyword);
   }
-  const customKeywords = Array.from(importedByKeyword.values(), (entry) => entry.keyword)
-    .sort((a, b) => a.localeCompare(b));
-  return {
-    customKeywords,
-    customKeywordTextByPattern: Object.fromEntries(
-      Array.from(importedByKeyword.values(), (entry) => [entry.keyword, entry.hoverText])
-    )
-  };
+  const customKeywords = Array.from(importedByKeyword.values()).sort((a, b) => a.localeCompare(b));
+  return { customKeywords, skippedShort };
 }
 
 function renderKeywords() {
@@ -256,57 +227,8 @@ function renderKeywords() {
   }
 }
 
-function mergeSettings(base, override) {
-  const merged = {
-    ...base,
-    ...override,
-    categories: {},
-    customKeywords: Array.isArray(override?.customKeywords) ? override.customKeywords.map(normalizeKeyword).filter(Boolean) : base.customKeywords,
-    customKeywordTextByPattern: normalizeCustomKeywordTextMap(override?.customKeywords, override?.customKeywordTextByPattern || base.customKeywordTextByPattern || {})
-  };
-  for (const key of Object.keys(base.categories || {})) {
-    const categoryOverride = override?.categories?.[key] || {};
-    merged.categories[key] = {
-      ...base.categories[key],
-      ...categoryOverride,
-      label: base.categories[key].label
-    };
-    if (key === 'txt' && String(categoryOverride.color || '').toUpperCase() === '#F6DA71') {
-      merged.categories[key].color = base.categories[key].color;
-    }
-  }
-  if (base.categories?.user_added && merged.categories.user_added) {
-    merged.categories.user_added.color = base.categories.user_added.color;
-  }
-  return merged;
-}
-
-function normalizeKeyword(value) {
-  if (value && typeof value === 'object') return limitText(String(value.pattern || value.name || '').trim().replace(/\s+/g, ' '), MAX_KEYWORD_LENGTH);
-  return limitText(String(value || '').trim().replace(/\s+/g, ' '), MAX_KEYWORD_LENGTH);
-}
-
-function normalizeHoverText(value) {
-  return limitText(String(value || '').trim().replace(/\s+/g, ' '), MAX_HOVER_TEXT_LENGTH);
-}
-
-function limitText(value, maxLength) {
-  return String(value || '').slice(0, maxLength).trim();
-}
-
-function normalizeCustomKeywordTextMap(customKeywords, existingTextByPattern = {}) {
-  const textByPattern = {};
-  for (const item of customKeywords || []) {
-    if (item && typeof item === 'object') {
-      const pattern = normalizeKeyword(item);
-      if (pattern) textByPattern[pattern] = normalizeHoverText(item.text || existingTextByPattern[pattern] || '');
-    }
-  }
-  for (const [pattern, text] of Object.entries(existingTextByPattern || {})) {
-    const normalized = normalizeKeyword(pattern);
-    if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = normalizeHoverText(text);
-  }
-  return textByPattern;
+function exceedsSyncItemLimit(nextSettings) {
+  return new TextEncoder().encode(SETTINGS_KEY + JSON.stringify(nextSettings)).length > SYNC_ITEM_BYTE_LIMIT;
 }
 
 function setStatus(text) {

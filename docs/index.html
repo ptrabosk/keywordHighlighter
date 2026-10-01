@@ -25,7 +25,7 @@
   <main>
     <article>
       <h1>Offsight Highlighter Privacy Policy</h1>
-      <p class="updated">Last updated: September 29, 2026</p>
+      <p class="updated">Last updated: October 1, 2026</p>
 
       <p>Offsight Highlighter highlights configured rule matches on its supported work page without requesting or inspecting the user's Chrome profile identity. This page contains the extension's complete data-use disclosure.</p>
 
@@ -35,11 +35,11 @@
         <li>the number of rendered rule highlights, capped at 1,000;</li>
         <li>an event timestamp, random event and session identifiers, extension version, and the supported page surface;</li>
         <li>the full URL of the supported Operations page when a highlight is detected, a supported shortcut is pressed, or a content-script error occurs; this URL may contain conversation identifiers, query parameters, or fragments;</li>
-        <li>which supported shortcut was pressed (<code>Shift+D</code>, <code>Shift+N</code>, <code>Shift+B</code>, or <code>Shift+C</code>); the extension does not record arbitrary keystrokes or text typed by the user;</li>
+        <li>which supported shortcut was pressed (<code>Shift+D</code>, <code>Shift+N</code>, <code>Shift+B</code>, <code>Shift+C</code>, or <code>Shift+E</code>); the extension does not record arbitrary keystrokes or text typed by the user;</li>
         <li>bounded technical event fields such as event type, severity, result, duration, sanitized error code/message, and allowlisted numeric or status metadata.</li>
       </ul>
       <p>The extension reads supported page content, including inbound messages that may be personal communications, locally to perform its highlighting feature. It does not separately add message text, matched text, account identifiers, rule names, selected text, field contents, text entered into editable fields, or arbitrary keystrokes to telemetry. URL collection is limited to the supported Operations page and the operational events described above; any value that the supported site embeds in that URL is included as part of the full URL. The extension does not collect unrelated browsing activity or request or inspect the user's Chrome profile identity.</p>
-      <p>Custom keywords and their hover guidance are stored in Chrome Sync storage so Chrome can synchronize them across browsers where the user is signed in and extension synchronization is enabled. They are not included in operational telemetry. CSV import reads a file selected by the user locally, and CSV export creates a local download; imported or exported keyword content is not sent to the publisher.</p>
+      <p>Custom keywords are stored in Chrome Sync storage so Chrome can synchronize them across browsers where the user is signed in and extension synchronization is enabled. They are not included in operational telemetry. CSV import reads a file selected by the user locally, and CSV export creates a local download; imported or exported keyword content is not sent to the publisher.</p>
       <p>The extension may also collect privacy-limited technical diagnostics needed to diagnose initialization, rule loading, rendering, settings, storage, and upload failures. Error strings are sanitized before storage.</p>
 
       <h2>Use, storage, and sharing</h2>

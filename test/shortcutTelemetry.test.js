@@ -36,9 +36,9 @@ function highlight(groupId, options = {}) {
   };
 }
 
-test("recognizes only trusted, non-repeating Shift+D/N/B/C keydowns", () => {
+test("recognizes only trusted, non-repeating Shift+D/N/B/C/E keydowns", () => {
   const telemetry = loadShortcutTelemetry();
-  for (const key of ["d", "D", "n", "N", "b", "B", "c", "C"]) {
+  for (const key of ["d", "D", "n", "N", "b", "B", "c", "C", "e", "E"]) {
     assert.equal(telemetry.normalizeShortcutEvent(keyEvent(key)), `Shift+${key.toUpperCase()}`);
   }
 
@@ -66,34 +66,35 @@ test("rejects extra modifiers and ignores editable fields", () => {
   }
 });
 
-test("counts rendered logical rule highlights once, including off-screen highlights", () => {
+test("counts rendered message highlights, including off-screen ones, and skips hidden ones", () => {
   const telemetry = loadShortcutTelemetry();
-  const elements = [
-    highlight("multipart-1"),
-    highlight("multipart-1"),
-    highlight("offscreen-2"),
+  const messages = [
     highlight(null),
-    highlight("hidden-layout", { hasLayout: false }),
-    highlight("hidden-display", { display: "none" }),
-    highlight("hidden-visibility", { visibility: "hidden" }),
-    highlight("hidden-opacity", { opacity: "0" })
+    highlight(null),
+    highlight(null, { hasLayout: false }),
+    highlight(null, { display: "none" }),
+    highlight(null, { visibility: "hidden" }),
+    highlight(null, { opacity: "0" })
   ];
-  const root = { querySelectorAll: (selector) => selector === ".amh-highlight" ? elements : [] };
+  const root = { querySelectorAll: (selector) => selector === ".amh-message-highlight" ? messages : [] };
   const view = { getComputedStyle: (element) => element.style };
 
-  assert.equal(telemetry.countRenderedHighlightGroups(root, { view }), 3);
+  assert.equal(telemetry.countRenderedHighlightGroups(root, { view }), 2);
   assert.equal(telemetry.countRenderedHighlightGroups({ querySelectorAll: () => [] }, { view }), 0);
 });
 
-test("counts rendered escalation highlights for shortcut telemetry", () => {
+test("counts highlighted messages and escalation notes together", () => {
   const telemetry = loadShortcutTelemetry();
-  const escalation = highlight(null);
-  const root = {
-    querySelectorAll: (selector) => selector === ".amh-escalation-highlight" ? [escalation] : []
+  const bySelector = {
+    ".amh-message-highlight": [highlight(null), highlight(null, { display: "none" })],
+    ".amh-escalation-highlight": [highlight(null), highlight(null)],
+    ".amh-highlight": [highlight(null)]
   };
+  const root = { querySelectorAll: (selector) => bySelector[selector] || [] };
   const view = { getComputedStyle: (element) => element.style };
 
-  assert.equal(telemetry.countRenderedHighlightGroups(root, { view }), 1);
+  // Legacy in-text spans are no longer rendered, so they are not counted.
+  assert.equal(telemetry.countRenderedHighlightGroups(root, { view }), 3);
 });
 
 test("content listener logs bounded metadata without intercepting host keyboard behavior", () => {

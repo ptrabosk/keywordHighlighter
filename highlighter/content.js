@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const { escapeHtml, safeClassName } = globalThis.AMH_EXTENSION_UTILS;
+  const { createOperationalLogger, loadSyncSettings } = globalThis.AMH_EXTENSION_UTILS;
   const { installDiagnostics, persistStats } = globalThis.AMH_CONTENT_DIAGNOSTICS;
 
   if (document.documentElement.dataset.amhRuntimeLoaded === 'true') return;
@@ -30,21 +30,24 @@
 
   const core = globalThis.AMH_HIGHLIGHT_CORE;
   const shortcutTelemetry = globalThis.AMH_SHORTCUT_TELEMETRY;
+  const messageContext = globalThis.AMH_MESSAGE_CONTEXT;
   const RENDER_LOG_INTERVAL_MS = 5 * 60 * 1000;
   const DEBUG_LOG_INTERVAL_MS = 10 * 1000;
   const DEBUG_MUTATION_THRESHOLD = 50;
   const ESCALATION_HIGHLIGHT_COLOR = '#2E6F68';
   const HOT_TOPIC_BRAND_LOOKBACK_LIMIT = 3;
+  const TOOLTIP_TARGET_SELECTOR = '.amh-escalation-highlight, .amh-message-highlight';
 
   const state = {
     rules: [],
-    hoverText: {},
     settings: DEFAULT_SETTINGS,
     observer: null,
     renderTimer: null,
     tooltip: null,
     targetSnapshots: new WeakMap(),
     escalationTargetSnapshots: new WeakMap(),
+    loggedHighlightBlocks: new WeakSet(),
+    loggedHighlightMessageIds: new Set(),
     stats: {
       loadedRules: 0,
       activeRules: 0,
@@ -61,38 +64,17 @@
       lastRenderStartedAt: 0,
       lastRenderDurationMs: 0,
       lastTrigger: 'startup'
-    },
-    nextMatchGroupId: 1
+    }
   };
 
-  function logOperationalEvent(event) {
-    try {
-      const loggedEvent = {
-        surface: 'content',
-        ...event
-      };
-      if (event.severity === 'error' || event.eventType === 'highlight_detected' || event.eventType === 'highlight_shortcut_pressed') {
+  const { logOperationalEvent, logOperationalFailure } = createOperationalLogger({
+    surface: 'content',
+    decorate(loggedEvent) {
+      if (loggedEvent.severity === 'error' || loggedEvent.eventType === 'highlight_detected' || loggedEvent.eventType === 'highlight_shortcut_pressed') {
         loggedEvent.pageUrl = window.location.href;
       }
-      chrome.runtime.sendMessage({
-        type: 'highlighter:logEvent',
-        event: loggedEvent
-      }).catch(() => {});
-    } catch (_error) {
-      // Logging must never affect highlighting.
     }
-  }
-
-  function logOperationalFailure(eventType, errorCode, errorMessage, metadata = {}) {
-    logOperationalEvent({
-      eventType,
-      severity: 'error',
-      result: 'failure',
-      errorCode,
-      errorMessage,
-      metadata
-    });
-  }
+  });
 
   init().catch((error) => {
     document.documentElement.dataset.amhInitError = error && error.message ? error.message : String(error);
@@ -104,9 +86,7 @@
 
   async function init() {
     state.settings = core.mergeSettings(DEFAULT_SETTINGS, await loadSettings());
-    const [rules, hoverText] = await Promise.all([loadRules(), loadHoverText()]);
-    state.rules = rules;
-    state.hoverText = hoverText;
+    state.rules = await loadRules();
     state.stats.loadedRules = state.rules.length;
     installTooltipHandlers();
     installShortcutTelemetry();
@@ -118,12 +98,8 @@
 
   async function loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(SETTINGS_KEY);
-      return result[SETTINGS_KEY] || {};
+      return await loadSyncSettings(SETTINGS_KEY, logOperationalFailure);
     } catch (error) {
-      logOperationalFailure('settings_load_failed', 'SETTINGS_LOAD_FAILED', 'Settings could not be loaded', {
-        operation: 'settingsRead'
-      });
       console.warn('[Offsight Highlighter] Could not load settings:', error);
       return {};
     }
@@ -170,19 +146,6 @@
     }, true);
   }
 
-  async function loadHoverText() {
-    const url = chrome.runtime.getURL('data/rules/rule_hover_text.json');
-    try {
-      return await loadJsonResource(url, 'Hover text');
-    } catch (error) {
-      logOperationalFailure('hover_text_load_failed', 'HOVER_TEXT_LOAD_FAILED', 'Hover text could not be loaded', {
-        operation: 'hoverTextFetch'
-      });
-      console.warn('[Offsight Highlighter] Could not load hover text:', error);
-      return {};
-    }
-  }
-
   async function loadJsonResource(url, label) {
     let response;
     try {
@@ -227,24 +190,26 @@
   }
 
   function isRelevantMutation(mutation) {
-    const extensionSelector = '.amh-extension-root, .amh-highlight, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count';
+    const extensionSelector = '.amh-extension-root, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count';
     const contentSelector = 'div[class*="type-INBOUND"], [class*="brand-message"], [data-speaker="Brand"], p[class*="variant-caption"]';
     const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
-    if (target?.closest(extensionSelector)) return false;
-    if (mutation.type === 'characterData') return Boolean(target?.closest(contentSelector));
+    if (!target || target.closest(extensionSelector)) return false;
+    const insideContent = Boolean(target.closest(contentSelector));
+    if (mutation.type === 'characterData') return insideContent;
 
     const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
-    return nodes.some((node) => {
-      if (node.nodeType === Node.TEXT_NODE) return Boolean(node.nodeValue?.trim() && target?.closest(contentSelector));
-      if (!(node instanceof Element) || node.closest(extensionSelector)) return false;
-      if (!node.textContent?.trim()) return false;
-      return Boolean(
-        target?.closest(contentSelector) ||
-        node.closest(contentSelector) ||
-        node.matches(contentSelector) ||
-        node.querySelector(contentSelector)
-      );
-    });
+    // Our own span insertions/removals swap text nodes in and out; skip them.
+    if (nodes.some((node) => node instanceof Element && node.matches(extensionSelector))) return false;
+    for (const node of nodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (insideContent && node.nodeValue?.trim()) return true;
+        continue;
+      }
+      if (!(node instanceof Element)) continue;
+      // Removed nodes are detached, so only the old parent tells us where they were.
+      if (insideContent || node.matches(contentSelector) || node.querySelector(contentSelector)) return true;
+    }
+    return false;
   }
 
   function installMessageHandlers() {
@@ -315,24 +280,22 @@
           state.stats.highlightedElements += clearAllRuleHighlights();
           state.targetSnapshots = new WeakMap();
         } else {
-          const targets = getTargetElements();
-          for (const target of targets) {
-            const snapshot = target.textContent || '';
-            const cached = state.targetSnapshots.get(target);
-            if (!forceAll && cached === snapshot) continue;
-            clearHighlightsWithin(target);
-            highlightTarget(target, activeRules);
-            state.targetSnapshots.set(target, target.textContent || '');
+          for (const [block, paragraphs] of getMessageBlocks()) {
+            const texts = paragraphs.map((paragraph) => paragraph.textContent || '');
+            const snapshot = texts.join('\n');
+            if (!forceAll && state.targetSnapshots.get(block) === snapshot) continue;
+            clearMessageBlockHighlight(block);
+            highlightMessageBlock(block, texts, activeRules);
+            state.targetSnapshots.set(block, snapshot);
             state.stats.highlightedElements += 1;
           }
         }
 
-        const escalationTargets = getEscalationBulletElements();
-        for (const target of escalationTargets) {
+        for (const target of getEscalationBulletElements()) {
           const snapshot = target.textContent || '';
           const cached = state.escalationTargetSnapshots.get(target);
           if (!forceAll && cached === snapshot) continue;
-          clearHighlightsWithin(target);
+          clearHighlightElements(target.querySelectorAll('.amh-escalation-highlight'));
           highlightEscalationTarget(target);
           state.escalationTargetSnapshots.set(target, target.textContent || '');
           state.stats.highlightedElements += 1;
@@ -407,326 +370,83 @@
   }
 
   function countVisibleHighlightsForBadge() {
-    const count = shortcutTelemetry.countRenderedHighlightGroups(document);
-    const messageHighlights = Array.from(document.querySelectorAll('.amh-message-highlight'))
-      .filter((element) => !element.querySelector('.amh-highlight'))
-      .filter((element) => shortcutTelemetry.isRenderedHighlight(element));
-    return Math.min(1000, count + messageHighlights.length);
+    return shortcutTelemetry.countRenderedHighlightGroups(document);
   }
 
-  function getTargetElements() {
-    let selector = state.settings.selector || DEFAULT_SETTINGS.selector;
-    let nodes = [];
+  // Groups the configured inbound paragraphs by their message block so a
+  // message with several <p> elements is classified once, as a whole.
+  function getMessageBlocks() {
+    const selector = state.settings.selector || DEFAULT_SETTINGS.selector;
+    let nodes;
     try {
-      nodes = Array.from(document.querySelectorAll(selector));
+      nodes = document.querySelectorAll(selector);
     } catch (error) {
       console.warn('[Offsight Highlighter] Invalid selector, using default:', selector, error);
-      nodes = Array.from(document.querySelectorAll(DEFAULT_SETTINGS.selector));
+      nodes = document.querySelectorAll(DEFAULT_SETTINGS.selector);
     }
-    const brandNodes = Array.from(document.querySelectorAll(getBrandMessageSelector()))
-      .filter((node) => node instanceof HTMLElement && isHotTopicBrandPrompt(node.textContent || ''));
-    return uniqueElements([...nodes, ...brandNodes]).filter((node) => {
-      if (!(node instanceof HTMLElement) || node.closest('.amh-tooltip') || !isVisible(node)) return false;
-      return node.closest('div[class*="type-INBOUND"]') || isHotTopicBrandElement(node);
-    });
-  }
-
-  function uniqueElements(nodes) {
-    return Array.from(new Set(nodes));
+    const blocks = new Map();
+    for (const node of nodes) {
+      if (!(node instanceof HTMLElement)) continue;
+      const block = node.closest('div[class*="type-INBOUND"]');
+      if (!block) continue;
+      const paragraphs = blocks.get(block) || [];
+      paragraphs.push(node);
+      blocks.set(block, paragraphs);
+    }
+    return blocks;
   }
 
   function getEscalationBulletElements() {
     const selector = 'div[class*="type-INBOUND"] p[class*="variant-caption"], [class*="brand-message"] p[class*="variant-caption"], [data-speaker="Brand"] p[class*="variant-caption"]';
     return Array.from(document.querySelectorAll(selector)).filter((node) => {
-      return node instanceof HTMLElement && isVisible(node) && /\u2022/.test(node.textContent || '');
+      return node instanceof HTMLElement && /\u2022/.test(node.textContent || '');
     });
   }
 
-  function isVisible(element) {
-    const rect = element.getBoundingClientRect();
-    const style = window.getComputedStyle(element);
-    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+  function highlightMessageBlock(block, texts, activeRules) {
+    const winningRule = core.classifyMessage(texts, activeRules, state.settings, {
+      rules: state.rules,
+      getRecentBrandTexts: () => messageContext.getRecentBrandMessageTexts(block, HOT_TOPIC_BRAND_LOOKBACK_LIMIT)
+    });
+    if (!winningRule) return;
+    block.classList.add('amh-message-highlight');
+    applyInsetHighlightStyle(block, winningRule);
+    applyTooltipData(block, winningRule);
+    state.stats.highlights += 1;
+    logHighlightOnce(block);
   }
 
-  function highlightTarget(element, activeRules) {
-    const segments = collectTextNodeSegments(element);
-    const text = segments.map((segment) => segment.text).join('');
-    if (!text.trim()) return;
-
-    const matches = mergeContextualMatches([
-      ...collectContextualMessageMatches(element, text),
-      ...core.collectMatches(text, activeRules, state.settings)
-    ]);
-    if (!matches.length) return;
-
-    const winningMatch = matches[0];
-    applyMessageBlockHighlight(element, winningMatch.rule, text);
-    const matchesByNode = mapMatchesToTextNodeSegments(segments, matches, text);
-    for (const [node, nodeMatches] of matchesByNode) {
-      wrapTextNodeMatches(node, nodeMatches);
+  function logHighlightOnce(block) {
+    const messageId = block.closest('[data-message-id]')?.dataset.messageId;
+    if (messageId) {
+      if (state.loggedHighlightMessageIds.has(messageId)) return;
+      state.loggedHighlightMessageIds.add(messageId);
+    } else {
+      if (state.loggedHighlightBlocks.has(block)) return;
+      state.loggedHighlightBlocks.add(block);
     }
-    state.stats.highlights += 1;
     logOperationalEvent({ eventType: 'highlight_detected', severity: 'info', result: 'success', metadata: {
       operation: 'message_highlight',
-      highlightCount: 1,
-      ruleCount: state.rules.length,
-      matchedCount: state.stats.highlights
+      ruleCount: state.rules.length
     } });
   }
 
-  function applyMessageBlockHighlight(element, rule, messageText) {
-    const messageBlock = element.closest('div[class*="type-INBOUND"]') || element;
-    messageBlock.classList.add('amh-message-highlight');
-    applyInsetHighlightStyle(messageBlock, rule);
-    applyTooltipData(messageBlock, rule, messageText);
-  }
-
-  function collectContextualMessageMatches(element, text) {
-    const hotTopicPromptRule = getHotTopicPromptRule(element);
-    if (hotTopicPromptRule) {
-      return [{
-        start: 0,
-        end: text.length,
-        length: text.length,
-        rule: hotTopicPromptRule
-      }];
-    }
-
-    const hotTopicRule = getHotTopicContextualRule(element, text);
-    if (!hotTopicRule) return [];
-    return [{
-      start: 0,
-      end: text.length,
-      length: text.length,
-      rule: hotTopicRule
-    }];
-  }
-
-  function getHotTopicContextualRule(element, text) {
-    if (!element.closest('div[class*="type-INBOUND"]')) return null;
-    const brandTexts = getRecentBrandMessageTexts(element, HOT_TOPIC_BRAND_LOOKBACK_LIMIT);
-    if (!brandTexts.some(isHotTopicBrandPrompt)) return null;
-
-    const normalizedReply = core.normalizeMessageBody(text);
-    const isOptOut = /\b(?:4|four|never)\b/i.test(normalizedReply);
-    const isPositiveChoice = /\b(?:1|one|same|2|two|weekly|3|three|monthly)\b/i.test(normalizedReply);
-    if (!isOptOut && !isPositiveChoice) return null;
-    const detector = isOptOut ? 'hot_topic_opt_out' : 'hot_topic_not_opt_out';
-    const rule = state.rules.find((item) => item.detector === detector) || createHotTopicFallbackRule(isOptOut);
-    if (!rule || !isRuleCategoryEnabled(rule)) return null;
-    return rule;
-  }
-
-  function getHotTopicPromptRule(element) {
-    if (!isHotTopicBrandElement(element)) return null;
-    const rule = state.rules.find((item) => item.detector === 'hot_topic_not_opt_out') || createHotTopicFallbackRule(false);
-    if (!rule || !isRuleCategoryEnabled(rule)) return null;
-    return rule;
-  }
-
-  function isHotTopicBrandElement(element) {
-    return element instanceof HTMLElement && Boolean(element.closest('[class*="brand-message"], [data-speaker="Brand"]')) && isHotTopicBrandPrompt(element.textContent || '');
-  }
-
-  function getBrandMessageSelector() {
-    return '.brand-message__text, [class*="brand-message"] p[class*="variant-caption"], [data-speaker="Brand"] p[class*="variant-caption"]';
-  }
-
-  function getRecentBrandMessageTexts(element, limit) {
-    const brandSelector = getBrandMessageSelector();
-    const scopedContainers = [
-      element.closest('article, [class*="message-card"]'),
-      element.closest('[data-message-id]')?.parentElement,
-      element.closest('[class*="messages"]')
-    ].filter(Boolean);
-
-    for (const container of scopedContainers) {
-      const candidates = getBrandMessagesBefore(container, brandSelector, element);
-      if (candidates.length) return candidates.slice(-limit).map((brand) => brand.textContent || '');
-    }
-
-    let ancestor = element.parentElement;
-    for (let depth = 0; ancestor && depth < 6; depth += 1, ancestor = ancestor.parentElement) {
-      const candidates = getBrandMessagesBefore(ancestor, brandSelector, element);
-      if (candidates.length) return candidates.slice(-limit).map((brand) => brand.textContent || '');
-    }
-
-    return [];
-  }
-
-  function getBrandMessagesBefore(container, selector, element) {
-    return Array.from(container.querySelectorAll?.(selector) || [])
-      .filter((node) => {
-        if (!(node instanceof HTMLElement) || node === element || !node.textContent) return false;
-        return Boolean(node.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING);
-      });
-  }
-
-  function isHotTopicBrandPrompt(text) {
-    const normalized = core.normalizeMessageBody(text);
-    return normalized.startsWith('hot topic') &&
-      /\b1\s+same\b/.test(normalized) &&
-      /\b2\s+weekly\b/.test(normalized) &&
-      /\b3\s+monthly\b/.test(normalized) &&
-      /\b4\s+never\b/.test(normalized);
-  }
-
-  function createHotTopicFallbackRule(isOptOut) {
-    const action = isOptOut ? 'opt_out' : 'close';
-    return {
-      id: isOptOut ? 'contextual_hot_topic_opt_out' : 'contextual_hot_topic_not_opt_out',
-      name: isOptOut ? 'opt_outs_ml.hot_topic_opt_out' : 'opt_outs_ml.hot_topic_not_opt_out',
-      tag: action,
-      action,
-      pattern: isOptOut ? 'Hot Topic customer reply contains 4, four, or never.' : 'Hot Topic customer reply does not contain 4, four, or never.',
-      conditionSummary: isOptOut
-        ? 'Brand message is a Hot Topic frequency prompt and the customer reply contains 4, four, or never.'
-        : 'Brand message is a Hot Topic frequency prompt and the customer reply does not contain 4, four, or never.'
-    };
-  }
-
-  function isRuleCategoryEnabled(rule) {
-    const category = state.settings.categories[rule.tag];
-    return category && category.enabled !== false;
-  }
-
-  function mergeContextualMatches(matches) {
-    const candidates = matches
-      .filter((match) => match && match.start < match.end)
-      .sort((a, b) => {
-        if (a.start !== b.start) return a.start - b.start;
-        if (b.length !== a.length) return b.length - a.length;
-        return (state.settings.categories[a.rule.tag]?.priority ?? 999) - (state.settings.categories[b.rule.tag]?.priority ?? 999);
-      });
-    const accepted = [];
-    for (const candidate of candidates) {
-      if (!accepted.some((existing) => candidate.start < existing.end && candidate.end > existing.start)) {
-        accepted.push(candidate);
-      }
-    }
-    return accepted.sort((a, b) => a.start - b.start);
-  }
-
-  function collectTextNodeSegments(element) {
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        if (!node.nodeValue) return NodeFilter.FILTER_REJECT;
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        if (parent.closest('.amh-highlight, .amh-escalation-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-    const segments = [];
-    let offset = 0;
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const text = node.nodeValue || '';
-      segments.push({
-        node,
-        text,
-        start: offset,
-        end: offset + text.length
-      });
-      offset += text.length;
-    }
-    return segments;
-  }
-
-  function mapMatchesToTextNodeSegments(segments, matches, fullText) {
-    const byNode = new Map();
-    matches.forEach((match, matchIndex) => {
-      const intersectingSegments = segments.filter((segment) => !(match.start >= segment.end || match.end <= segment.start));
-      const matchGroupId = String(state.nextMatchGroupId++);
-      intersectingSegments.forEach((segment, partIndex) => {
-        const nodeStart = Math.max(match.start, segment.start) - segment.start;
-        const nodeEnd = Math.min(match.end, segment.end) - segment.start;
-        const nodeMatches = byNode.get(segment.node) || [];
-        nodeMatches.push({
-          start: nodeStart,
-          end: nodeEnd,
-          rule: match.rule,
-          matchedText: fullText.slice(match.start, match.end),
-          matchId: matchIndex,
-          matchGroupId,
-          isMultiPart: intersectingSegments.length > 1,
-          isFirstPart: partIndex === 0,
-          isLastPart: partIndex === intersectingSegments.length - 1
-        });
-        byNode.set(segment.node, nodeMatches);
-      });
-    });
-    return byNode;
-  }
-
-  function wrapTextNodeMatches(node, matches) {
-    const text = node.nodeValue || '';
-    const orderedMatches = matches
-      .filter((match) => match.start < match.end)
-      .sort((a, b) => a.start - b.start || b.end - a.end);
-    if (!orderedMatches.length) return;
-
-    const fragment = document.createDocumentFragment();
-    let cursor = 0;
-    for (const match of orderedMatches) {
-      if (match.start < cursor) continue;
-      if (match.start > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, match.start)));
-      const span = document.createElement('span');
-      span.className = getHighlightClassName(match);
-      span.textContent = text.slice(match.start, match.end);
-      applyHighlightStyle(span, match.rule);
-      applyTooltipData(span, match.rule, match.matchedText);
-      applyHighlightPartData(span, match);
-      fragment.appendChild(span);
-      cursor = match.end;
-    }
-    if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
-    node.parentNode.replaceChild(fragment, node);
-  }
-
-  function getHighlightClassName(match) {
-    const classes = ['amh-highlight', `amh-highlight--${safeClassName(match.rule.tag)}`];
-    if (match.isMultiPart) {
-      classes.push('amh-highlight--multipart');
-      if (match.isFirstPart) classes.push('amh-highlight--match-start');
-      if (!match.isFirstPart && !match.isLastPart) classes.push('amh-highlight--match-middle');
-      if (match.isLastPart) classes.push('amh-highlight--match-end');
-    }
-    return classes.join(' ');
-  }
-
-  function applyHighlightPartData(span, match) {
-    span.dataset.amhMatchGroupId = match.matchGroupId;
-    if (!match.isMultiPart) return;
-    span.dataset.amhMatchId = String(match.matchId);
-    span.dataset.amhMatchPart = match.isFirstPart ? 'start' : match.isLastPart ? 'end' : 'middle';
-  }
-
-  function clearHighlightsWithin(root) {
-    clearMessageBlockHighlights(root);
-    return clearHighlightElements(root.querySelectorAll('.amh-highlight, .amh-escalation-highlight'));
-  }
-
   function clearAllHighlights() {
-    clearMessageBlockHighlights(document);
-    return clearHighlightElements(document.querySelectorAll('.amh-highlight, .amh-escalation-highlight'));
+    return clearAllRuleHighlights() + clearHighlightElements(document.querySelectorAll('.amh-escalation-highlight'));
   }
 
   function clearAllRuleHighlights() {
-    clearMessageBlockHighlights(document);
-    return clearHighlightElements(document.querySelectorAll('.amh-highlight'));
+    const blocks = document.querySelectorAll('.amh-message-highlight');
+    for (const element of blocks) clearMessageBlockHighlight(element);
+    return blocks.length;
   }
 
-  function clearMessageBlockHighlights(root) {
-    for (const element of root.querySelectorAll('.amh-message-highlight')) {
-      element.classList.remove('amh-message-highlight', 'amh-highlight--hover');
-      element.style.removeProperty('--amh-highlight-background');
-      element.style.removeProperty('--amh-highlight-border');
-      for (const attribute of ['amhRuleName', 'amhRuleTag', 'amhRuleLabel', 'amhTooltipTitle', 'amhTooltipText', 'amhTooltipName', 'amhMatchedText']) {
-        element.removeAttribute(`data-${attribute}`);
-      }
+  function clearMessageBlockHighlight(element) {
+    element.classList.remove('amh-message-highlight', 'amh-highlight--hover');
+    element.style.removeProperty('--amh-highlight-background');
+    element.style.removeProperty('--amh-highlight-border');
+    for (const key of ['amhRuleTag', 'amhTooltipTitle']) {
+      delete element.dataset[key];
     }
   }
 
@@ -747,7 +467,7 @@
         if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
         const parent = node.parentElement;
         if (!parent) return NodeFilter.FILTER_REJECT;
-        if (parent.closest('.amh-highlight, .amh-escalation-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
+        if (parent.closest('.amh-escalation-highlight, .amh-tooltip, script, style, textarea, input, [contenteditable="true"]')) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;
@@ -772,25 +492,14 @@
       span.className = 'amh-escalation-highlight';
       span.textContent = text.slice(match.start, match.end);
       applyEscalationHighlightStyle(span);
-    span.dataset.amhRuleName = match.rule.name;
-    span.dataset.amhRuleTag = match.rule.tag;
-    span.dataset.amhRuleLabel = match.rule.label;
-    span.dataset.amhTooltipTitle = match.rule.label;
-    span.dataset.amhTooltipText = match.rule.label;
-    fragment.appendChild(span);
+      span.dataset.amhRuleTag = match.rule.tag;
+      span.dataset.amhTooltipTitle = match.rule.label;
+      fragment.appendChild(span);
       cursor = match.end;
     }
     if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
     node.parentNode.replaceChild(fragment, node);
     return matches.length;
-  }
-
-  function applyHighlightStyle(span, rule) {
-    const category = state.settings.categories[rule.tag] || {};
-    const color = category.color || '#a855f7';
-    const opacity = clamp(Number(state.settings.opacity), 0.08, 0.85);
-    span.style.backgroundColor = hexToRgba(color, opacity);
-    span.style.boxShadow = `0 0 0 1px ${hexToRgba(color, Math.min(opacity + 0.18, 0.9))}`;
   }
 
   function applyInsetHighlightStyle(element, rule) {
@@ -808,44 +517,19 @@
     span.style.textShadow = '0 1px 1px rgba(0, 0, 0, 0.35)';
   }
 
-  function applyTooltipData(span, rule, matchedText) {
+  // Tooltips show only the category label of the winning rule.
+  function applyTooltipData(element, rule) {
     const category = state.settings.categories[rule.tag] || {};
-    const label = category.label || rule.tag;
-    const hoverText = getRuleHoverText(rule);
-    span.dataset.amhRuleName = rule.name;
-    span.dataset.amhRuleTag = rule.tag;
-    span.dataset.amhRuleLabel = label;
-    span.dataset.amhTooltipTitle = hoverText.title || label;
-    span.dataset.amhTooltipText = hoverText.text || 'Review the highlighted message and choose the appropriate response.';
-    span.dataset.amhTooltipName = hoverText.name || rule.name || rule.pattern;
-    span.dataset.amhMatchedText = matchedText;
-    span.removeAttribute('title');
-  }
-
-  function getRuleHoverText(rule) {
-    if (rule.tag === 'user_added') {
-      return {
-        title: 'user_added',
-        text: rule.conditionSummary || state.hoverText.defaults?.user_added?.text || 'Review this user-added highlighted pattern.',
-        name: rule.pattern || rule.name || 'user_added'
-      };
-    }
-
-    const configured = state.hoverText.by_rule_id?.[rule.id] || state.hoverText.by_rule_name?.[rule.name];
-    if (configured) return configured;
-
-    return {
-      title: rule.action || rule.tag,
-      text: rule.conditionSummary || rule.pattern || 'Review the highlighted message and choose the appropriate response.',
-      name: rule.name || rule.pattern || rule.id
-    };
+    element.dataset.amhRuleTag = rule.tag;
+    element.dataset.amhTooltipTitle = category.label || rule.tag;
+    element.removeAttribute('title');
   }
 
   function installTooltipHandlers() {
     document.addEventListener('mouseover', (event) => {
-      const target = event.target instanceof Element ? event.target.closest('.amh-highlight, .amh-message-highlight') : null;
+      const target = getTooltipTarget(event.target);
       if (!target || !state.settings.showTooltip) return;
-      setHighlightGroupHover(target, true);
+      target.classList.add('amh-highlight--hover');
       showTooltip(target, event);
     }, true);
     document.addEventListener('mousemove', (event) => {
@@ -853,30 +537,17 @@
       positionTooltip(event);
     }, true);
     document.addEventListener('mouseout', (event) => {
-      const target = event.target instanceof Element ? event.target.closest('.amh-highlight, .amh-message-highlight') : null;
-      if (!target) return;
-      const related = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.amh-highlight, .amh-message-highlight') : null;
-      if (related && getHighlightGroupId(related) === getHighlightGroupId(target)) return;
-      setHighlightGroupHover(target, false);
+      const target = getTooltipTarget(event.target);
+      if (!target || getTooltipTarget(event.relatedTarget) === target) return;
+      target.classList.remove('amh-highlight--hover');
       hideTooltip();
     }, true);
   }
 
-  function getHighlightGroupId(target) {
-    return target?.dataset?.amhMatchGroupId || '';
-  }
-
-  function getHighlightGroupParts(target) {
-    const groupId = getHighlightGroupId(target);
-    if (!groupId) return [target];
-    const escapedGroupId = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(groupId) : groupId.replace(/"/g, '\\"');
-    return Array.from(document.querySelectorAll(`.amh-highlight[data-amh-match-group-id="${escapedGroupId}"]`));
-  }
-
-  function setHighlightGroupHover(target, isHovered) {
-    for (const part of getHighlightGroupParts(target)) {
-      part.classList.toggle('amh-highlight--hover', isHovered);
-    }
+  // The innermost highlight wins, so an escalation note inside a highlighted
+  // message shows its own label.
+  function getTooltipTarget(node) {
+    return node instanceof Element ? node.closest(TOOLTIP_TARGET_SELECTOR) : null;
   }
 
   function ensureTooltip() {
@@ -890,10 +561,10 @@
   }
 
   function showTooltip(target, event) {
-    const html = renderTooltipHtml(target);
-    if (!html) return;
+    const title = target.dataset.amhTooltipTitle || target.dataset.amhRuleTag || '';
+    if (!title) return;
     const tooltip = ensureTooltip();
-    tooltip.innerHTML = html;
+    tooltip.textContent = title;
     tooltip.dataset.visible = 'true';
     positionTooltip(event);
   }
@@ -901,26 +572,6 @@
   function hideTooltip() {
     if (!state.tooltip) return;
     state.tooltip.dataset.visible = 'false';
-  }
-
-  function renderTooltipHtml(target) {
-    const title = target.dataset.amhTooltipTitle || target.dataset.amhRuleLabel || target.dataset.amhRuleTag || '';
-    const text = target.dataset.amhTooltipText || '';
-    const name = target.dataset.amhTooltipName || target.dataset.amhRuleName || '';
-    if (!title && !text) return '';
-
-    return [
-      '<div class="amh-tooltip__top">',
-      `<span class="amh-tooltip__rule">${escapeHtml(name || title)}</span>`,
-      `<span class="amh-tooltip__tag">${escapeHtml(title)}</span>`,
-      '</div>',
-      text
-        ? '<div class="amh-tooltip__row amh-tooltip__row--stacked">' +
-          '<span class="amh-tooltip__label">Guidance</span>' +
-          `<span class="amh-tooltip__value">${escapeHtml(text)}</span>` +
-          '</div>'
-        : ''
-    ].join('');
   }
 
   function positionTooltip(event) {

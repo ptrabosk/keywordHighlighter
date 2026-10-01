@@ -18,7 +18,7 @@ import {
 } from "./types.js";
 
 const SAFE_ID_PATTERN = /^[a-zA-Z0-9._:-]+$/;
-const HIGHLIGHT_SHORTCUTS = new Set(["Shift+D", "Shift+N", "Shift+B", "Shift+C"]);
+const HIGHLIGHT_SHORTCUTS = new Set(["Shift+D", "Shift+N", "Shift+B", "Shift+C", "Shift+E"]);
 const PAGE_URL_EVENT_TYPES = new Set(["highlight_detected", "highlight_shortcut_pressed"]);
 const MAX_PAGE_URL_LENGTH = 2_048;
 const DROPPED_EVENT_TYPES = new Set([

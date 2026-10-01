@@ -1,13 +1,13 @@
 const KW_EVENTS_SHEET_NAME = "Events_keywordHighlighter";
 const KW_BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
 const KW_INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
-const KW_RECEIVER_VERSION = "1.5.0";
+const KW_RECEIVER_VERSION = "1.6.0";
 const KW_DAILY_QUOTA_PROPERTY = "KEYWORD_HIGHLIGHTER_DAILY_QUOTA";
 const KW_DAILY_EVENT_LIMIT = 25000;
 const KW_DAILY_SHORTCUT_LIMIT = 10000;
 const KW_RETENTION_DAYS = 90;
 const KW_SHORTCUT_EVENT_TYPE = "highlight_shortcut_pressed";
-const KW_SHORTCUTS = ["Shift+D", "Shift+N", "Shift+B", "Shift+C"];
+const KW_SHORTCUTS = ["Shift+D", "Shift+N", "Shift+B", "Shift+C", "Shift+E"];
 
 const KW_EVENTS_HEADERS = [
   "Received At",

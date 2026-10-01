@@ -33,7 +33,7 @@ The script creates these tabs if missing:
 
 `Received At`, `Event Timestamp`, `Event ID`, `Session ID`, `Event Type`, `Severity`, `Result`, `Surface`, `Page URL`, `Rule Source`, `Duration Ms`, `Extension Version`, `Error Code`, `Error Message`, `Metadata JSON`, `Batch ID`.
 
-Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. Highlight detections, supported shortcut presses, and content-script errors may include the current URL on `https://ui.attentivemobile.com/concierge/*`. The schema has no profile-email, message-text, or matched-text field; unknown fields are rejected. The extension sanitizes bounded error and metadata strings before upload.
+Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. Shortcut events must name one of `Shift+D`, `Shift+N`, `Shift+B`, `Shift+C`, or `Shift+E` with a highlight count from 1 to 1000. `Shift+E` requires receiver version 1.6.0, so redeploy `Code.gs` before shipping an extension build that sends it. Highlight detections, supported shortcut presses, and content-script errors may include the current URL on `https://ui.attentivemobile.com/concierge/*`. The schema has no profile-email, message-text, or matched-text field; unknown fields are rejected. The extension sanitizes bounded error and metadata strings before upload.
 
 `Event_ID_Index_keywordHighlighter` is used for deduplication so retrying the same batch does not duplicate rows. It stores event ID reservation and write status under a script lock so interrupted uploads can be retried safely.
 

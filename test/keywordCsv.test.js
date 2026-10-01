@@ -14,39 +14,43 @@ function loadKeywordCsv() {
   return context.globalThis.AMH_KEYWORD_CSV;
 }
 
-test("keyword CSV export writes required headers and escapes spreadsheet text", () => {
+test("keyword CSV export writes the keyword header and escapes spreadsheet text", () => {
   const csv = loadKeywordCsv();
   const output = csv.serializeKeywordCsv([
-    { keyword: "STOP", hoverText: "Standard guidance" },
-    { keyword: "hello, world", hoverText: "Say \"hello\"\nthen stop" }
+    { keyword: "STOP" },
+    { keyword: "hello, world" },
+    { keyword: 'say "hi"' }
   ]);
 
-  assert.equal(
-    output,
-    'keyword,hover text\r\nSTOP,Standard guidance\r\n"hello, world","Say ""hello""\nthen stop"\r\n'
-  );
+  assert.equal(output, 'keyword\r\nSTOP\r\n"hello, world"\r\n"say ""hi"""\r\n');
 });
 
-test("keyword CSV import handles BOM, CRLF, commas, quotes, and multiline values", () => {
+test("keyword CSV import handles BOM, CRLF, commas, and quotes", () => {
   const csv = loadKeywordCsv();
-  const entries = csv.parseKeywordCsv(
-    '\uFEFFkeyword,hover text\r\nSTOP,Standard guidance\r\n"hello, world","Say ""hello""\r\nthen stop"\r\n'
-  );
+  const entries = csv.parseKeywordCsv('\uFEFFkeyword\r\nSTOP\r\n"hello, world"\r\n"say ""hi"""\r\n');
 
   assert.deepEqual(
     Array.from(entries, (entry) => ({ ...entry })),
-    [
-      { keyword: "STOP", hoverText: "Standard guidance" },
-      { keyword: "hello, world", hoverText: 'Say "hello"\r\nthen stop' }
-    ]
+    [{ keyword: "STOP" }, { keyword: "hello, world" }, { keyword: 'say "hi"' }]
   );
 });
 
-test("keyword CSV import requires exact row-one headers and at most two columns", () => {
+test("keyword CSV import still reads older two-column backups and ignores hover text", () => {
+  const csv = loadKeywordCsv();
+  const entries = csv.parseKeywordCsv('keyword,hover text\r\nSTOP,Standard guidance\r\n"hello, world","Say ""hello""\r\nthen stop"\r\n');
+
+  assert.deepEqual(
+    Array.from(entries, (entry) => ({ ...entry })),
+    [{ keyword: "STOP" }, { keyword: "hello, world" }]
+  );
+});
+
+test("keyword CSV import requires an exact row-one header and matching column count", () => {
   const csv = loadKeywordCsv();
 
-  assert.throws(() => csv.parseKeywordCsv("Keyword,Hover Text\nSTOP,Guidance"), /Row 1/);
+  assert.throws(() => csv.parseKeywordCsv("Keyword\nSTOP"), /Row 1/);
   assert.throws(() => csv.parseKeywordCsv("keyword,hover text,extra\nSTOP,Guidance,nope"), /Row 1/);
+  assert.throws(() => csv.parseKeywordCsv("keyword\nSTOP,extra"), /one column/);
   assert.throws(() => csv.parseKeywordCsv("keyword,hover text\nSTOP,Guidance,nope"), /two columns/);
-  assert.throws(() => csv.parseKeywordCsv('keyword,hover text\n"STOP,Guidance'), /Unterminated/);
+  assert.throws(() => csv.parseKeywordCsv('keyword\n"STOP'), /Unterminated/);
 });

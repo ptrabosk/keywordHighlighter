@@ -65,7 +65,7 @@ h1 { margin: 0; font-size: 28px; line-height: 1.05; letter-spacing: -0.04em; }
 
 .keyword-form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: end;
   margin-top: 22px;
@@ -77,31 +77,10 @@ h1 { margin: 0; font-size: 28px; line-height: 1.05; letter-spacing: -0.04em; }
 .empty { padding: 14px; }
 .actions { min-height: 0; margin-top: 0; }
 
-button {
-  border: 1px solid transparent;
-  border-radius: 9px;
-  padding: 9px 12px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
-}
-
-button:hover { transform: translateY(-1px); }
-button:focus-visible, input:focus-visible { outline: 3px solid rgba(255, 203, 153, 0.65); outline-offset: 2px; }
-button:disabled { cursor: not-allowed; opacity: 0.5; transform: none; }
+button { padding: 9px 12px; }
 .keyword .secondary { padding: 4px 8px; }
 
 .primary {
   grid-column: 1 / -1;
   width: 100%;
-  background: var(--accent);
-  color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
-
-.primary:hover { background: var(--accent-strong); }
-.secondary { border-color: var(--accent); color: var(--text); background: var(--accent-wash); }
-.secondary:hover { border-color: var(--accent); background: var(--accent-wash); }
-#status { color: var(--muted); }

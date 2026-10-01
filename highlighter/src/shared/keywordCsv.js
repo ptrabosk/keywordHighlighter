@@ -1,7 +1,9 @@
 (function installKeywordCsv(globalScope) {
   'use strict';
 
-  const HEADERS = Object.freeze(['keyword', 'hover text']);
+  const HEADERS = Object.freeze(['keyword']);
+  // Backups exported before hover text was removed; the second column is ignored.
+  const LEGACY_HEADERS = Object.freeze(['keyword', 'hover text']);
 
   function parseRows(input) {
     const text = String(input || '').replace(/^\uFEFF/, '');
@@ -61,16 +63,21 @@
   function parseKeywordCsv(input) {
     const rows = parseRows(input);
     const header = rows.shift();
-    if (!header || header.length !== HEADERS.length || header.some((value, index) => value !== HEADERS[index])) {
-      throw new Error('Row 1 must contain the headers keyword and hover text');
-    }
+    const columns = [HEADERS, LEGACY_HEADERS].find((expected) => headerMatches(header, expected));
+    if (!columns) throw new Error('Row 1 must contain the header keyword');
 
     return rows
       .filter((values) => values.some((value) => value !== ''))
       .map((values) => {
-        if (values.length > HEADERS.length) throw new Error('CSV rows may contain only two columns');
-        return { keyword: values[0] || '', hoverText: values[1] || '' };
+        if (values.length > columns.length) {
+          throw new Error(`CSV rows may contain only ${columns.length === 1 ? 'one column' : 'two columns'}`);
+        }
+        return { keyword: values[0] || '' };
       });
+  }
+
+  function headerMatches(header, expected) {
+    return Boolean(header) && header.length === expected.length && header.every((value, index) => value === expected[index]);
   }
 
   function escapeField(value) {
@@ -81,7 +88,7 @@
   function serializeKeywordCsv(entries = []) {
     const rows = [
       HEADERS,
-      ...entries.map((entry) => [entry?.keyword || '', entry?.hoverText || ''])
+      ...entries.map((entry) => [entry?.keyword || ''])
     ];
     return `${rows.map((values) => values.map(escapeField).join(',')).join('\r\n')}\r\n`;
   }

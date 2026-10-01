@@ -3,12 +3,13 @@
 
   const normalizeRegexPatternForSearch = globalScope.AMH_REGEX_NORMALIZATION.normalizeRegexPatternForSearch;
 
+  const MIN_CUSTOM_KEYWORD_LENGTH = 3;
   const MAX_CUSTOM_KEYWORD_LENGTH = 128;
-  const MAX_CUSTOM_KEYWORD_TEXT_LENGTH = 256;
+  const MAX_CUSTOM_KEYWORDS = 40;
   const EXPECTED_SCHEMA_VERSION = 2;
   const EXPECTED_REGISTRY_NAME = 'unified_deterministic_opt_out_rules';
-  const EXPECTED_RULE_COUNT = 220;
-  const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'no_action', 'txt', 'tmt', 'close']);
+  const EXPECTED_RULE_COUNT = 211;
+  const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'txt', 'tmt', 'close']);
   const TARGETS = new Set(['raw_customer', 'normalized_customer', 'combined']);
   const MATCH_TYPES = new Set(['regex_search', 'full_match', 'bounded_phrase', 'exact', 'exact_set', 'detector']);
   const DETECTOR_NAMES = new Set([
@@ -62,10 +63,6 @@
 
     const ids = new Set();
     payload.rules.forEach((rule, index) => validateRuleDefinition(rule, index, ids));
-    for (let index = 1; index <= EXPECTED_RULE_COUNT; index += 1) {
-      const expectedId = `R${String(index).padStart(4, '0')}`;
-      if (!ids.has(expectedId)) throw new Error(`Rule registry is missing ${expectedId}.`);
-    }
     return payload;
   }
 
@@ -177,11 +174,13 @@
     const merged = { ...base, ...override, categories: {} };
     const categoryKeys = Object.keys(base.categories || {});
     for (const key of categoryKeys) {
-      const categoryOverride = override?.categories?.[key] || {};
+      // Categories cannot be switched off; ignore any stored `enabled` flag.
+      const { enabled: _ignoredEnabled, ...categoryOverride } = override?.categories?.[key] || {};
       merged.categories[key] = {
         ...(base.categories && base.categories[key] ? base.categories[key] : {}),
         ...categoryOverride,
-        label: base.categories[key].label
+        label: base.categories[key].label,
+        priority: base.categories[key].priority
       };
       if (key === 'txt' && String(categoryOverride.color || '').toUpperCase() === '#F6DA71') {
         merged.categories[key].color = base.categories[key].color;
@@ -192,19 +191,16 @@
     }
     merged.opacity = clamp(Number(merged.opacity ?? base.opacity), 0.08, 0.85);
     merged.selector = String(merged.selector || base.selector);
-    merged.customKeywords = Array.isArray(override?.customKeywords)
+    merged.customKeywords = (Array.isArray(override?.customKeywords)
       ? Array.from(new Set(override.customKeywords.map(normalizeKeyword).filter(Boolean)))
-      : [...(base.customKeywords || [])];
-    merged.customKeywordTextByPattern = normalizeCustomKeywordTextMap(
-      override?.customKeywords,
-      override?.customKeywordTextByPattern || base.customKeywordTextByPattern || {}
-    );
+      : [...(base.customKeywords || [])]).slice(0, MAX_CUSTOM_KEYWORDS);
+    // Hover text was removed; drop any value left in older stored settings.
+    delete merged.customKeywordTextByPattern;
     return merged;
   }
 
   function getCustomKeywordRules(settings) {
-    const category = settings.categories.user_added;
-    if (!category || category.enabled === false) return [];
+    if (!settings.categories.user_added) return [];
     return (settings.customKeywords || []).map((keyword, index) => ({
       id: `user_added:${index}`,
       name: keyword,
@@ -215,7 +211,7 @@
       matchType: 'regex_search',
       pattern: escapeRegex(keyword),
       patterns: [keyword],
-      conditionSummary: settings.customKeywordTextByPattern?.[keyword] || '',
+      conditionSummary: '',
       source: 'popup custom keyword',
       regexes: [new RegExp(escapeRegex(keyword), 'gi')],
       exactPatterns: null,
@@ -225,13 +221,15 @@
 
   function getActiveRules(rules, settings) {
     const configuredRules = rules
-      .filter((rule) => {
-        if (rule.tag === 'no_action') return false;
-        const category = settings.categories[rule.tag];
-        return rule.executable && category && category.enabled !== false;
-      })
-      .sort((a, b) => (settings.categories[a.tag]?.priority ?? 999) - (settings.categories[b.tag]?.priority ?? 999));
+      .filter((rule) => rule.executable && settings.categories[rule.tag])
+      .sort((a, b) => getRulePriority(a, settings) - getRulePriority(b, settings));
     return [...getCustomKeywordRules(settings), ...configuredRules];
+  }
+
+  function getRulePriority(rule, settings) {
+    if (rule.detector === 'reaction_reply' || rule.detector === 'emoji_only_non_stop') return 0;
+    if (rule.detector === 'hot_topic_opt_out' || rule.detector === 'hot_topic_not_opt_out') return 1;
+    return settings.categories[rule.tag]?.priority ?? 999;
   }
 
   const escalationBulletRules = Object.freeze([
@@ -339,9 +337,11 @@
     }
 
     candidates.sort((a, b) => {
+      const priorityDifference = getRulePriority(a.rule, settings) - getRulePriority(b.rule, settings);
+      if (priorityDifference !== 0) return priorityDifference;
       if (a.start !== b.start) return a.start - b.start;
       if (b.length !== a.length) return b.length - a.length;
-      return (settings.categories[a.rule.tag]?.priority ?? 999) - (settings.categories[b.rule.tag]?.priority ?? 999);
+      return 0;
     });
     const accepted = [];
     for (const candidate of candidates) {
@@ -349,7 +349,7 @@
         accepted.push(candidate);
       }
     }
-    return accepted.sort((a, b) => a.start - b.start);
+    return accepted;
   }
 
   function collectRuleMatches(rule, messageText, rawContext, normalizedContext) {
@@ -400,7 +400,7 @@
       case 'number_only':
         return /^\d+$/.test(normalizedText);
       case 'reaction_reply':
-        return isReactionReply(normalizedText);
+        return isTapbackReaction(rawText);
       case 'emoji_only_non_stop':
         return isEmojiOnlyWithoutStopSignal(rawText);
       case 'no_notifications':
@@ -434,10 +434,70 @@
     }
   }
 
-  function isReactionReply(text) {
-    return text.includes('reacted to')
-      || /^(?:liked|loved|emphasized|laughed at|disliked|questioned)\s+/.test(text)
-      || /^(?:removed a|removed from)\s+/.test(text);
+  // A tapback is the entire message: a reaction verb followed by the quoted
+  // original (or a media noun). Any trailing text means the customer wrote
+  // something of their own, so it is not treated as a reaction.
+  const QUOTED_ORIGINAL = '["\\u201C\\u201D][\\s\\S]*["\\u201C\\u201D]';
+  const TAPBACK_VERB = '(?:liked|loved|disliked|laughed at|emphasized|questioned)';
+  const TAPBACK_MEDIA = '(?:an?\\s+(?:image|photo|video|movie|attachment|sticker|gif|audio message|voice message|link))';
+  const TAPBACK_PATTERNS = Object.freeze([
+    new RegExp(`^${TAPBACK_VERB}\\s+(?:${QUOTED_ORIGINAL}|${TAPBACK_MEDIA})$`, 'iu'),
+    new RegExp(`^removed\\s+(?:an?\\s+[a-z ]+?|\\S+)\\s+from\\s+(?:${QUOTED_ORIGINAL}|${TAPBACK_MEDIA})$`, 'iu'),
+    new RegExp(`^reacted\\s+(?:with\\s+)?\\S+\\s+to\\s+(?:${QUOTED_ORIGINAL}|${TAPBACK_MEDIA})$`, 'iu'),
+    new RegExp(`^reacted\\s+to\\s+${QUOTED_ORIGINAL}\\s+with\\s+\\S+$`, 'iu')
+  ]);
+
+  function isTapbackReaction(value) {
+    const text = String(value || '').trim();
+    return Boolean(text) && TAPBACK_PATTERNS.some((pattern) => pattern.test(text));
+  }
+
+  // The Hot Topic survey asks for one of four numbered choices. Only a reply
+  // that is nothing but a choice is classified; anything else falls through to
+  // the regular rules so an added "stop" is never hidden.
+  function isHotTopicPrompt(text) {
+    const normalized = normalizeComparableText(text);
+    return normalized.startsWith('hot topic') &&
+      /\b1\s+same\b/.test(normalized) &&
+      /\b2\s+weekly\b/.test(normalized) &&
+      /\b3\s+monthly\b/.test(normalized) &&
+      /\b4\s+never\b/.test(normalized);
+  }
+
+  // Picks the rule that colors a whole message. `texts` are the message's
+  // paragraphs; each contributes its best match, and a Hot Topic reply adds its
+  // contextual rule. `getRecentBrandTexts` is only called for choice-only
+  // replies, so the DOM lookback is skipped for ordinary messages.
+  function classifyMessage(texts, activeRules, settings, { rules = [], getRecentBrandTexts = () => [] } = {}) {
+    const candidates = [];
+    const hotTopicRule = findHotTopicRule(texts.join('\n'), rules, getRecentBrandTexts);
+    if (hotTopicRule) candidates.push(hotTopicRule);
+    for (const text of texts) {
+      if (!String(text || '').trim()) continue;
+      const [best] = collectMatches(text, activeRules, settings);
+      if (best) candidates.push(best.rule);
+    }
+    return pickHighestPriorityRule(candidates, settings);
+  }
+
+  function findHotTopicRule(replyText, rules, getRecentBrandTexts) {
+    const detector = classifyHotTopicReply(replyText);
+    if (!detector || !getRecentBrandTexts().some((text) => isHotTopicPrompt(text))) return null;
+    return rules.find((rule) => rule.detector === detector) || null;
+  }
+
+  // Stable: among equal priorities the earliest candidate (paragraph order) wins.
+  function pickHighestPriorityRule(candidates, settings) {
+    return [...candidates].sort((a, b) => getRulePriority(a, settings) - getRulePriority(b, settings))[0] || null;
+  }
+
+  function classifyHotTopicReply(text) {
+    const normalized = normalizeComparableText(text);
+    if (/^(?:(?:4|four)(?: never)?|never)$/.test(normalized)) return 'hot_topic_opt_out';
+    if (/^(?:(?:1|one)(?: same)?|same|(?:2|two)(?: weekly)?|weekly|(?:3|three)(?: monthly)?|monthly)$/.test(normalized)) {
+      return 'hot_topic_not_opt_out';
+    }
+    return '';
   }
 
   function isEmojiOnlyWithoutStopSignal(value) {
@@ -524,7 +584,16 @@
   }
 
   function hasLegalIntent(text) {
-    return /\b(?:law|lawyer|attorney|sue|suing|sued|lawsuit|legal action|complaint|report|reporting|reported|bbb|better business bureau|fcc|ftsa|tcpa|federal communications commission|telephone consumer protection act)\b/.test(text);
+    if (/\b(?:who|where|how|what)\s+(?:can|could|do|should|would)\s+i\s+(?:report|file|make|submit|lodge)\b/.test(text)) return false;
+    // "complaint" alone is usually about an order; it only signals legal intent
+    // when it is filed/lodged or aimed at the sender or a regulator.
+    if (/\b(?:file|filing|filed|lodge|lodging|lodged|submit|submitting|submitted|make|making|made)\s+(?:a\s+)?(?:formal\s+)?complaints?\b/.test(text)
+      || /\bcomplaints?\s+(?:against|on)\s+(?:you|u|this|your|the)\b/.test(text)
+      || /\bcomplaints?\s+(?:with|to)\s+(?:the\s+)?(?:bbb|better business bureau|fcc|ftc|attorney general|consumer protection|authorities)\b/.test(text)) {
+      return true;
+    }
+    return /\b(?:law|lawyer|attorney|sue|suing|sued|lawsuit|legal action|bbb|better business bureau|fcc|ftsa|tcpa|federal communications commission|telephone consumer protection act)\b/.test(text)
+      || /\breport(?:ing|ed)?\s+(?:(?:you|u)\b|(?:this|your)\s+(?:company|business|brand|businesses)\b|(?:me|us)\s+to\s+(?:the\s+)?(?:bbb|better business bureau|fcc|ftc|attorney general|consumer protection|police|authorities)\b)/.test(text);
   }
 
   function hasNotInterestedIntent(text) {
@@ -599,27 +668,13 @@
   }
 
   function normalizeKeyword(value) {
-    return limitText(getKeywordPattern(value).trim().replace(/\s+/g, ' '), MAX_CUSTOM_KEYWORD_LENGTH);
+    const keyword = limitText(getKeywordPattern(value).trim().replace(/\s+/g, ' '), MAX_CUSTOM_KEYWORD_LENGTH);
+    return keyword.length >= MIN_CUSTOM_KEYWORD_LENGTH ? keyword : '';
   }
 
   function getKeywordPattern(value) {
     if (value && typeof value === 'object') return String(value.pattern || value.name || '');
     return String(value || '');
-  }
-
-  function normalizeCustomKeywordTextMap(customKeywords, existingTextByPattern = {}) {
-    const textByPattern = {};
-    for (const item of customKeywords || []) {
-      if (item && typeof item === 'object') {
-        const pattern = normalizeKeyword(item);
-        if (pattern) textByPattern[pattern] = limitText(item.text || existingTextByPattern[pattern] || '', MAX_CUSTOM_KEYWORD_TEXT_LENGTH);
-      }
-    }
-    for (const [pattern, text] of Object.entries(existingTextByPattern || {})) {
-      const normalized = normalizeKeyword(pattern);
-      if (normalized && !(normalized in textByPattern)) textByPattern[normalized] = limitText(text || '', MAX_CUSTOM_KEYWORD_TEXT_LENGTH);
-    }
-    return textByPattern;
   }
 
   function limitText(value, maxLength) {
@@ -640,8 +695,13 @@
   }
 
   globalScope.AMH_HIGHLIGHT_CORE = Object.freeze({
+    MAX_CUSTOM_KEYWORDS,
+    MAX_CUSTOM_KEYWORD_LENGTH,
+    MIN_CUSTOM_KEYWORD_LENGTH,
     buildRules,
     clamp,
+    classifyHotTopicReply,
+    classifyMessage,
     collectEscalationBulletMatches,
     collectMatches,
     describeRule,
@@ -651,13 +711,16 @@
     getActiveRules,
     getCustomKeywordRules,
     getKeywordPattern,
+    getRulePriority,
     guardAllows,
+    isHotTopicPrompt,
+    isTapbackReaction,
     mergeSettings,
     normalizeComparableText,
-    normalizeCustomKeywordTextMap,
     normalizeEscalationBulletText,
     normalizeKeyword,
     normalizeMessageBody,
+    pickHighestPriorityRule,
     translatePythonUnicodeEscapes,
     uniqueRegexFlags,
     validateRuleRegistry

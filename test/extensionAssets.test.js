@@ -22,6 +22,7 @@ test("manifest content scripts parse as classic Chrome scripts", () => {
     "src/highlight/regexNormalization.js",
     "src/highlight/core.js",
     "src/highlight/shortcutTelemetry.js",
+    "src/content/messageContext.js",
     "src/content/diagnostics.js",
     "content.js"
   ]);
@@ -58,7 +59,7 @@ test("popup and options pages provide keyword controls without an in-product dis
     assert.doesNotMatch(source, /privacyConsent|allowTelemetry|denyTelemetry|privacy-ui\.js/);
     assert.match(source, /keywordForm/);
     assert.match(source, /keywordInput/);
-    assert.match(source, /keywordText/);
+    assert.doesNotMatch(source, /keywordText|Hover text/);
     assert.match(source, /accept="text\/csv,\.csv"/);
     assert.ok(source.indexOf("src/shared/keywordCsv.js") < source.indexOf("popup.js"));
   }
@@ -98,8 +99,7 @@ test("manifest JSON resources exist and are parseable", () => {
     .filter((resource) => resource.endsWith(".json"));
 
   assert.deepEqual(jsonResources.sort(), [
-    "data/rules/opt_out_rules.json",
-    "data/rules/rule_hover_text.json"
+    "data/rules/opt_out_rules.json"
   ]);
   assert.deepEqual(
     fs.readdirSync(path.join(extensionDir, "data/rules"))
@@ -115,20 +115,19 @@ test("manifest JSON resources exist and are parseable", () => {
   }
 });
 
-test("conversation split phrase highlights render as continuous multi-part spans", () => {
+test("highlights are whole-message only; no in-text span styles remain", () => {
   const cssSource = readExtensionFile("content.css");
+  const contentSource = readExtensionFile("content.js");
 
-  assert.match(cssSource, /\.amh-highlight--multipart/);
-  assert.match(cssSource, /box-shadow:\s*none !important/);
-  assert.match(cssSource, /\.amh-highlight--match-start/);
-  assert.match(cssSource, /\.amh-highlight--match-end/);
+  assert.doesNotMatch(cssSource, /\.amh-highlight\s*\{|\.amh-highlight--multipart|\.amh-highlight--match-/);
+  assert.doesNotMatch(contentSource, /wrapTextNodeMatches|mapMatchesToTextNodeSegments|collectTextNodeSegments|nextMatchGroupId/);
 });
 
 test("message highlights preserve the box radius and are inset seven pixels on every edge", () => {
   const contentSource = readExtensionFile("content.js");
   const cssSource = readExtensionFile("content.css");
 
-  assert.match(contentSource, /applyInsetHighlightStyle\(messageBlock, rule\)/);
+  assert.match(contentSource, /applyInsetHighlightStyle\(block, winningRule\)/);
   assert.doesNotMatch(cssSource, /\.amh-message-highlight\s*\{[^}]*border-radius/);
   assert.match(cssSource, /\.amh-message-highlight::before[\s\S]*inset:\s*7px/);
   assert.match(cssSource, /\.amh-message-highlight::before[\s\S]*border-radius:\s*inherit/);
@@ -160,6 +159,17 @@ test("mutation observer gates rerenders on message text changes", () => {
 
   assert.match(contentSource, /mutation\.type === 'characterData'/);
   assert.match(contentSource, /node\.nodeType === Node\.TEXT_NODE/);
-  assert.match(contentSource, /node\.textContent\?\.trim\(\)/);
-  assert.match(contentSource, /node\.closest\(extensionSelector\)/);
+  assert.match(contentSource, /node\.matches\(extensionSelector\)/);
+  // Serializing whole added subtrees forced work on every large DOM insert.
+  assert.doesNotMatch(contentSource, /node\.textContent\?\.trim\(\)/);
+});
+
+test("render loop avoids forced layout for message targets", () => {
+  const contentSource = readExtensionFile("content.js");
+
+  const renderPath = contentSource.slice(contentSource.indexOf("function renderNow("), contentSource.indexOf("function logHighlightOnce("));
+  assert.ok(renderPath.length > 0);
+  assert.doesNotMatch(renderPath, /getBoundingClientRect\(|getComputedStyle\(/);
+  assert.doesNotMatch(contentSource, /function isVisible\(/);
+  assert.match(contentSource, /state\.targetSnapshots\.get\(block\) === snapshot\) continue/);
 });

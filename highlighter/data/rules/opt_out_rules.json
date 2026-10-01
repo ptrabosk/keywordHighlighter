@@ -64,7 +64,7 @@
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "full_match",
-      "pattern": "^(?:no|n[\\W_]+no|nah\\s+stop)$",
+      "pattern": "^(?:n[\\W_]+no|nah\\s+stop)$",
       "flags": "i",
       "rule_id": "R0009"
     },
@@ -253,7 +253,7 @@
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "(?:sue\\ your)|^(?:sued)$|(?:BBB)|(?:fcc)|(?:federal\\ communications\\ commission)|(?:florida\\ telephone\\ solicitation\\ act)|(?:ftsa)|(?:suing)|(?:telephone\\ consumer\\ protection\\ act)|(?:\\b(bring|file)\\s+a\\s+suit\\b)|(?:\\b(bring|file)\\s+suit\\b)|(?:\\bTCPA\\b)|(?:(?:sue you|reporting you|legal\\s+action|attorney|lawyer|complaint|\\b(?:bbb|better business bureau)\\b))|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) going to sue you)|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) reporting you to the bbb)|(?:report(ed)?)|(?:\\b(?:sue|suing|sued|lawsuit|legal action|attorney|lawyer|complaint)\\b)|(?:\\b(?:law|lawyer)\\b)|(?:\\breport(?:ing|ed)?\\b(?:\\s+(?:you|u))?)|(?:\\bFCC\\b)|(?:\\bfederal communications commission\\b)|(?:\\bflorida telephone solicitation act\\b)|(?:\\bftsa\\b)|(?:\\bsuing\\b)|(?:\\btelephone consumer protection act\\b)",
+      "pattern": "(?:sue\\ your)|^(?:sued)$|(?:BBB)|(?:fcc)|(?:federal\\ communications\\ commission)|(?:florida\\ telephone\\ solicitation\\ act)|(?:ftsa)|(?:suing)|(?:telephone\\ consumer\\ protection\\ act)|(?:\\b(bring|file)\\s+a\\s+suit\\b)|(?:\\b(bring|file)\\s+suit\\b)|(?:\\bTCPA\\b)|(?:(?:sue you|legal\\s+action|attorney|lawyer|complaint|\\b(?:bbb|better business bureau)\\b))|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) going to sue you)|(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) reporting you to the bbb)|(?:\\b(?:sue|suing|sued|lawsuit|legal action|attorney|lawyer|complaint)\\b)|(?:\\b(?:law|lawyer)\\b)|(?:\\breport(?:ing|ed)?\\s+(?:(?:you|u)\\b|(?:this|your)\\s+(?:company|business|brand|businesses)\\b|(?:me|us)\\s+to\\s+(?:the\\s+)?(?:bbb|better business bureau|fcc|ftc|attorney general|consumer protection|police|authorities)\\b))|(?:\\bFCC\\b)|(?:\\bfederal communications commission\\b)|(?:\\bflorida telephone solicitation act\\b)|(?:\\bftsa\\b)|(?:\\bsuing\\b)|(?:\\btelephone consumer protection act\\b)",
       "flags": "i",
       "guard": "legal_intent",
       "max_customer_message_chars": 500,
@@ -327,15 +327,6 @@
       "rule_id": "R0039"
     },
     {
-      "action": "fuzzy_opt_out",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "\\bspam\\b",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0040"
-    },
-    {
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
@@ -398,36 +389,6 @@
       "guard": "not_interested_intent",
       "max_customer_message_chars": 500,
       "rule_id": "R0047"
-    },
-    {
-      "action": "fuzzy_opt_out",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?ll|i\\s+will) never shop here again)(?![a-z0-9])",
-      "flags": "i",
-      "guard": "not_interested_intent",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0048"
-    },
-    {
-      "action": "fuzzy_opt_out",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) done with this brand)(?![a-z0-9])",
-      "flags": "i",
-      "guard": "not_interested_intent",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0049"
-    },
-    {
-      "action": "fuzzy_opt_out",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "(?<![a-z0-9])(?:(?:i(?:['\\u2019`]|\\s)?m|i\\s+am) not a customer anymore)(?![a-z0-9])",
-      "flags": "i",
-      "guard": "not_interested_intent",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0050"
     },
     {
       "action": "fuzzy_opt_out",
@@ -925,28 +886,10 @@
       "action": "close",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "take10",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0108"
-    },
-    {
-      "action": "close",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
       "pattern": "test",
       "flags": "i",
       "max_customer_message_chars": 500,
       "rule_id": "R0109"
-    },
-    {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "^(?:thank u|thanks|thx)$",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0110"
     },
     {
       "action": "close",
@@ -963,15 +906,6 @@
       "pattern": "the code doesn t work",
       "flags": "i",
       "rule_id": "R0112"
-    },
-    {
-      "action": "close",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "welcome15",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0113"
     },
     {
       "action": "reply",
@@ -1128,30 +1062,6 @@
       "pattern": "^10 shein freebies and a 50 allowance for the lucky just click and claim so easy$",
       "flags": "i",
       "rule_id": "R0131"
-    },
-    {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "full_match",
-      "pattern": "^thank you so much$",
-      "flags": "i",
-      "rule_id": "R0132"
-    },
-    {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "full_match",
-      "pattern": "^thank you$",
-      "flags": "i",
-      "rule_id": "R0133"
-    },
-    {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "full_match",
-      "pattern": "^thanks so much$",
-      "flags": "i",
-      "rule_id": "R0134"
     },
     {
       "action": "tmt",
@@ -1544,15 +1454,16 @@
     {
       "action": "fuzzy_opt_out",
       "target": "normalized_customer",
-      "match_type": "bounded_phrase",
+      "match_type": "full_match",
       "pattern": "no longer",
+      "flags": "i",
       "rule_id": "R0170"
     },
     {
       "action": "opt_out",
       "target": "normalized_customer",
       "match_type": "regex_search",
-      "pattern": "\\b(?:fuck\\s+(?:you|ya|yall|u|off)|fuxk\\s+you|go\\s+fuck\\s+yourself|get\\s+the\\s+fuck\\s+out|eat\\s+shit|shut\\s+the\\s+fuck\\s+up|go\\s+to\\s+hell|f\\s+u|stfu|sybau|fu)\\b",
+      "pattern": "\\b(?:fuck\\s+ya|fuxk\\s+you|get\\s+the\\s+fuck\\s+out|eat\\s+shit|go\\s+to\\s+hell|f\\s+u|fu)\\b",
       "flags": "i",
       "guard": "offensive_intent",
       "max_customer_message_chars": 500,
@@ -1605,37 +1516,10 @@
     {
       "action": "close",
       "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "(?<![a-z0-9])(?:10 shein freebies and a 50 allowance for the lucky just click and claim-so easy)(?![a-z0-9])",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0177"
-    },
-    {
-      "action": "close",
-      "target": "normalized_customer",
       "match_type": "full_match",
       "pattern": "10 shein freebies and a 50 allowance for the lucky just click and claim-so easy",
       "flags": "i",
       "rule_id": "R0178"
-    },
-    {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "^thanks$",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0179"
-    },
-    {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "regex_search",
-      "pattern": "^thx$",
-      "flags": "i",
-      "max_customer_message_chars": 500,
-      "rule_id": "R0180"
     },
     {
       "action": "opt_out",
@@ -2003,24 +1887,6 @@
       "rule_id": "R0197"
     },
     {
-      "action": "no_action",
-      "target": "normalized_customer",
-      "match_type": "exact_set",
-      "patterns": [
-        "yes",
-        "okay",
-        "ok thank you",
-        "ok thanks",
-        "okay thank you",
-        "got it",
-        "sounds good",
-        "sounds great",
-        "email",
-        "url"
-      ],
-      "rule_id": "R0198"
-    },
-    {
       "action": "close",
       "target": "normalized_customer",
       "match_type": "exact_set",
@@ -2040,13 +1906,6 @@
         "discount code"
       ],
       "rule_id": "R0200"
-    },
-    {
-      "action": "close",
-      "target": "normalized_customer",
-      "match_type": "detector",
-      "detector": "driving_auto_reply",
-      "rule_id": "R0201"
     },
     {
       "action": "opt_out",
@@ -2235,6 +2094,54 @@
       "pattern": "reply\\s+stop\\s+to\\s+opt\\s+out\\b",
       "flags": "i",
       "rule_id": "R0220"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "\\b(?:please\\s+)?remove\\s+(?:my|this)\\s+(?:phone\\s+)?number\\b",
+      "flags": "i",
+      "rule_id": "R0221"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "\\b(?:please\\s+)?stop\\s+sending\\s+me\\s+(?:texts?|messages?|sms)\\b",
+      "flags": "i",
+      "rule_id": "R0222"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "\\b(?:please\\s+)?quit\\s+(?:texting|messaging)(?:\\s+me)?\\b",
+      "flags": "i",
+      "rule_id": "R0223"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "\\bno\\s+more\\s+(?:sms|sms\\s+messages?)\\b",
+      "flags": "i",
+      "rule_id": "R0224"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "(?:^|\\b)(?:wrong\\s+recipient|(?:this\\s+is\\s+)?not\\s+my\\s+phone|this\\s+isn(?:['\\u2019`]|\\s)?t\\s+my\\s+phone|you(?:['\\u2019`]|\\s)?ve\\s+got\\s+the\\s+wrong\\s+recipient)(?:\\b|$)",
+      "flags": "i",
+      "rule_id": "R0225"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "regex_search",
+      "pattern": "^optout$",
+      "flags": "i",
+      "rule_id": "R0226"
     }
   ]
 }

@@ -40,6 +40,7 @@ test("receiver validates shortcut metadata as an exact two-field contract", () =
   const receiver = loadReceiver();
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+D", highlightCount: 1 }), true);
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+C", highlightCount: 1000 }), true);
+  assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+E", highlightCount: 2 }), true);
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+A", highlightCount: 1 }), false);
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+D", highlightCount: 0 }), false);
   assert.equal(receiver.isValidShortcutMetadata_({ shortcut: "Shift+D", highlightCount: 1, text: "no" }), false);

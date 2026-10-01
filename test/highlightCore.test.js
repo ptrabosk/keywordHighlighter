@@ -11,7 +11,6 @@ import "../highlighter/src/highlight/core.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootRegistryPath = path.join(__dirname, "../opt_out_rules.json");
 const packagedRegistryPath = path.join(__dirname, "../highlighter/data/rules/opt_out_rules.json");
-const hoverPath = path.join(__dirname, "../highlighter/data/rules/rule_hover_text.json");
 const core = globalThis.AMH_HIGHLIGHT_CORE;
 const defaults = globalThis.DEFAULT_SETTINGS;
 const bullet = String.fromCodePoint(0x2022);
@@ -48,7 +47,7 @@ test("canonical and packaged schema-v2 registries are byte-identical", () => {
   const payload = loadRegistry();
   assert.equal(payload.schema_version, 2);
   assert.equal(payload.registry_name, "unified_deterministic_opt_out_rules");
-  assert.equal(payload.rules.length, 220);
+  assert.equal(payload.rules.length, 211);
   assert.deepEqual(
     payload.rules.map((rule) => rule.rule_id),
     JSON.parse(fs.readFileSync(rootRegistryPath, "utf8")).rules.map((rule) => rule.rule_id)
@@ -71,12 +70,20 @@ test("registry validation rejects incompatible or incomplete payloads", () => {
   const unknownDetector = loadRegistry();
   unknownDetector.rules[0].detector = "unknown_detector";
   assert.throws(() => core.buildRules(unknownDetector), /unsupported detector/);
+
+  const truncated = loadRegistry();
+  truncated.rules.pop();
+  assert.throws(() => core.buildRules(truncated), /exactly 211 rules/);
+
+  const noAction = loadRegistry();
+  noAction.rules[0].action = "no_action";
+  assert.throws(() => core.buildRules(noAction), /unsupported action no_action/);
 });
 
-test("builds all 220 rules with the schema-v2 runtime interface", () => {
+test("builds all 211 rules with the schema-v2 runtime interface", () => {
   const rules = buildRules();
-  assert.equal(rules.length, 220);
-  assert.equal(new Set(rules.map((rule) => rule.id)).size, 220);
+  assert.equal(rules.length, 211);
+  assert.equal(new Set(rules.map((rule) => rule.id)).size, 211);
   for (const rule of rules) {
     assert.match(rule.id, /^R\d{4}$/);
     assert.equal(rule.name, rule.id);
@@ -88,21 +95,19 @@ test("builds all 220 rules with the schema-v2 runtime interface", () => {
 
 test("merges settings and keeps stable user-added IDs", () => {
   const longKeyword = "k".repeat(140);
-  const longText = "d".repeat(300);
   const merged = settings({
     opacity: 9,
-    customKeywords: [" launch code ", "launch   code", { pattern: "VIP", text: "Added in popup" }, longKeyword, ""],
-    customKeywordTextByPattern: { "launch code": "Custom hover copy", [longKeyword]: longText },
+    // Older stored settings may hold keyword objects and hover text.
+    customKeywords: [" launch code ", "launch   code", { pattern: "VIP", text: "Added in popup" }, longKeyword, "", "ab"],
+    customKeywordTextByPattern: { "launch code": "Custom hover copy" },
     categories: { user_added: { color: "#000000" }, opt_out: { enabled: false } }
   });
 
   assert.equal(merged.opacity, 0.85);
   assert.deepEqual(merged.customKeywords, ["launch code", "VIP", "k".repeat(128)]);
-  assert.equal(merged.customKeywordTextByPattern["launch code"], "Custom hover copy");
-  assert.equal(merged.customKeywordTextByPattern.VIP, "Added in popup");
-  assert.equal(merged.customKeywordTextByPattern["k".repeat(128)].length, 256);
+  assert.equal(Object.hasOwn(merged, "customKeywordTextByPattern"), false);
   assert.equal(merged.categories.user_added.color, defaults.categories.user_added.color);
-  assert.equal(merged.categories.opt_out.enabled, false);
+  assert.equal(Object.hasOwn(merged.categories.opt_out, "enabled"), false);
 
   const customRules = core.getCustomKeywordRules(merged);
   assert.deepEqual(customRules.map((rule) => rule.id), ["user_added:0", "user_added:1", "user_added:2"]);
@@ -129,14 +134,25 @@ test("default action colors and no-action behavior remain unchanged", () => {
   assert.equal(migrated.categories.txt.label, "Texting Explanation");
   assert.equal(migrated.categories.txt.color, "#8fded4");
 
-  const enabledNoAction = settings({ categories: { no_action: { enabled: true } } });
-  assert.equal(core.getActiveRules(buildRules(), enabledNoAction).some((rule) => rule.action === "no_action"), false);
+  assert.equal(Object.hasOwn(defaults.categories, "no_action"), false);
+  assert.equal(Object.hasOwn(settings({ categories: { no_action: { color: "#000000" } } }).categories, "no_action"), false);
+});
+
+test("custom keywords require three characters and are capped", () => {
+  assert.equal(core.normalizeKeyword("ab"), "");
+  assert.equal(core.normalizeKeyword("  a  b "), "a b");
+  assert.equal(core.normalizeKeyword("abc"), "abc");
+
+  const many = Array.from({ length: core.MAX_CUSTOM_KEYWORDS + 5 }, (_value, index) => `keyword${index}`);
+  const merged = settings({ customKeywords: many });
+  assert.equal(merged.customKeywords.length, core.MAX_CUSTOM_KEYWORDS);
+  assert.deepEqual(merged.customKeywords, many.slice(0, core.MAX_CUSTOM_KEYWORDS));
 });
 
 test("executes every declarative match type", () => {
   const cases = [
     ["spam", "R0015", "regex_search"],
-    ["No.", "R0009", "full_match"],
+    ["N-no", "R0009", "full_match"],
     ["Please fuck off now", "R0020", "bounded_phrase"],
     ["no longer", "R0034", "exact"],
     ["stpp", "R0187", "exact_set"]
@@ -148,7 +164,43 @@ test("executes every declarative match type", () => {
     assert.equal(core.collectMatches(text, [rule], settings()).length, 1, `${id}: ${text}`);
   }
   assert.equal(core.collectMatches("No thanks", [ruleById("R0009")], settings()).length, 0);
+  assert.equal(core.collectMatches("No", [ruleById("R0009")], settings()).length, 0);
+  assert.equal(core.collectMatches("nah stop", [ruleById("R0009")], settings()).length, 1);
   assert.equal(core.collectMatches("stpp now", [ruleById("R0187")], settings()).length, 0);
+});
+
+test("rewrites registry regexes for normalized search without touching regex syntax", () => {
+  const normalize = globalThis.AMH_REGEX_NORMALIZATION.normalizeRegexPatternForSearch;
+  const cases = [
+    // Dropped quotes, including the "?" that made them optional.
+    ["don't", "dont"],
+    ["don'?t", "dont"],
+    ["it’s", "its"],
+    // Literal punctuation becomes whitespace, collapsed to one \s+.
+    ["a.b", "a\\s+b"],
+    ["a-b", "a\\s+b"],
+    ["x, y; z: w!", "x\\s+y\\s+z\\s+w\\s+"],
+    ["hi.?", "hi\\s+?"],
+    // Escapes, character classes, and quantifier braces are copied verbatim.
+    ["\\.", "\\."],
+    ["[.,-]", "[.,-]"],
+    ["[a'b]?", "[a'b]?"],
+    ["[{]", "[{]"],
+    ["a{1,3}", "a{1,3}"],
+    // Group, lookaround, optional, and wildcard syntax is preserved.
+    ["(?:x)", "(?:x)"],
+    ["(?=y)", "(?=y)"],
+    ["(?!z)", "(?!z)"],
+    ["(?<=a)", "(?<=a)"],
+    ["(?<!b)", "(?<!b)"],
+    ["a?", "a?"],
+    [".*", ".*"],
+    [".+", ".+"],
+    ["", ""]
+  ];
+  for (const [pattern, expected] of cases) {
+    assert.equal(normalize(pattern), expected, pattern);
+  }
 });
 
 test("normalizes punctuation, contractions, accents, and stylized letters with raw span mapping", () => {
@@ -184,7 +236,7 @@ test("uses Unicode-aware bounded phrases", () => {
 test("every configured literal phrase matches its owning rule", () => {
   const rules = buildRules().filter((rule) => ["exact", "exact_set", "bounded_phrase"].includes(rule.matchType) && !rule.guard);
   const phrases = rules.flatMap((rule) => rule.patterns.map((phrase) => [rule, phrase]));
-  assert.equal(phrases.length, 379);
+  assert.equal(phrases.length, 368);
   for (const [rule, phrase] of phrases) {
     assert.equal(core.collectMatches(phrase, [rule], settings()).length, 1, `${rule.id}: ${phrase}`);
   }
@@ -197,6 +249,13 @@ test("implements all detector names with positive and negative behavior", () => 
     ["number_only", "45", true],
     ["number_only", "45 please", false],
     ["reaction_reply", 'Loved "Thanks for your order"', true],
+    ["reaction_reply", "Laughed at “that deal”", true],
+    ["reaction_reply", "Emphasized an image", true],
+    ["reaction_reply", 'Removed a heart from "Sale today"', true],
+    ["reaction_reply", 'Reacted \u{1F602} to "Sale today"', true],
+    ["reaction_reply", 'Loved "sale" but stop texting me now', false],
+    ["reaction_reply", "I reacted to your ad. STOP texting me", false],
+    ["reaction_reply", "Loved it", false],
     ["emoji_only_non_stop", "😊✨", true],
     ["emoji_only_non_stop", "🛑", false],
     ["no_notifications", "I'm not receiving notifications. If this is urgent reply urgent to send a notification through with your original message.", true],
@@ -231,7 +290,18 @@ test("enforces every named guard against the complete normalized message", () =>
     ["offensive_intent", "fuck you", true],
     ["offensive_intent", "kung fu", false],
     ["legal_intent", "I will sue you", true],
+    ["legal_intent", "I will report you", true],
+    ["legal_intent", "I'm reporting you", true],
+    ["legal_intent", "I will report this company", true],
+    ["legal_intent", "Who can I report this to?", false],
+    ["legal_intent", "Where do I report this company?", false],
     ["legal_intent", "lawlessness", false],
+    ["legal_intent", "I have a complaint about my order", false],
+    ["legal_intent", "complaint", false],
+    ["legal_intent", "How do I file a complaint about my order?", false],
+    ["legal_intent", "I'm filing a complaint against you", true],
+    ["legal_intent", "I will file a complaint with the FCC", true],
+    ["legal_intent", "I made a complaint to the BBB", true],
     ["not_interested_intent", "I'm done with this brand", true],
     ["not_interested_intent", "the order is done", false],
     ["wrong_number_intent", "you have the wrong number", true],
@@ -282,7 +352,76 @@ test("retains representative action behavior and priority", () => {
   assert.equal(actionsFor("stop")[0], "opt_out");
 });
 
-test("keeps earliest, longest, then category-priority conflict resolution", () => {
+test("a lone no closes, and only real tapbacks outrank an opt-out", () => {
+  assert.equal(actionsFor("no")[0], "close");
+  assert.equal(actionsFor("No.")[0], "close");
+  assert.equal(actionsFor("n no")[0], "opt_out");
+  assert.equal(actionsFor("No stop")[0], "opt_out");
+  assert.equal(actionsFor('Loved "Reply STOP to opt out"')[0], "close");
+  assert.equal(actionsFor("I reacted to your ad. STOP texting me")[0], "opt_out");
+  assert.equal(actionsFor('Loved "sale" but stop texting me now')[0], "opt_out");
+});
+
+test("classifies Hot Topic prompts and choice-only replies", () => {
+  const prompt = "Hot Topic: How often do you want texts? Reply 1 Same, 2 Weekly, 3 Monthly, 4 Never";
+  assert.equal(core.isHotTopicPrompt(prompt), true);
+  assert.equal(core.isHotTopicPrompt("How often? 1 Same, 2 Weekly, 3 Monthly, 4 Never"), false);
+
+  for (const reply of ["4", "Four!", "never", "4 - Never"]) {
+    assert.equal(core.classifyHotTopicReply(reply), "hot_topic_opt_out", reply);
+  }
+  for (const reply of ["1", "two", "Weekly", "3 monthly", "same."]) {
+    assert.equal(core.classifyHotTopicReply(reply), "hot_topic_not_opt_out", reply);
+  }
+  for (const reply of ["2 but stop", "4 please stop", "I never ordered", "maybe", ""]) {
+    assert.equal(core.classifyHotTopicReply(reply), "", reply);
+  }
+});
+
+test("classifies a whole message across paragraphs by rule priority", () => {
+  const rules = buildRules();
+  const active = core.getActiveRules(rules, settings());
+  const classify = (texts, options = {}) => core.classifyMessage(texts, active, settings(), { rules, ...options })?.action ?? null;
+
+  // A later paragraph with a higher-priority match wins over an earlier one.
+  assert.equal(classify(["customer service", "stop"]), "opt_out");
+  assert.equal(classify(["stop", "customer service"]), "opt_out");
+  assert.equal(classify(["", "   ", "wrong number"]), "opt_out");
+  assert.equal(classify(["hello there"]), null);
+  assert.equal(classify([]), null);
+});
+
+test("classifies Hot Topic replies only when a preceding prompt is present", () => {
+  const rules = buildRules();
+  const active = core.getActiveRules(rules, settings());
+  const prompt = "Hot Topic: reply 1 Same, 2 Weekly, 3 Monthly, 4 Never";
+  let lookups = 0;
+  const withPrompt = () => { lookups += 1; return ["Thanks for shopping", prompt]; };
+  const classify = (texts, getRecentBrandTexts) =>
+    core.classifyMessage(texts, active, settings(), { rules, getRecentBrandTexts });
+
+  assert.equal(classify(["4"], withPrompt).detector, "hot_topic_opt_out");
+  assert.equal(classify(["Weekly"], withPrompt).detector, "hot_topic_not_opt_out");
+  // Without the prompt, "4" is just a number-only reply.
+  assert.equal(classify(["4"], () => []).detector, "number_only");
+  // Anything besides a bare choice falls through to the regular rules.
+  assert.equal(classify(["2 but stop texting me"], withPrompt).action, "opt_out");
+
+  lookups = 0;
+  classify(["stop texting me"], withPrompt);
+  assert.equal(lookups, 0, "the brand lookback only runs for choice-only replies");
+});
+
+test("pickHighestPriorityRule is stable for equal priorities", () => {
+  const first = { id: "a", tag: "reply" };
+  const second = { id: "b", tag: "reply" };
+  const optOut = { id: "c", tag: "opt_out" };
+  assert.equal(core.pickHighestPriorityRule([first, second], settings()).id, "a");
+  assert.equal(core.pickHighestPriorityRule([first, second, optOut], settings()).id, "c");
+  assert.equal(core.pickHighestPriorityRule([], settings()), null);
+});
+
+test("resolves conflicts by category priority, then earliest, then longest", () => {
   const runtimeRule = (id, action, pattern) => ({
     id,
     name: id,
@@ -299,7 +438,7 @@ test("keeps earliest, longest, then category-priority conflict resolution", () =
     runtimeRule("late", "txt", "messages")
   ];
   const matches = core.collectMatches("Stop sending me so many messages please", rules, settings());
-  assert.deepEqual(matches.map((match) => match.rule.id), ["long"]);
+  assert.deepEqual(matches.map((match) => match.rule.id), ["short", "late"]);
 });
 
 test("matches an empty-message detector in core without creating a non-empty span", () => {
@@ -308,11 +447,11 @@ test("matches an empty-message detector in core without creating a non-empty spa
   assert.deepEqual([matches[0].start, matches[0].end], [0, 3]);
 });
 
-test("disables configured categories without affecting other actions", () => {
-  const configured = settings({ categories: { opt_out: { enabled: false } } });
+test("ignores stored category enabled flags", () => {
+  const configured = settings({ categories: { opt_out: { enabled: false }, user_added: { enabled: false } }, customKeywords: ["launch"] });
   const active = core.getActiveRules(buildRules(), configured);
-  assert.equal(active.some((rule) => rule.action === "opt_out"), false);
-  assert.equal(active.some((rule) => rule.action === "reply"), true);
+  assert.equal(active.some((rule) => rule.action === "opt_out"), true);
+  assert.equal(active.some((rule) => rule.action === "user_added"), true);
 });
 
 test("custom keyword rules escape punctuation and are ordered before built-ins", () => {
@@ -323,18 +462,6 @@ test("custom keyword rules escape punctuation and are ordered before built-ins",
   assert.equal(matches[0].rule.id, "user_added:0");
 });
 
-test("generated hover guidance covers every R-ID exactly once", () => {
-  const registry = loadRegistry();
-  const hover = JSON.parse(fs.readFileSync(hoverPath, "utf8"));
-  assert.deepEqual(Object.keys(hover.by_rule_id).sort(), registry.rules.map((rule) => rule.rule_id).sort());
-  for (const rule of registry.rules) {
-    assert.deepEqual(hover.by_rule_id[rule.rule_id].title, rule.action);
-    assert.equal(hover.by_rule_id[rule.rule_id].name, rule.rule_id);
-    assert.ok(hover.by_rule_id[rule.rule_id].text);
-    assert.doesNotMatch(hover.by_rule_id[rule.rule_id].text, /\\b|\(\?:/);
-  }
-  assert.equal(hover.defaults.user_added.name, "{pattern}");
-});
 
 test("preserves all seven escalation rule IDs and matching behavior", () => {
   assert.deepEqual(core.escalationBulletRules.map((rule) => rule.id), [

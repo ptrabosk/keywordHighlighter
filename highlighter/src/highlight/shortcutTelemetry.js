@@ -1,7 +1,7 @@
 (function initShortcutTelemetry(globalScope) {
   'use strict';
 
-  const SHORTCUT_KEYS = new Set(['D', 'N', 'B', 'C']);
+  const SHORTCUT_KEYS = new Set(['D', 'N', 'B', 'C', 'E']);
 
   function isEditableTarget(target) {
     if (!target) return false;
@@ -32,21 +32,13 @@
     if (!root || typeof root.querySelectorAll !== 'function') return 0;
     const view = options.view || globalScope;
     const rendered = options.isRendered || ((element) => isRenderedHighlight(element, view));
-    const groupIds = new Set();
-    let ungroupedCount = 0;
-
+    // Highlighted messages plus highlighted escalation notes.
     const elements = [
-      ...root.querySelectorAll('.amh-highlight'),
+      ...root.querySelectorAll('.amh-message-highlight'),
       ...root.querySelectorAll('.amh-escalation-highlight')
     ];
-    for (const element of elements) {
-      if (!rendered(element)) continue;
-      const groupId = element.dataset?.amhMatchGroupId;
-      if (groupId) groupIds.add(groupId);
-      else ungroupedCount += 1;
-    }
-
-    return Math.min(1000, groupIds.size + ungroupedCount);
+    const count = elements.filter((element) => rendered(element)).length;
+    return Math.min(1000, count);
   }
 
   const api = Object.freeze({

@@ -42,6 +42,7 @@
         "src/highlight/regexNormalization.js",
         "src/highlight/core.js",
         "src/highlight/shortcutTelemetry.js",
+        "src/content/messageContext.js",
         "src/content/diagnostics.js",
         "content.js"
       ],
@@ -54,8 +55,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "data/rules/opt_out_rules.json",
-        "data/rules/rule_hover_text.json"
+        "data/rules/opt_out_rules.json"
       ],
       "matches": [
         "https://ui.attentivemobile.com/*"
