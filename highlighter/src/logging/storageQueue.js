@@ -140,7 +140,7 @@ export async function recalculateQueueMeta(chunks = null) {
 export async function enqueueEvent(event) {
   if (!event) return false;
 
-  return await withQueueWrite(async () => {
+  return await withQueueWrite(async function writeEnqueuedEvent() {
     const chunks = await loadAllChunks();
     let meta = await getQueueMeta();
     let target = chunks.find((entry) => entry.chunkNumber === meta.nextChunkNumber && !entry.chunk.closed);
@@ -210,14 +210,14 @@ export async function selectUploadBatch(batchId, options = {}) {
   const maxEvents = options.maxEvents || config.maxBatchEvents;
   const maxBytes = options.maxBytes || config.maxBatchBytes;
 
-  return await withQueueWrite(async () => {
+  return await withQueueWrite(async function markBatchUploading() {
     const chunks = await loadAllChunks();
     const selected = [];
     const updates = {};
 
     for (const entry of chunks) {
       let changed = false;
-      entry.chunk.events = entry.chunk.events.map((event) => {
+      entry.chunk.events = entry.chunk.events.map(function selectPendingEvent(event) {
         if (selected.length >= maxEvents || event.uploadState !== "pending") return event;
 
         const nextEvent = {

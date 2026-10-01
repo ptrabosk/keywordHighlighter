@@ -83,6 +83,15 @@ Both `config.js` and `config.example.js` are tracked and contain placeholders on
 npm test
 ```
 
+For coverage (Istanbul JSON in the ignored `coverage/` folder) and a health report that uses it:
+
+```sh
+npm run coverage
+fallow health --coverage coverage/coverage-final.json
+```
+
+Without `--coverage`, fallow estimates test coverage and over-reports risk, because the tests load the content-side scripts through `vm` rather than imports. The content script, popup, and background worker run only in the browser and are not exercised by the test suite.
+
 ## Files
 
 ```text

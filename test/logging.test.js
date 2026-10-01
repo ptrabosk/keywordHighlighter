@@ -633,7 +633,7 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /maybeLogRenderCompleted/);
   assert.match(contentSource, /render_failed/);
   assert.match(contentSource, /clearAllHighlights/);
-  assert.match(contentSource, /!state\.settings\.enabled/);
+  assert.match(contentSource, /if \(state\.settings\.enabled\)/);
   assert.doesNotMatch(contentSource, /AMH_ACCESS_POLICY|amhAccessDenied|amhAccessReason/);
   assert.match(contentSource, /loggedEvent\.pageUrl = window\.location\.href/);
 });

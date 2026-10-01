@@ -42,48 +42,21 @@ function estimateBytesAfterRemoval(chunks, removeIds) {
   }), 0);
 }
 
+const RETENTION_SETTING_BY_SEVERITY = Object.freeze([
+  ["info", "normalRetentionDays"],
+  ["warning", "warningRetentionDays"],
+  ["error", "errorRetentionDays"]
+]);
+
 export async function pruneLogs(options = {}) {
   return await withQueueWrite(async () => {
     const config = await getLoggingConfig();
     const now = options.now || new Date();
     const targetBytes = options.targetBytes || config.softStorageLimitBytes;
     const chunks = await loadAllChunks();
-    let removeIds = new Set();
 
-    const infoCutoff = ageCutoff(config.normalRetentionDays, now);
-    const warningCutoff = ageCutoff(config.warningRetentionDays, now);
-    const errorCutoff = ageCutoff(config.errorRetentionDays, now);
-
-    for (const entry of chunks) {
-      for (const event of entry.chunk.events) {
-        if (event.severity === "info" && isOlderThan(event, infoCutoff)) removeIds.add(event.eventId);
-        if (event.severity === "warning" && isOlderThan(event, warningCutoff)) removeIds.add(event.eventId);
-        if (event.severity === "error" && isOlderThan(event, errorCutoff)) removeIds.add(event.eventId);
-      }
-    }
-
-    let estimatedBytes = chunks.reduce((total, entry) => total + byteSize(entry.chunk), 0);
-    if (estimatedBytes >= config.pruneInfoAtBytes) {
-      collectRemovals(chunks, (event) => event.severity === "info" && NAVIGATION_EVENT_TYPES.includes(event.eventType), targetBytes)
-        .forEach((id) => removeIds.add(id));
-    }
-
-    estimatedBytes = estimateBytesAfterRemoval(chunks, removeIds);
-
-    if (estimatedBytes >= config.pruneWarningAtBytes) {
-      collectRemovals(chunks, (event) => event.severity === "warning", targetBytes)
-        .forEach((id) => removeIds.add(id));
-    }
-
-    estimatedBytes = estimateBytesAfterRemoval(chunks, removeIds);
-
-    if (estimatedBytes >= config.emergencyLimitBytes) {
-      collectRemovals(chunks, (event) => event.severity !== "error", targetBytes)
-        .forEach((id) => removeIds.add(id));
-      const recentErrorCutoff = ageCutoff(Math.min(1, config.errorRetentionDays), now);
-      collectRemovals(chunks, (event) => event.severity === "error" && isOlderThan(event, recentErrorCutoff), targetBytes)
-        .forEach((id) => removeIds.add(id));
-    }
+    const removeIds = collectExpiredIds(chunks, config, now);
+    addSizePressureRemovals(chunks, removeIds, { config, now, targetBytes });
 
     const removedCount = await removeMatchingIds(chunks, removeIds);
     const meta = await recalculateQueueMeta();
@@ -93,4 +66,35 @@ export async function pruneLogs(options = {}) {
       prunedAt: utcNow()
     };
   });
+}
+
+// Events past their severity's retention period.
+function collectExpiredIds(chunks, config, now) {
+  const cutoffs = new Map(RETENTION_SETTING_BY_SEVERITY.map(([severity, setting]) => [severity, ageCutoff(config[setting], now)]));
+  const removeIds = new Set();
+  for (const entry of chunks) {
+    for (const event of entry.chunk.events) {
+      if (cutoffs.has(event.severity) && isOlderThan(event, cutoffs.get(event.severity))) removeIds.add(event.eventId);
+    }
+  }
+  return removeIds;
+}
+
+// Escalating stages, oldest first within each: navigation info events, then
+// warnings, then (at the emergency limit) everything but errors and older errors.
+function addSizePressureRemovals(chunks, removeIds, { config, now, targetBytes }) {
+  const remove = (predicate) => collectRemovals(chunks, predicate, targetBytes).forEach((id) => removeIds.add(id));
+  // The first stage measures the size before expired events are removed (unchanged behavior).
+  const totalBytes = chunks.reduce((total, entry) => total + byteSize(entry.chunk), 0);
+  if (totalBytes >= config.pruneInfoAtBytes) {
+    remove((event) => event.severity === "info" && NAVIGATION_EVENT_TYPES.includes(event.eventType));
+  }
+  if (estimateBytesAfterRemoval(chunks, removeIds) >= config.pruneWarningAtBytes) {
+    remove((event) => event.severity === "warning");
+  }
+  if (estimateBytesAfterRemoval(chunks, removeIds) >= config.emergencyLimitBytes) {
+    remove((event) => event.severity !== "error");
+    const recentErrorCutoff = ageCutoff(Math.min(1, config.errorRetentionDays), now);
+    remove((event) => event.severity === "error" && isOlderThan(event, recentErrorCutoff));
+  }
 }

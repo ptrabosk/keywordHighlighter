@@ -1,4 +1,4 @@
-(() => {
+(function installContentScript() {
   'use strict';
 
   const { createOperationalLogger, loadSyncSettings } = globalThis.AMH_EXTENSION_UTILS;
@@ -168,7 +168,7 @@
   function installMutationObserver() {
     state.observer?.disconnect();
     state.observer = new MutationObserver((mutations) => {
-      const relevantMutations = mutations.filter(isRelevantMutation);
+      const relevantMutations = mutations.filter(messageContext.isRelevantMutation);
       if (relevantMutations.length) {
         state.debug.mutations += relevantMutations.length;
         const now = Date.now();
@@ -189,31 +189,8 @@
     state.observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   }
 
-  function isRelevantMutation(mutation) {
-    const extensionSelector = '.amh-extension-root, .amh-escalation-highlight, .amh-tooltip, .amh-highlight-count';
-    const contentSelector = 'div[class*="type-INBOUND"], [class*="brand-message"], [data-speaker="Brand"], p[class*="variant-caption"]';
-    const target = mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
-    if (!target || target.closest(extensionSelector)) return false;
-    const insideContent = Boolean(target.closest(contentSelector));
-    if (mutation.type === 'characterData') return insideContent;
-
-    const nodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
-    // Our own span insertions/removals swap text nodes in and out; skip them.
-    if (nodes.some((node) => node instanceof Element && node.matches(extensionSelector))) return false;
-    for (const node of nodes) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        if (insideContent && node.nodeValue?.trim()) return true;
-        continue;
-      }
-      if (!(node instanceof Element)) continue;
-      // Removed nodes are detached, so only the old parent tells us where they were.
-      if (insideContent || node.matches(contentSelector) || node.querySelector(contentSelector)) return true;
-    }
-    return false;
-  }
-
   function installMessageHandlers() {
-    chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener(function handlePopupMessage(message, _sender, sendResponse) {
       if (!message || !message.type) return false;
       if (message.type === 'AMH_GET_STATS') {
         sendResponse({ stats: state.stats, settings: state.settings });
@@ -257,71 +234,99 @@
 
   function renderNow(forceAll = false) {
     const startedAt = performance.now();
+    beginRender(forceAll);
+    try {
+      const activeRules = core.getActiveRules(state.rules, state.settings);
+      resetRenderStats(activeRules);
+      if (state.settings.enabled) {
+        renderHighlights(activeRules, forceAll);
+      } else {
+        state.stats.highlightedElements = clearAllHighlights();
+        resetSnapshots();
+      }
+      finishRender(startedAt, forceAll);
+    } catch (error) {
+      handleRenderFailure(error, forceAll);
+    }
+  }
+
+  function beginRender(forceAll) {
     state.debug.renders += 1;
     state.debug.lastRenderStartedAt = Date.now();
     state.debug.lastTrigger = forceAll ? 'force' : state.debug.lastTrigger;
     window.clearTimeout(state.renderTimer);
     state.renderTimer = null;
+  }
 
-    try {
-      const activeRules = core.getActiveRules(state.rules, state.settings);
-      state.stats.activeRules = activeRules.length;
-      state.stats.invalidRules = state.rules.filter((rule) => !rule.executable).length;
-      state.stats.highlightedElements = 0;
-      state.stats.highlights = 0;
-      state.stats.lastRunAt = new Date().toISOString();
+  function resetRenderStats(activeRules) {
+    state.stats.activeRules = activeRules.length;
+    state.stats.invalidRules = state.rules.filter((rule) => !rule.executable).length;
+    state.stats.highlightedElements = 0;
+    state.stats.highlights = 0;
+    state.stats.lastRunAt = new Date().toISOString();
+  }
 
-      if (!state.settings.enabled) {
-        state.stats.highlightedElements = clearAllHighlights();
-        state.targetSnapshots = new WeakMap();
-        state.escalationTargetSnapshots = new WeakMap();
-      } else {
-        if (!activeRules.length) {
-          state.stats.highlightedElements += clearAllRuleHighlights();
-          state.targetSnapshots = new WeakMap();
-        } else {
-          for (const [block, paragraphs] of getMessageBlocks()) {
-            const texts = paragraphs.map((paragraph) => paragraph.textContent || '');
-            const snapshot = texts.join('\n');
-            if (!forceAll && state.targetSnapshots.get(block) === snapshot) continue;
-            clearMessageBlockHighlight(block);
-            highlightMessageBlock(block, texts, activeRules);
-            state.targetSnapshots.set(block, snapshot);
-            state.stats.highlightedElements += 1;
-          }
-        }
+  function resetSnapshots() {
+    state.targetSnapshots = new WeakMap();
+    state.escalationTargetSnapshots = new WeakMap();
+  }
 
-        for (const target of getEscalationBulletElements()) {
-          const snapshot = target.textContent || '';
-          const cached = state.escalationTargetSnapshots.get(target);
-          if (!forceAll && cached === snapshot) continue;
-          clearHighlightElements(target.querySelectorAll('.amh-escalation-highlight'));
-          highlightEscalationTarget(target);
-          state.escalationTargetSnapshots.set(target, target.textContent || '');
-          state.stats.highlightedElements += 1;
-        }
-      }
-
-      persistStats(state);
-      refreshHighlightCountBadge();
-      maybeLogRenderCompleted({
-        durationMs: performance.now() - startedAt,
-        forceAll,
-        changedElements: state.stats.highlightedElements,
-        highlights: state.stats.highlights
-      });
-      state.debug.lastRenderDurationMs = performance.now() - startedAt;
-    } catch (error) {
+  function renderHighlights(activeRules, forceAll) {
+    if (activeRules.length) {
+      renderMessageBlocks(activeRules, forceAll);
+    } else {
+      state.stats.highlightedElements += clearAllRuleHighlights();
       state.targetSnapshots = new WeakMap();
-      persistStats(state);
-      logOperationalFailure('render_failed', 'RENDER_FAILED', error?.message || 'Render failed', {
-        operation: 'render',
-        trigger: forceAll ? 'force' : 'scheduled',
-        ruleCount: state.rules.length,
-        matchedCount: state.stats.highlights
-      });
-      console.warn('[Offsight Highlighter] Render failed and will retry on the next DOM update:', error);
     }
+    renderEscalationNotes(forceAll);
+  }
+
+  // Unchanged blocks (same paragraph text) are skipped unless forced.
+  function renderMessageBlocks(activeRules, forceAll) {
+    for (const [block, paragraphs] of getMessageBlocks()) {
+      const texts = paragraphs.map((paragraph) => paragraph.textContent || '');
+      const snapshot = texts.join('\n');
+      if (!forceAll && state.targetSnapshots.get(block) === snapshot) continue;
+      clearMessageBlockHighlight(block);
+      highlightMessageBlock(block, texts, activeRules);
+      state.targetSnapshots.set(block, snapshot);
+      state.stats.highlightedElements += 1;
+    }
+  }
+
+  function renderEscalationNotes(forceAll) {
+    for (const target of getEscalationBulletElements()) {
+      const snapshot = target.textContent || '';
+      if (!forceAll && state.escalationTargetSnapshots.get(target) === snapshot) continue;
+      clearHighlightElements(target.querySelectorAll('.amh-escalation-highlight'));
+      highlightEscalationTarget(target);
+      state.escalationTargetSnapshots.set(target, target.textContent || '');
+      state.stats.highlightedElements += 1;
+    }
+  }
+
+  function finishRender(startedAt, forceAll) {
+    persistStats(state);
+    refreshHighlightCountBadge();
+    maybeLogRenderCompleted({
+      durationMs: performance.now() - startedAt,
+      forceAll,
+      changedElements: state.stats.highlightedElements,
+      highlights: state.stats.highlights
+    });
+    state.debug.lastRenderDurationMs = performance.now() - startedAt;
+  }
+
+  function handleRenderFailure(error, forceAll) {
+    state.targetSnapshots = new WeakMap();
+    persistStats(state);
+    logOperationalFailure('render_failed', 'RENDER_FAILED', error?.message || 'Render failed', {
+      operation: 'render',
+      trigger: forceAll ? 'force' : 'scheduled',
+      ruleCount: state.rules.length,
+      matchedCount: state.stats.highlights
+    });
+    console.warn('[Offsight Highlighter] Render failed and will retry on the next DOM update:', error);
   }
 
   function refreshHighlightCountBadge() {

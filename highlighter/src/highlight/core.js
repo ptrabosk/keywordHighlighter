@@ -12,26 +12,29 @@
   const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'txt', 'tmt', 'close']);
   const TARGETS = new Set(['raw_customer', 'normalized_customer', 'combined']);
   const MATCH_TYPES = new Set(['regex_search', 'full_match', 'bounded_phrase', 'exact', 'exact_set', 'detector']);
-  const DETECTOR_NAMES = new Set([
-    'hot_topic_not_opt_out',
-    'hot_topic_opt_out',
-    'single_letter_only',
-    'number_only',
-    'reaction_reply',
-    'emoji_only_non_stop',
-    'no_notifications',
-    'driving_auto_reply',
-    'unavailable_auto_reply',
-    'device_not_working',
-    'txt_origin_question',
-    'empty_customer_message',
-    'real_word_collision',
-    'under_13',
-    'language_filter_non_opt_out',
-    'bounded_block_intent',
-    'targeted_legal_intent',
-    'link_only'
-  ]);
+  // Each detector receives (rawText, normalizedText). Hot Topic detectors need
+  // the preceding brand prompt, so they never match here; see classifyMessage.
+  const DETECTORS = Object.freeze({
+    hot_topic_not_opt_out: () => false,
+    hot_topic_opt_out: () => false,
+    single_letter_only: (_raw, text) => /^[A-Za-z]$/.test(text),
+    number_only: (_raw, text) => /^\d+$/.test(text),
+    reaction_reply: (raw) => isTapbackReaction(raw),
+    emoji_only_non_stop: (raw) => isEmojiOnlyWithoutStopSignal(raw),
+    no_notifications: (_raw, text) => text.includes('not receiving notifications if this is urgent reply urgent to send a notification through with your original message'),
+    driving_auto_reply: (_raw, text) => isDrivingAutoReply(text),
+    unavailable_auto_reply: (_raw, text) => isUnavailableAutoReply(text),
+    device_not_working: (_raw, text) => isDeviceNotWorking(text),
+    txt_origin_question: (_raw, text) => isTextOriginQuestion(text),
+    empty_customer_message: (raw) => !String(raw || '').trim(),
+    real_word_collision: (_raw, text) => SAFE_COLLISION_WORDS.has(text),
+    under_13: (_raw, text) => isUnderThirteen(text),
+    language_filter_non_opt_out: (_raw, text) => isConservativeNonOptOutLanguage(text),
+    bounded_block_intent: (_raw, text) => hasBoundedBlockIntent(text),
+    targeted_legal_intent: (_raw, text) => hasLegalIntent(text),
+    link_only: (raw) => isLinkOnly(raw)
+  });
+  const DETECTOR_NAMES = new Set(Object.keys(DETECTORS));
   const GUARD_NAMES = new Set([
     'unsubscribe_intent',
     'offensive_intent',
@@ -41,6 +44,8 @@
     'block_intent',
     'opt_in_intent'
   ]);
+  const WHOLE_MESSAGE_MATCH_TYPES = new Set(['detector', 'exact', 'exact_set']);
+  const RULE_ENUM_FIELDS =Object.freeze([['action', ACTIONS], ['target', TARGETS], ['match_type', MATCH_TYPES]]);
   const SAFE_COLLISION_WORDS = new Set([
     'no', 'price', 'shop', 'top', 'the', 'nice', 'oh', 'save', 'sri', 'test',
     'ok', 'yes', 'okay', 'email', 'url', 'chat'
@@ -48,9 +53,7 @@
   const STOP_SIGNAL_EMOJIS = new Set(['🖕', '🛑', '✋', '🙅', '🚫', '🔕']);
 
   function validateRuleRegistry(payload) {
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-      throw new Error('Rule registry must be a JSON object.');
-    }
+    if (!isPlainObject(payload)) throw new Error('Rule registry must be a JSON object.');
     if (payload.schema_version !== EXPECTED_SCHEMA_VERSION) {
       throw new Error(`Rule registry schema_version must be ${EXPECTED_SCHEMA_VERSION}.`);
     }
@@ -67,28 +70,45 @@
   }
 
   function validateRuleDefinition(rule, index, ids) {
-    const location = `rules[${index}]`;
-    if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
-      throw new Error(`${location} must be an object.`);
+    validateRuleIdentity(rule, index, ids);
+    validateRuleEnums(rule);
+    if (rule.match_type === 'detector') {
+      if (!DETECTOR_NAMES.has(rule.detector)) throw new Error(`${rule.rule_id} has unsupported detector ${rule.detector}.`);
+    } else {
+      validatePatternData(rule);
     }
+  }
+
+  function validateRuleIdentity(rule, index, ids) {
+    const location = `rules[${index}]`;
+    if (!isPlainObject(rule)) throw new Error(`${location} must be an object.`);
     if (!/^R\d{4}$/.test(rule.rule_id || '')) throw new Error(`${location} has an invalid rule_id.`);
     if (ids.has(rule.rule_id)) throw new Error(`Rule registry contains duplicate rule_id ${rule.rule_id}.`);
     ids.add(rule.rule_id);
-    if (!ACTIONS.has(rule.action)) throw new Error(`${rule.rule_id} has unsupported action ${rule.action}.`);
-    if (!TARGETS.has(rule.target)) throw new Error(`${rule.rule_id} has unsupported target ${rule.target}.`);
-    if (!MATCH_TYPES.has(rule.match_type)) throw new Error(`${rule.rule_id} has unsupported match_type ${rule.match_type}.`);
-    if (rule.guard && !GUARD_NAMES.has(rule.guard)) throw new Error(`${rule.rule_id} has unsupported guard ${rule.guard}.`);
+  }
 
-    if (rule.match_type === 'detector') {
-      if (!DETECTOR_NAMES.has(rule.detector)) throw new Error(`${rule.rule_id} has unsupported detector ${rule.detector}.`);
-      return;
+  function validateRuleEnums(rule) {
+    for (const [field, allowed] of RULE_ENUM_FIELDS) {
+      if (!allowed.has(rule[field])) throw new Error(`${rule.rule_id} has unsupported ${field} ${rule[field]}.`);
     }
-    const hasPattern = typeof rule.pattern === 'string' && rule.pattern.length > 0;
-    const hasPatterns = Array.isArray(rule.patterns) && rule.patterns.length > 0 && rule.patterns.every((item) => typeof item === 'string' && item.length > 0);
+    if (rule.guard && !GUARD_NAMES.has(rule.guard)) throw new Error(`${rule.rule_id} has unsupported guard ${rule.guard}.`);
+  }
+
+  // Non-detector rules need a `pattern`, or a `patterns` list (required for exact_set).
+  function validatePatternData(rule) {
+    const hasPattern = isNonEmptyString(rule.pattern);
+    const hasPatterns = Array.isArray(rule.patterns) && rule.patterns.length > 0 && rule.patterns.every(isNonEmptyString);
     if (!hasPattern && !hasPatterns) throw new Error(`${rule.rule_id} has no usable pattern data.`);
-    if ((rule.match_type === 'exact_set' || Array.isArray(rule.patterns)) && !hasPatterns) {
-      throw new Error(`${rule.rule_id} requires a non-empty patterns array.`);
-    }
+    const needsPatterns = rule.match_type === 'exact_set' || Array.isArray(rule.patterns);
+    if (needsPatterns && !hasPatterns) throw new Error(`${rule.rule_id} requires a non-empty patterns array.`);
+  }
+
+  function isPlainObject(value) {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function isNonEmptyString(value) {
+    return typeof value === 'string' && value.length > 0;
   }
 
   function buildRules(payload) {
@@ -171,32 +191,38 @@
   }
 
   function mergeSettings(base, override = {}) {
-    const merged = { ...base, ...override, categories: {} };
-    const categoryKeys = Object.keys(base.categories || {});
-    for (const key of categoryKeys) {
-      // Categories cannot be switched off; ignore any stored `enabled` flag.
-      const { enabled: _ignoredEnabled, ...categoryOverride } = override?.categories?.[key] || {};
-      merged.categories[key] = {
-        ...(base.categories && base.categories[key] ? base.categories[key] : {}),
-        ...categoryOverride,
-        label: base.categories[key].label,
-        priority: base.categories[key].priority
-      };
-      if (key === 'txt' && String(categoryOverride.color || '').toUpperCase() === '#F6DA71') {
-        merged.categories[key].color = base.categories[key].color;
-      }
-    }
-    if (base.categories?.user_added && merged.categories.user_added) {
-      merged.categories.user_added.color = base.categories.user_added.color;
-    }
+    const merged = { ...base, ...override, categories: mergeCategories(base.categories || {}, override?.categories) };
     merged.opacity = clamp(Number(merged.opacity ?? base.opacity), 0.08, 0.85);
     merged.selector = String(merged.selector || base.selector);
-    merged.customKeywords = (Array.isArray(override?.customKeywords)
-      ? Array.from(new Set(override.customKeywords.map(normalizeKeyword).filter(Boolean)))
-      : [...(base.customKeywords || [])]).slice(0, MAX_CUSTOM_KEYWORDS);
+    merged.customKeywords = mergeCustomKeywords(base, override);
     // Hover text was removed; drop any value left in older stored settings.
     delete merged.customKeywordTextByPattern;
     return merged;
+  }
+
+  // Only known categories survive. Stored overrides may change a color, but
+  // never the label, priority, the user_added color, or (removed) on/off state.
+  function mergeCategories(baseCategories, overrideCategories) {
+    const categories = {};
+    for (const [key, baseCategory] of Object.entries(baseCategories)) {
+      const { enabled: _ignoredEnabled, ...categoryOverride } = overrideCategories?.[key] || {};
+      categories[key] = { ...baseCategory, ...categoryOverride, label: baseCategory.label, priority: baseCategory.priority };
+      if (isRetiredColorOverride(key, categoryOverride.color)) categories[key].color = baseCategory.color;
+    }
+    if (categories.user_added) categories.user_added.color = baseCategories.user_added.color;
+    return categories;
+  }
+
+  // The old yellow TXT color was replaced; stored copies of it fall back to the default.
+  function isRetiredColorOverride(key, color) {
+    return key === 'txt' && String(color || '').toUpperCase() === '#F6DA71';
+  }
+
+  function mergeCustomKeywords(base, override) {
+    const keywords = Array.isArray(override?.customKeywords)
+      ? Array.from(new Set(override.customKeywords.map(normalizeKeyword).filter(Boolean)))
+      : [...(base.customKeywords || [])];
+    return keywords.slice(0, MAX_CUSTOM_KEYWORDS);
   }
 
   function getCustomKeywordRules(settings) {
@@ -317,34 +343,40 @@
       .trim();
   }
 
+  // Returns non-overlapping matches, best first: category priority, then
+  // earliest, then longest.
   function collectMatches(text, activeRules, settings) {
-    const candidates = [];
     const messageText = String(text || '');
     const rawContext = { text: messageText, normalized: false, rawSpans: null };
     const normalizedContext = normalizeSearchTextWithMapping(messageText);
+    const candidates = activeRules.flatMap((rule) => collectAllowedRuleMatches(rule, messageText, rawContext, normalizedContext));
+    candidates.sort((a, b) => compareCandidates(a, b, settings));
+    return selectNonOverlapping(candidates);
+  }
 
-    for (const rule of activeRules) {
-      const effectiveGuard = rule.guard || implicitGuardForRule(rule);
-      if (!guardAllows(effectiveGuard, normalizedContext.text)) continue;
-      const matches = collectRuleMatches(rule, messageText, rawContext, normalizedContext);
-      for (const candidate of matches) {
-        const rawValue = messageText.slice(candidate.start, candidate.end);
-        const normalizedValue = normalizeComparableText(rawValue);
-        if (/^f\s*u$/i.test(normalizedValue) && normalizedContext.text !== 'fu' && normalizedContext.text !== 'f u') continue;
-        if (shouldSuppressContextualStopMatch(normalizedValue, messageText, candidate.end)) continue;
-        candidates.push(candidate);
-      }
-    }
+  function collectAllowedRuleMatches(rule, messageText, rawContext, normalizedContext) {
+    const effectiveGuard = rule.guard || implicitGuardForRule(rule);
+    if (!guardAllows(effectiveGuard, normalizedContext.text)) return [];
+    return collectRuleMatches(rule, messageText, rawContext, normalizedContext)
+      .filter((candidate) => !isSuppressedCandidate(candidate, messageText, normalizedContext.text));
+  }
 
-    candidates.sort((a, b) => {
-      const priorityDifference = getRulePriority(a.rule, settings) - getRulePriority(b.rule, settings);
-      if (priorityDifference !== 0) return priorityDifference;
-      if (a.start !== b.start) return a.start - b.start;
-      if (b.length !== a.length) return b.length - a.length;
-      return 0;
-    });
+  // "f u" only counts as the whole message, and "stop by" is not an opt-out.
+  function isSuppressedCandidate(candidate, messageText, normalizedMessage) {
+    const normalizedValue = normalizeComparableText(messageText.slice(candidate.start, candidate.end));
+    if (/^f\s*u$/i.test(normalizedValue) && normalizedMessage !== 'fu' && normalizedMessage !== 'f u') return true;
+    return shouldSuppressContextualStopMatch(normalizedValue, messageText, candidate.end);
+  }
+
+  function compareCandidates(a, b, settings) {
+    return (getRulePriority(a.rule, settings) - getRulePriority(b.rule, settings))
+      || (a.start - b.start)
+      || (b.length - a.length);
+  }
+
+  function selectNonOverlapping(sortedCandidates) {
     const accepted = [];
-    for (const candidate of candidates) {
+    for (const candidate of sortedCandidates) {
       if (!accepted.some((existing) => candidate.start < existing.end && candidate.end > existing.start)) {
         accepted.push(candidate);
       }
@@ -354,34 +386,31 @@
 
   function collectRuleMatches(rule, messageText, rawContext, normalizedContext) {
     if (!rule || !rule.executable || rule.target === 'combined') return [];
-    if (rule.matchType === 'detector') {
-      return detectorMatches(rule.detector, messageText, normalizedContext.text)
-        ? [wholeMessageCandidate(messageText, rule)]
-        : [];
+    if (WHOLE_MESSAGE_MATCH_TYPES.has(rule.matchType)) {
+      return wholeMessageRuleMatches(rule, messageText, normalizedContext.text) ? [wholeMessageCandidate(messageText, rule)] : [];
     }
-    if (rule.matchType === 'exact' || rule.matchType === 'exact_set') {
-      return rule.exactPatterns?.has(normalizedContext.text)
-        ? [wholeMessageCandidate(messageText, rule)]
-        : [];
-    }
-
     const context = rule.target === 'raw_customer' ? rawContext : normalizedContext;
+    return (rule.regexes || []).flatMap((regex) => collectRegexMatches(rule, regex, context, messageText));
+  }
+
+  function wholeMessageRuleMatches(rule, messageText, normalizedText) {
+    if (rule.matchType === 'detector') return detectorMatches(rule.detector, messageText, normalizedText);
+    return Boolean(rule.exactPatterns?.has(normalizedText));
+  }
+
+  function collectRegexMatches(rule, regex, context, messageText) {
     const output = [];
-    for (const regex of rule.regexes || []) {
-      regex.lastIndex = 0;
-      let match;
-      while ((match = regex.exec(context.text)) !== null) {
-        if (!match[0]) {
-          regex.lastIndex += 1;
-          continue;
-        }
-        if (rule.matchType === 'full_match') {
-          output.push(wholeMessageCandidate(messageText, rule));
-          break;
-        }
-        const span = mapSearchSpanToRaw(context, match.index, match.index + match[0].length);
-        output.push({ start: span.start, end: span.end, length: span.end - span.start, rule });
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(context.text)) !== null) {
+      if (!match[0]) {
+        regex.lastIndex += 1;
+        continue;
       }
+      // A full_match rule always covers the whole message.
+      if (rule.matchType === 'full_match') return [wholeMessageCandidate(messageText, rule)];
+      const span = mapSearchSpanToRaw(context, match.index, match.index + match[0].length);
+      output.push({ start: span.start, end: span.end, length: span.end - span.start, rule });
     }
     return output;
   }
@@ -391,47 +420,18 @@
   }
 
   function detectorMatches(detector, rawText, normalizedText) {
-    switch (detector) {
-      case 'hot_topic_not_opt_out':
-      case 'hot_topic_opt_out':
-        return false;
-      case 'single_letter_only':
-        return /^[A-Za-z]$/.test(normalizedText);
-      case 'number_only':
-        return /^\d+$/.test(normalizedText);
-      case 'reaction_reply':
-        return isTapbackReaction(rawText);
-      case 'emoji_only_non_stop':
-        return isEmojiOnlyWithoutStopSignal(rawText);
-      case 'no_notifications':
-        return normalizedText.includes('not receiving notifications if this is urgent reply urgent to send a notification through with your original message');
-      case 'driving_auto_reply':
-        return /^(?:im driving sent from|im driving with focus turned on|driving cant text)\b/.test(normalizedText)
-          || (/\bdriving\b/.test(normalizedText) && /\b(?:cant|cannot|can not)\s+(?:text|reply|respond)\b/.test(normalizedText));
-      case 'unavailable_auto_reply':
-        return isUnavailableAutoReply(normalizedText);
-      case 'device_not_working':
-        return isDeviceNotWorking(normalizedText);
-      case 'txt_origin_question':
-        return isTextOriginQuestion(normalizedText);
-      case 'empty_customer_message':
-        return !String(rawText || '').trim();
-      case 'real_word_collision':
-        return SAFE_COLLISION_WORDS.has(normalizedText);
-      case 'under_13':
-        return isUnderThirteen(normalizedText);
-      case 'language_filter_non_opt_out':
-        return isConservativeNonOptOutLanguage(normalizedText);
-      case 'bounded_block_intent':
-        return /\b(?:block|blocking|blocked)\s+(?:(?:your|this|the)\s+)?(?:you|u|this|these|texts?|messages?|number|sender)\b/.test(normalizedText)
-          || /\b(?:im|i am|ill|i will)\s+(?:block|blocking)\s+(?:(?:your|this|the)\s+)?(?:you|u|this|these|texts?|messages?|number|sender)\b/.test(normalizedText);
-      case 'targeted_legal_intent':
-        return hasLegalIntent(normalizedText);
-      case 'link_only':
-        return isLinkOnly(rawText);
-      default:
-        return false;
-    }
+    const detect = Object.hasOwn(DETECTORS, detector) ? DETECTORS[detector] : null;
+    return detect ? detect(rawText, normalizedText) : false;
+  }
+
+  function isDrivingAutoReply(text) {
+    return /^(?:im driving sent from|im driving with focus turned on|driving cant text)\b/.test(text)
+      || (/\bdriving\b/.test(text) && /\b(?:cant|cannot|can not)\s+(?:text|reply|respond)\b/.test(text));
+  }
+
+  function hasBoundedBlockIntent(text) {
+    return /\b(?:block|blocking|blocked)\s+(?:(?:your|this|the)\s+)?(?:you|u|this|these|texts?|messages?|number|sender)\b/.test(text)
+      || /\b(?:im|i am|ill|i will)\s+(?:block|blocking)\s+(?:(?:your|this|the)\s+)?(?:you|u|this|these|texts?|messages?|number|sender)\b/.test(text);
   }
 
   // A tapback is the entire message: a reaction verb followed by the quoted
@@ -608,36 +608,38 @@
     return normalizedValue === 'stop' && /^\s+by\b/i.test(messageText.slice(end));
   }
 
+  // Lowercases, strips accents, and collapses punctuation/space runs to one
+  // space, recording for every output character the raw span it came from.
   function normalizeSearchTextWithMapping(value) {
-    const chars = [];
-    const rawSpans = [];
-    let pendingSpaceSpan = null;
-    const text = String(value || '');
+    const state = { chars: [], rawSpans: [], pendingSpaceSpan: null };
     let rawIndex = 0;
-    for (const codePoint of text) {
+    for (const codePoint of String(value || '')) {
       const sourceSpan = { start: rawIndex, end: rawIndex + codePoint.length };
-      const folded = codePoint.normalize('NFKD').toLowerCase();
-      for (const char of folded) {
-        if (/\p{M}/u.test(char)) continue;
-        if (/[\p{L}\p{N}]/u.test(char)) {
-          if (pendingSpaceSpan !== null && chars.length) {
-            chars.push(' ');
-            rawSpans.push(pendingSpaceSpan);
-          }
-          pendingSpaceSpan = null;
-          chars.push(char);
-          rawSpans.push(sourceSpan);
-        } else if (isIgnorableSearchPunctuation(char)) {
-          continue;
-        } else if (chars.length) {
-          pendingSpaceSpan = pendingSpaceSpan
-            ? { start: pendingSpaceSpan.start, end: sourceSpan.end }
-            : sourceSpan;
-        }
-      }
+      for (const char of codePoint.normalize('NFKD').toLowerCase()) appendSearchChar(state, char, sourceSpan);
       rawIndex += codePoint.length;
     }
-    return { text: chars.join(''), normalized: true, rawSpans };
+    return { text: state.chars.join(''), normalized: true, rawSpans: state.rawSpans };
+  }
+
+  // Letters and digits are kept; combining marks and apostrophes are dropped;
+  // any other run becomes a single space, emitted only between words.
+  function appendSearchChar(state, char, sourceSpan) {
+    if (/\p{M}/u.test(char) || isIgnorableSearchPunctuation(char)) return;
+    if (!/[\p{L}\p{N}]/u.test(char)) {
+      if (state.chars.length) state.pendingSpaceSpan = extendSpan(state.pendingSpaceSpan, sourceSpan);
+      return;
+    }
+    if (state.pendingSpaceSpan !== null) {
+      state.chars.push(' ');
+      state.rawSpans.push(state.pendingSpaceSpan);
+      state.pendingSpaceSpan = null;
+    }
+    state.chars.push(char);
+    state.rawSpans.push(sourceSpan);
+  }
+
+  function extendSpan(span, next) {
+    return span ? { start: span.start, end: next.end } : next;
   }
 
   function normalizeComparableText(value) {

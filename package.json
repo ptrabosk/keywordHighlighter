@@ -6,6 +6,11 @@
   "scripts": {
     "test": "node --import ./test/setup-test-env.js --test test/*.test.js",
     "package:store": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1 -Mode Store",
-    "package:dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1 -Mode Development"
+    "package:dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1 -Mode Development",
+    "coverage": "c8 --all --include \"highlighter/**/*.js\" --reporter=json --reporter=text-summary node --import ./test/setup-test-env.js --test test/*.test.js && node scripts/normalize-coverage.mjs"
+  },
+  "devDependencies": {
+    "c8": "^10.1.3",
+    "jsdom": "^26.1.0"
   }
 }

@@ -77,91 +77,99 @@ function validateUploadResponse(responseBody, batchId) {
 export async function uploadPendingLogs(reason = "scheduled") {
   const config = await getLoggingConfig();
   const fingerprint = configFingerprint(config);
-  if (!config.enabled) {
-    await updateUploadStatus({ ...buildFailureStatus(await getUploadStatus(), "UPLOAD_DISABLED"), configFingerprint: fingerprint });
-    return { uploaded: false, reason: "disabled" };
-  }
-  if (!isConfigured(config)) {
-    await updateUploadStatus({ ...buildFailureStatus(await getUploadStatus(), "UPLOAD_INVALID_CONFIGURATION"), configFingerprint: fingerprint });
-    return { uploaded: false, reason: "not_configured" };
-  }
-
-  let uploadStatus = await getUploadStatus();
-  if (uploadStatus.blockedUntilConfigurationChange && (uploadStatus.configFingerprint !== fingerprint || reason === "diagnostics")) {
-    uploadStatus = await updateUploadStatus(clearPermanentFailureStatus(uploadStatus));
-  }
-  if (!shouldRetry(uploadStatus)) {
-    return { uploaded: false, reason: "backoff_active" };
-  }
+  const ready = await prepareUploadStatus(config, fingerprint, reason);
+  if (ready.stopped) return ready.stopped;
+  const { uploadStatus } = ready;
 
   await restoreUploadingEvents();
-
   const batchId = createUuid();
   const events = await selectUploadBatch(batchId, {
     maxEvents: config.maxBatchEvents,
     maxBytes: config.maxBatchBytes
   });
-
   if (!events.length) return { uploaded: false, reason: "empty" };
 
-  const body = {
-    apiKey: config.apiKey,
-    batchId,
-    extensionVersion: getExtensionVersion(),
-    sentAt: utcNow(),
-    reason,
-    events
-  };
-
+  const body = { apiKey: config.apiKey, batchId, extensionVersion: getExtensionVersion(), sentAt: utcNow(), reason, events };
   if (new TextEncoder().encode(JSON.stringify(body)).length > config.maxBatchBytes) {
-    await restoreBatch(batchId);
-    await updateUploadStatus({ ...buildFailureStatus(uploadStatus, "UPLOAD_PAYLOAD_TOO_LARGE"), configFingerprint: fingerprint });
-    await recordUploadFailure("UPLOAD_PAYLOAD_TOO_LARGE", { operation: "upload", failureCategory: "payload" });
-    return { uploaded: false, reason: "payload_too_large" };
+    return rejectOversizedBatch(batchId, uploadStatus, fingerprint);
   }
 
   try {
-    const response = await fetch(config.endpointUrl, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(body),
-      redirect: "follow"
-    });
-
-    if (!response.ok) {
-      const errorCode = response.status === 401 || response.status === 403
-        ? ERROR_CODES.UPLOAD_UNAUTHORIZED
-        : ERROR_CODES.UPLOAD_HTTP_FAILED;
-      throw Object.assign(new Error("Upload HTTP failure"), { errorCode, httpStatus: response.status });
-    }
-
-    const responseBody = await response.json();
-    const acknowledgement = validateUploadResponse(responseBody, batchId);
-    await removeEventsById([...acknowledgement.acceptedEventIds, ...acknowledgement.rejectedEventIds]);
-    await markUploadSuccess();
-    return {
-      uploaded: true,
-      batchId,
-      acceptedCount: acknowledgement.acceptedEventIds.length,
-      rejectedCount: acknowledgement.rejectedEventIds.length
-    };
+    return await sendBatch(config.endpointUrl, body, batchId);
   } catch (error) {
-    const errorCode = error?.errorCode || ERROR_CODES.UPLOAD_NETWORK_FAILED;
-    await restoreBatch(batchId);
-    const nextStatus = { ...buildFailureStatus(uploadStatus, errorCode), configFingerprint: fingerprint };
-    await updateUploadStatus(nextStatus);
-    await recordUploadFailure(errorCode, {
-      operation: "upload",
-      httpStatus: error?.httpStatus,
-      retryCount: nextStatus.consecutiveFailures,
-      failureCategory: isPermanentUploadFailure(errorCode) ? "permanent" : "temporary",
-      uploadBatchSize: events.length
-    });
-    return { uploaded: false, reason: "failed", errorCode };
+    return handleUploadError(error, { batchId, uploadStatus, fingerprint, batchSize: events.length });
   } finally {
     const meta = await getQueueMeta();
     await updateUploadStatus({ lastUploadAt: utcNow(), estimatedBytes: meta.estimatedBytes });
   }
+}
+
+// Resolves to { stopped } when no upload should happen, else { uploadStatus }.
+async function prepareUploadStatus(config, fingerprint, reason) {
+  if (!config.enabled) return { stopped: await recordConfigurationFailure("UPLOAD_DISABLED", fingerprint, "disabled") };
+  if (!isConfigured(config)) {
+    return { stopped: await recordConfigurationFailure("UPLOAD_INVALID_CONFIGURATION", fingerprint, "not_configured") };
+  }
+  let uploadStatus = await getUploadStatus();
+  // A permanent failure is retried once the configuration changes or diagnostics ask for it.
+  if (uploadStatus.blockedUntilConfigurationChange && (uploadStatus.configFingerprint !== fingerprint || reason === "diagnostics")) {
+    uploadStatus = await updateUploadStatus(clearPermanentFailureStatus(uploadStatus));
+  }
+  if (!shouldRetry(uploadStatus)) return { stopped: { uploaded: false, reason: "backoff_active" } };
+  return { uploadStatus };
+}
+
+async function recordConfigurationFailure(errorCode, fingerprint, reason) {
+  await updateUploadStatus({ ...buildFailureStatus(await getUploadStatus(), errorCode), configFingerprint: fingerprint });
+  return { uploaded: false, reason };
+}
+
+async function rejectOversizedBatch(batchId, uploadStatus, fingerprint) {
+  await restoreBatch(batchId);
+  await updateUploadStatus({ ...buildFailureStatus(uploadStatus, "UPLOAD_PAYLOAD_TOO_LARGE"), configFingerprint: fingerprint });
+  await recordUploadFailure("UPLOAD_PAYLOAD_TOO_LARGE", { operation: "upload", failureCategory: "payload" });
+  return { uploaded: false, reason: "payload_too_large" };
+}
+
+async function sendBatch(endpointUrl, body, batchId) {
+  const response = await fetch(endpointUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(body),
+    redirect: "follow"
+  });
+  if (!response.ok) throw httpUploadError(response.status);
+
+  const acknowledgement = validateUploadResponse(await response.json(), batchId);
+  await removeEventsById([...acknowledgement.acceptedEventIds, ...acknowledgement.rejectedEventIds]);
+  await markUploadSuccess();
+  return {
+    uploaded: true,
+    batchId,
+    acceptedCount: acknowledgement.acceptedEventIds.length,
+    rejectedCount: acknowledgement.rejectedEventIds.length
+  };
+}
+
+function httpUploadError(httpStatus) {
+  const errorCode = httpStatus === 401 || httpStatus === 403 ? ERROR_CODES.UPLOAD_UNAUTHORIZED : ERROR_CODES.UPLOAD_HTTP_FAILED;
+  return Object.assign(new Error("Upload HTTP failure"), { errorCode, httpStatus });
+}
+
+// Puts the batch back in the queue and records the failure for backoff.
+async function handleUploadError(error, { batchId, uploadStatus, fingerprint, batchSize }) {
+  const errorCode = error?.errorCode || ERROR_CODES.UPLOAD_NETWORK_FAILED;
+  await restoreBatch(batchId);
+  const nextStatus = { ...buildFailureStatus(uploadStatus, errorCode), configFingerprint: fingerprint };
+  await updateUploadStatus(nextStatus);
+  await recordUploadFailure(errorCode, {
+    operation: "upload",
+    httpStatus: error?.httpStatus,
+    retryCount: nextStatus.consecutiveFailures,
+    failureCategory: isPermanentUploadFailure(errorCode) ? "permanent" : "temporary",
+    uploadBatchSize: batchSize
+  });
+  return { uploaded: false, reason: "failed", errorCode };
 }
 
 export async function shouldUploadOnStartup() {

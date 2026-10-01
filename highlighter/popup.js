@@ -64,13 +64,25 @@ async function saveSettings() {
         changeSource: 'popup'
       }
     });
-    setStatus('Saved. Refresh the page if highlights do not update immediately.');
-  } catch (error) {
+    return true;
+  } catch (_error) {
     logOperationalFailure('settings_save_failed', 'SETTINGS_SAVE_FAILED', 'Settings could not be saved', {
       operation: 'customKeywordsSave'
     });
-    throw error;
+    return false;
   }
+}
+
+// Shows the change immediately; if saving fails, restores the previous list.
+async function commitSettings(nextSettings) {
+  const previous = settings;
+  settings = nextSettings;
+  renderKeywords();
+  if (await saveSettings()) return true;
+  settings = previous;
+  renderKeywords();
+  setStatus('Keywords could not be saved. Try again.');
+  return false;
 }
 
 async function addKeyword(event) {
@@ -104,14 +116,12 @@ async function addKeyword(event) {
     setStatus('Not enough sync storage for this keyword. Remove a keyword first.');
     return;
   }
-  settings = nextSettings;
+  if (!(await commitSettings(nextSettings))) return;
   if (wasEditing) {
     editingKeyword = null;
     els.addKeyword.textContent = 'ADD KEYWORD';
   }
   els.input.value = '';
-  renderKeywords();
-  await saveSettings();
   setStatus(wasEditing ? 'Keyword updated.' : 'Keyword added.');
 }
 
@@ -123,14 +133,14 @@ function editKeyword(keyword) {
 }
 
 async function removeKeyword(keyword) {
-  settings.customKeywords = settings.customKeywords.filter((item) => item !== keyword);
+  const nextSettings = { ...settings, customKeywords: settings.customKeywords.filter((item) => item !== keyword) };
+  if (!(await commitSettings(nextSettings))) return;
+  setStatus('Keyword removed.');
   if (editingKeyword === keyword) {
     editingKeyword = null;
     els.input.value = '';
     els.addKeyword.textContent = 'ADD KEYWORD';
   }
-  renderKeywords();
-  await saveSettings();
 }
 
 function exportKeywords() {
@@ -162,9 +172,7 @@ async function importKeywords(event) {
       setStatus('Import is too large for sync storage. Remove some keywords from the CSV.');
       return;
     }
-    settings = nextSettings;
-    renderKeywords();
-    await saveSettings();
+    if (!(await commitSettings(nextSettings))) return;
     const count = settings.customKeywords.length;
     const skipped = imported.skippedShort + Math.max(0, imported.customKeywords.length - count);
     const skippedNote = skipped

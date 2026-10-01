@@ -3,14 +3,17 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const source = fs.readFileSync(path.join(__dirname, "../highlighter/src/content/messageContext.js"), "utf8");
+const sourcePath = path.join(__dirname, "../highlighter/src/content/messageContext.js");
+// The file URL lets coverage tools attribute this vm-run script to its source.
+const sourceUrl = pathToFileURL(sourcePath).href;
+const source = fs.readFileSync(sourcePath, "utf8");
 
 function loadMessageContext() {
   const context = { globalThis: {} };
-  vm.runInNewContext(source, context, { filename: "messageContext.js" });
+  vm.runInNewContext(source, context, { filename: sourceUrl });
   return context.globalThis.AMH_MESSAGE_CONTEXT;
 }
 
@@ -68,4 +71,45 @@ test("falls back to ancestors when no conversation container matches", () => {
     ["inbound", "2"]
   ], { scoped: false });
   assert.deepEqual(Array.from(getRecentBrandMessageTexts(nodes[1], 3)), ["prompt"]);
+});
+
+// Fake nodes for isRelevantMutation. The extension selector is recognized by
+// its ".amh-tooltip" part; anything else is the message-content selector.
+const isExtensionSelector = (selector) => selector.includes(".amh-tooltip");
+function element({ inContent = false, inExtension = false, isContent = false, isExtension = false, containsContent = false } = {}) {
+  return {
+    nodeType: 1,
+    parentElement: null,
+    closest: (selector) => ((isExtensionSelector(selector) ? inExtension || isExtension : inContent || isContent) ? {} : null),
+    matches: (selector) => (isExtensionSelector(selector) ? isExtension : isContent),
+    querySelector: (selector) => (!isExtensionSelector(selector) && containsContent ? {} : null)
+  };
+}
+const textNode = (nodeValue, parentElement = null) => ({ nodeType: 3, nodeValue, parentElement });
+const childList = (target, addedNodes = [], removedNodes = []) => ({ type: "childList", target, addedNodes, removedNodes });
+
+test("text edits count only inside message content", () => {
+  const { isRelevantMutation } = loadMessageContext();
+  assert.equal(isRelevantMutation({ type: "characterData", target: textNode("hi", element({ inContent: true })) }), true);
+  assert.equal(isRelevantMutation({ type: "characterData", target: textNode("hi", element()) }), false);
+  assert.equal(isRelevantMutation({ type: "characterData", target: textNode("hi", null) }), false);
+});
+
+test("added or removed nodes count when they touch message content", () => {
+  const { isRelevantMutation } = loadMessageContext();
+  const content = element({ inContent: true });
+  assert.equal(isRelevantMutation(childList(content, [textNode("new reply")])), true);
+  assert.equal(isRelevantMutation(childList(content, [textNode("   ")])), false);
+  assert.equal(isRelevantMutation(childList(content, [], [element()])), true, "removed from content");
+  assert.equal(isRelevantMutation(childList(element(), [element({ containsContent: true })])), true, "new message list");
+  assert.equal(isRelevantMutation(childList(element(), [element({ isContent: true })])), true);
+  assert.equal(isRelevantMutation(childList(element(), [element()])), false, "unrelated page change");
+  assert.equal(isRelevantMutation(childList(element(), [{ nodeType: 8 }])), false, "comment node");
+});
+
+test("the extension's own DOM changes are ignored", () => {
+  const { isRelevantMutation } = loadMessageContext();
+  const content = element({ inContent: true });
+  assert.equal(isRelevantMutation(childList(content, [element({ isExtension: true })], [textNode("STOP")])), false);
+  assert.equal(isRelevantMutation(childList(element({ inExtension: true }), [textNode("label")])), false);
 });

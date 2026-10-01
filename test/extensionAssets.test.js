@@ -154,14 +154,14 @@ test("customer highlight count badge is URL-gated and uses logical rendered grou
   assert.match(cssSource, /\.amh-highlight-count[\s\S]*border-radius:\s*6px/);
 });
 
-test("mutation observer gates rerenders on message text changes", () => {
+// Filter behavior is unit-tested in messageContext.test.js.
+test("mutation observer gates rerenders through the message-context filter", () => {
   const contentSource = readExtensionFile("content.js");
+  const contextSource = readExtensionFile("src/content/messageContext.js");
 
-  assert.match(contentSource, /mutation\.type === 'characterData'/);
-  assert.match(contentSource, /node\.nodeType === Node\.TEXT_NODE/);
-  assert.match(contentSource, /node\.matches\(extensionSelector\)/);
+  assert.match(contentSource, /mutations\.filter\(messageContext\.isRelevantMutation\)/);
   // Serializing whole added subtrees forced work on every large DOM insert.
-  assert.doesNotMatch(contentSource, /node\.textContent\?\.trim\(\)/);
+  assert.doesNotMatch(contextSource, /textContent\?\.trim\(\)/);
 });
 
 test("render loop avoids forced layout for message targets", () => {

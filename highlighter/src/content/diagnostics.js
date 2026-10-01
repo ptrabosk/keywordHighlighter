@@ -2,7 +2,7 @@
   'use strict';
 
   function installDiagnostics(state) {
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', function logPageError(event) {
       const error = event.error;
       console.warn('[Offsight Highlighter] Page error observed', {
         message: event.message || error?.message || 'unknown error',
@@ -13,7 +13,7 @@
         highlighter: { ...state.debug }
       });
     }, true);
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', function logUnhandledRejection(event) {
       const reason = event.reason;
       console.warn('[Offsight Highlighter] Unhandled rejection observed', {
         message: reason?.message || String(reason || 'unknown rejection'),

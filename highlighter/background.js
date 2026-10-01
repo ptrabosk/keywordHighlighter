@@ -3,7 +3,7 @@ import { getLoggingConfig } from "./src/logging/config.js";
 import { logEvent, logFailure } from "./src/logging/logger.js";
 import { pruneLogs } from "./src/logging/prune.js";
 import { startSession, endSession } from "./src/logging/session.js";
-import { enqueueEvent, getQueueStats, restoreUploadingEvents } from "./src/logging/storageQueue.js";
+import { enqueueEvent, getQueueStats, getUploadStatus, restoreUploadingEvents } from "./src/logging/storageQueue.js";
 import { ERROR_CODES } from "./src/logging/types.js";
 import { shouldUploadOnStartup, uploadPendingLogs } from "./src/logging/uploader.js";
 
@@ -120,9 +120,9 @@ globalThis.chrome?.runtime?.onSuspend?.addListener(() => {
   void endSession("success");
 });
 
-globalThis.chrome?.runtime?.onMessage?.addListener((message, _sender, sendResponse) => {
+globalThis.chrome?.runtime?.onMessage?.addListener(function handleRuntimeMessage(message, _sender, sendResponse) {
   if (message?.type === "logging:event") {
-    return respondAsync(async () => {
+    return respondAsync(async function queueLoggedEvent() {
       await initializeLoggingServiceWorker();
       const event = { ...(message.event || {}) };
       await enqueueEvent(event);

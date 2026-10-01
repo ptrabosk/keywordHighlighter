@@ -3,14 +3,17 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const source = fs.readFileSync(path.join(__dirname, "../highlighter/src/shared/keywordCsv.js"), "utf8");
+const sourcePath = path.join(__dirname, "../highlighter/src/shared/keywordCsv.js");
+// The file URL lets coverage tools attribute this vm-run script to its source.
+const sourceUrl = pathToFileURL(sourcePath).href;
+const source = fs.readFileSync(sourcePath, "utf8");
 
 function loadKeywordCsv() {
   const context = { globalThis: {} };
-  vm.runInNewContext(source, context, { filename: "keywordCsv.js" });
+  vm.runInNewContext(source, context, { filename: sourceUrl });
   return context.globalThis.AMH_KEYWORD_CSV;
 }
 

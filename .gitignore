@@ -3,3 +3,5 @@ highlighter/src/logging/config.local.js
 dist/
 .DS_Store
 __pycache__/
+coverage/
+.fallow/

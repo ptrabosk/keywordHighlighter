@@ -90,28 +90,47 @@ function sanitizeErrorMessage(message, fallback = "Operation failed") {
   return truncateString(redacted, MAX_ERROR_MESSAGE_LENGTH);
 }
 
+// Field order matters: it is the serialized order used for the size check.
 export function sanitizeEvent(input = {}) {
-  if (!LOGGING_CONFIG.enabled) return null;
-  if (DROPPED_EVENT_TYPES.has(input.eventType)) return null;
-  if (!LOG_EVENT_TYPES.includes(input.eventType)) return null;
+  if (!isAcceptedEventType(input.eventType)) return null;
+  const event = buildBaseEvent(input);
+  addOptionalFields(event, input);
+  if (!applyMetadata(event, input.metadata)) return null;
+  return fitEventSize(event);
+}
 
-  const eventType = input.eventType;
-  const severity = LOG_SEVERITIES.includes(input.severity) ? input.severity : "info";
-  const result = LOG_RESULTS.includes(input.result) ? input.result : "unknown";
+function isAcceptedEventType(eventType) {
+  return LOGGING_CONFIG.enabled && !DROPPED_EVENT_TYPES.has(eventType) && LOG_EVENT_TYPES.includes(eventType);
+}
 
-  const event = {
+function pickAllowed(value, allowed, fallback) {
+  return allowed.includes(value) ? value : fallback;
+}
+
+function sanitizeTimestamp(value) {
+  return value && !Number.isNaN(Date.parse(value)) ? new Date(value).toISOString() : utcNow();
+}
+
+function sanitizeUploadAttempts(value) {
+  return Number.isInteger(value) && value >= 0 ? value : 0;
+}
+
+function buildBaseEvent(input) {
+  return {
     schemaVersion: SCHEMA_VERSION,
     eventId: sanitizeSafeId(input.eventId, 80) || createUuid(),
     sessionId: sanitizeSafeId(input.sessionId, 80) || "unknown",
-    timestamp: input.timestamp && !Number.isNaN(Date.parse(input.timestamp)) ? new Date(input.timestamp).toISOString() : utcNow(),
-    eventType,
-    severity,
-    result,
+    timestamp: sanitizeTimestamp(input.timestamp),
+    eventType: input.eventType,
+    severity: pickAllowed(input.severity, LOG_SEVERITIES, "info"),
+    result: pickAllowed(input.result, LOG_RESULTS, "unknown"),
     extensionVersion: truncateString(input.extensionVersion || getExtensionVersion(), 40),
     uploadState: "pending",
-    uploadAttempts: Number.isInteger(input.uploadAttempts) && input.uploadAttempts >= 0 ? input.uploadAttempts : 0
+    uploadAttempts: sanitizeUploadAttempts(input.uploadAttempts)
   };
+}
 
+function addOptionalFields(event, input) {
   const surface = sanitizeSafeId(input.surface, 40);
   const ruleSource = sanitizeSafeId(input.ruleSource, 120);
   const batchId = sanitizeSafeId(input.batchId, 80);
@@ -123,30 +142,41 @@ export function sanitizeEvent(input = {}) {
   if (input.errorMessage) event.errorMessage = sanitizeErrorMessage(input.errorMessage);
   if (batchId) event.batchId = batchId;
 
-  if (surface === "content" && (severity === "error" || PAGE_URL_EVENT_TYPES.has(eventType))) {
-    const pageUrl = sanitizePageUrl(input.pageUrl);
-    if (pageUrl) event.pageUrl = pageUrl;
-  }
+  const pageUrl = mayCarryPageUrl(event) ? sanitizePageUrl(input.pageUrl) : undefined;
+  if (pageUrl) event.pageUrl = pageUrl;
+}
 
-  const metadata = sanitizeMetadata(input.metadata);
-  if (eventType === "highlight_shortcut_pressed") {
-    const shortcut = metadata?.shortcut;
-    const highlightCount = metadata?.highlightCount;
-    if (!HIGHLIGHT_SHORTCUTS.has(shortcut) || !Number.isInteger(highlightCount) || highlightCount < 1 || highlightCount > 1000) {
-      return null;
-    }
-    event.metadata = { shortcut, highlightCount };
-  } else if (metadata) {
+function mayCarryPageUrl(event) {
+  return event.surface === "content" && (event.severity === "error" || PAGE_URL_EVENT_TYPES.has(event.eventType));
+}
+
+// Returns false when the event must be rejected (invalid shortcut metadata).
+function applyMetadata(event, rawMetadata) {
+  const metadata = sanitizeMetadata(rawMetadata);
+  if (event.eventType === "highlight_shortcut_pressed") {
+    const shortcutMetadata = sanitizeShortcutMetadata(metadata);
+    if (shortcutMetadata) event.metadata = shortcutMetadata;
+    return Boolean(shortcutMetadata);
+  }
+  if (metadata) {
     delete metadata.shortcut;
     delete metadata.highlightCount;
     if (Object.keys(metadata).length) event.metadata = metadata;
   }
+  return true;
+}
 
+function sanitizeShortcutMetadata(metadata) {
+  const shortcut = metadata?.shortcut;
+  const highlightCount = metadata?.highlightCount;
+  const validCount = Number.isInteger(highlightCount) && highlightCount >= 1 && highlightCount <= 1000;
+  return HIGHLIGHT_SHORTCUTS.has(shortcut) && validCount ? { shortcut, highlightCount } : null;
+}
+
+// Drops metadata and shortens the error message before giving up on an oversized event.
+function fitEventSize(event) {
   if (byteSize(event) <= MAX_EVENT_BYTES) return event;
-
   delete event.metadata;
   if (event.errorMessage) event.errorMessage = truncateString(event.errorMessage, 120);
-  if (byteSize(event) <= MAX_EVENT_BYTES) return event;
-
-  return null;
+  return byteSize(event) <= MAX_EVENT_BYTES ? event : null;
 }

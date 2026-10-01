@@ -5,59 +5,71 @@
   // Backups exported before hover text was removed; the second column is ignored.
   const LEGACY_HEADERS = Object.freeze(['keyword', 'hover text']);
 
+  // RFC 4180-style parser: quoted fields may contain commas, newlines, and
+  // doubled quotes. Trailing blank rows are dropped.
   function parseRows(input) {
     const text = String(input || '').replace(/^\uFEFF/, '');
-    const rows = [];
-    let row = [];
-    let field = '';
-    let inQuotes = false;
-    let afterQuote = false;
-
-    for (let index = 0; index < text.length; index += 1) {
-      const character = text[index];
-      if (inQuotes) {
-        if (character === '"') {
-          if (text[index + 1] === '"') {
-            field += '"';
-            index += 1;
-          } else {
-            inQuotes = false;
-            afterQuote = true;
-          }
-        } else {
-          field += character;
-        }
-        continue;
-      }
-
-      if (afterQuote && character !== ',' && character !== '\r' && character !== '\n') {
-        throw new Error('Unexpected character after closing quote');
-      }
-      if (character === '"') {
-        if (field) throw new Error('Unexpected quote in unquoted field');
-        inQuotes = true;
-        afterQuote = false;
-      } else if (character === ',') {
-        row.push(field);
-        field = '';
-        afterQuote = false;
-      } else if (character === '\r' || character === '\n') {
-        if (character === '\r' && text[index + 1] === '\n') index += 1;
-        row.push(field);
-        rows.push(row);
-        row = [];
-        field = '';
-        afterQuote = false;
-      } else {
-        field += character;
-      }
+    const state = { rows: [], row: [], field: '', inQuotes: false, afterQuote: false };
+    let index = 0;
+    while (index < text.length) {
+      index += state.inQuotes ? consumeQuoted(state, text, index) : consumeUnquoted(state, text, index);
     }
+    if (state.inQuotes) throw new Error('Unterminated quoted field');
+    endRow(state);
+    while (state.rows.length && state.rows.at(-1).every((value) => value === '')) state.rows.pop();
+    return state.rows;
+  }
 
-    if (inQuotes) throw new Error('Unterminated quoted field');
-    row.push(field);
-    rows.push(row);
-    while (rows.length && rows.at(-1).every((value) => value === '')) rows.pop();
-    return rows;
+  // Each consumer returns the number of characters it used.
+  function consumeQuoted(state, text, index) {
+    if (text[index] !== '"') {
+      state.field += text[index];
+      return 1;
+    }
+    if (text[index + 1] === '"') {
+      state.field += '"';
+      return 2;
+    }
+    state.inQuotes = false;
+    state.afterQuote = true;
+    return 1;
+  }
+
+  function consumeUnquoted(state, text, index) {
+    const character = text[index];
+    if (state.afterQuote && !isFieldBoundary(character)) throw new Error('Unexpected character after closing quote');
+    if (character === '"') {
+      if (state.field) throw new Error('Unexpected quote in unquoted field');
+      state.inQuotes = true;
+      state.afterQuote = false;
+      return 1;
+    }
+    if (character === ',') {
+      endField(state);
+      return 1;
+    }
+    if (character === '\r' || character === '\n') {
+      endRow(state);
+      return character === '\r' && text[index + 1] === '\n' ? 2 : 1;
+    }
+    state.field += character;
+    return 1;
+  }
+
+  function isFieldBoundary(character) {
+    return character === ',' || character === '\r' || character === '\n';
+  }
+
+  function endField(state) {
+    state.row.push(state.field);
+    state.field = '';
+    state.afterQuote = false;
+  }
+
+  function endRow(state) {
+    endField(state);
+    state.rows.push(state.row);
+    state.row = [];
   }
 
   function parseKeywordCsv(input) {
