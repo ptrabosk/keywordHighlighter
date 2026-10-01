@@ -33,7 +33,7 @@ Telemetry is described on this privacy policy page. The extension does not show 
 - Locally queued events: informational events are scheduled for deletion after 7 days, warnings after 14 days, and errors after 30 days; cleanup runs with scheduled upload maintenance and may occur sooner under storage pressure.
 - Uploaded events, deduplication identifiers, and upload-batch audit records: automatically deleted after 90 days.
 - Synchronized custom settings: retained until the user removes or resets them, subject to Chrome Sync settings and Google's applicable terms.
-- Deletion requests: `privacy@attentive.com`.
+- Deletion requests: `info@offsightoperations.com`.
 
 ## Limited Use certification text
 
