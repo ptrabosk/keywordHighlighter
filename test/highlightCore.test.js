@@ -47,7 +47,7 @@ test("canonical and packaged schema-v2 registries are byte-identical", () => {
   const payload = loadRegistry();
   assert.equal(payload.schema_version, 2);
   assert.equal(payload.registry_name, "unified_deterministic_opt_out_rules");
-  assert.equal(payload.rules.length, 211);
+  assert.equal(payload.rules.length, 214);
   assert.deepEqual(
     payload.rules.map((rule) => rule.rule_id),
     JSON.parse(fs.readFileSync(rootRegistryPath, "utf8")).rules.map((rule) => rule.rule_id)
@@ -73,17 +73,17 @@ test("registry validation rejects incompatible or incomplete payloads", () => {
 
   const truncated = loadRegistry();
   truncated.rules.pop();
-  assert.throws(() => core.buildRules(truncated), /exactly 211 rules/);
+  assert.throws(() => core.buildRules(truncated), /exactly 214 rules/);
 
   const noAction = loadRegistry();
-  noAction.rules[0].action = "no_action";
-  assert.throws(() => core.buildRules(noAction), /unsupported action no_action/);
+  noAction.rules[0].action = "bogus_action";
+  assert.throws(() => core.buildRules(noAction), /unsupported action bogus_action/);
 });
 
-test("builds all 211 rules with the schema-v2 runtime interface", () => {
+test("builds all 214 rules with the schema-v2 runtime interface", () => {
   const rules = buildRules();
-  assert.equal(rules.length, 211);
-  assert.equal(new Set(rules.map((rule) => rule.id)).size, 211);
+  assert.equal(rules.length, 214);
+  assert.equal(new Set(rules.map((rule) => rule.id)).size, 214);
   for (const rule of rules) {
     assert.match(rule.id, /^R\d{4}$/);
     assert.equal(rule.name, rule.id);
@@ -121,8 +121,8 @@ test("default action colors and no-action behavior remain unchanged", () => {
   assert.equal(defaults.categories.tmt.color, "#8fded4");
   assert.equal(defaults.categories.txt.color, defaults.categories.tmt.color);
   assert.equal(defaults.categories.txt.label, "Texting Explanation");
-  assert.equal(defaults.categories.reply.color, "#bbcfa4");
-  assert.equal(defaults.categories.close.color, "#FAF4DF");
+  assert.equal(defaults.categories.reply.color, "#5C9E3E");
+  assert.equal(defaults.categories.close.color, "#E0A800");
 
   const migrated = settings({
     categories: {
@@ -151,7 +151,7 @@ test("custom keywords require three characters and are capped", () => {
 
 test("executes every declarative match type", () => {
   const cases = [
-    ["spam", "R0015", "regex_search"],
+    ["unsubscribe me", "R0016", "regex_search"],
     ["N-no", "R0009", "full_match"],
     ["Please fuck off now", "R0020", "bounded_phrase"],
     ["no longer", "R0034", "exact"],
@@ -224,6 +224,8 @@ test("supports raw emoji rules and translates Python Unicode escapes", () => {
   assert.equal(stopEmoji.regexes[0].unicode, true);
   assert.equal(core.collectMatches("🖕", [middleFinger], settings()).length, 1);
   assert.equal(core.collectMatches("🛑 ✋", [stopEmoji], settings()).length, 1);
+  assert.equal(core.collectMatches("✋🏻", [stopEmoji], settings()).length, 1);
+  assert.equal(core.collectMatches("✋🏿 🛑", [stopEmoji], settings()).length, 1);
   assert.equal(core.collectMatches("hello 🛑", [stopEmoji], settings()).length, 0);
 });
 
@@ -236,7 +238,7 @@ test("uses Unicode-aware bounded phrases", () => {
 test("every configured literal phrase matches its owning rule", () => {
   const rules = buildRules().filter((rule) => ["exact", "exact_set", "bounded_phrase"].includes(rule.matchType) && !rule.guard);
   const phrases = rules.flatMap((rule) => rule.patterns.map((phrase) => [rule, phrase]));
-  assert.equal(phrases.length, 368);
+  assert.equal(phrases.length, 506);
   for (const [rule, phrase] of phrases) {
     assert.equal(core.collectMatches(phrase, [rule], settings()).length, 1, `${rule.id}: ${phrase}`);
   }
@@ -259,7 +261,9 @@ test("implements all detector names with positive and negative behavior", () => 
     ["emoji_only_non_stop", "😊✨", true],
     ["emoji_only_non_stop", "🛑", false],
     ["no_notifications", "I'm not receiving notifications. If this is urgent reply urgent to send a notification through with your original message.", true],
-    ["driving_auto_reply", "I'm driving with Focus turned on", true],
+    ["driving_auto_reply", "I'm driving with Focus turned on. I'll see your message when I get where I'm going.", true],
+    ["driving_auto_reply", "Manejan., no puedo escrib. \nSent from MY ALTIMA", true],
+    ["driving_auto_reply", "I'm driving with Focus turned on", false],
     ["unavailable_auto_reply", "Sorry, I can't talk right now.", true],
     ["device_not_working", "This phone cannot receive text messages.", true],
     ["txt_origin_question", "Who is this and why are you texting me?", true],
@@ -331,7 +335,7 @@ test("enforces every named guard against the complete normalized message", () =>
 
 test("prevents representative false-positive highlights", () => {
   const rules = activeRules();
-  for (const text of ["Stop by my house after delivery.", "kung fu", "lawlessness", "the order is done", "start the engine", "shipping is no longer available"]) {
+  for (const text of ["Stop by my house after delivery.", "kung fu", "lawlessness", "the order is done", "start the engine", "shipping is no longer available", "Why would you need an RFID blocking card if the wallet has RFID-blocking wireless theft protection?", "spam is annoying", "lol that was funny", "this is a test of the order", "i dont want to wait"]) {
     assert.deepEqual(core.collectMatches(text, rules, settings()), [], text);
   }
 });
@@ -344,7 +348,7 @@ test("retains representative action behavior and priority", () => {
     ["I'm done with this brand", "fuzzy_opt_out"],
     ["Sorry, I can't talk right now.", "close"],
     ["I am 12 years old.", "opt_out"],
-    ["spam", "fuzzy_opt_out"]
+    ["spam", "tmt"]
   ];
   for (const [text, action] of cases) {
     assert.ok(actionsFor(text).includes(action), `${text} should produce ${action}`);
@@ -367,13 +371,13 @@ test("classifies Hot Topic prompts and choice-only replies", () => {
   assert.equal(core.isHotTopicPrompt(prompt), true);
   assert.equal(core.isHotTopicPrompt("How often? 1 Same, 2 Weekly, 3 Monthly, 4 Never"), false);
 
-  for (const reply of ["4", "Four!", "never", "4 - Never"]) {
+  for (const reply of ["4", "Four!", "never", "4 - Never", "I never ordered", "please never text me again"]) {
     assert.equal(core.classifyHotTopicReply(reply), "hot_topic_opt_out", reply);
   }
   for (const reply of ["1", "two", "Weekly", "3 monthly", "same."]) {
     assert.equal(core.classifyHotTopicReply(reply), "hot_topic_not_opt_out", reply);
   }
-  for (const reply of ["2 but stop", "4 please stop", "I never ordered", "maybe", ""]) {
+  for (const reply of ["2 but stop", "4 please stop", "maybe", ""]) {
     assert.equal(core.classifyHotTopicReply(reply), "", reply);
   }
 });
@@ -488,4 +492,74 @@ test("preserves all seven escalation rule IDs and matching behavior", () => {
     core.collectEscalationBulletMatches(text).map((match) => match.rule.id),
     core.escalationBulletRules.map((rule) => rule.id)
   );
+});
+
+test("whole-message rules and shush requests behave as tightened", () => {
+  for (const text of ["done", "I'm done", "lol", "test", "spam"]) {
+    assert.ok(core.collectMatches(text, activeRules(), settings()).length > 0, text);
+  }
+  for (const text of ["sh", "shh", "shhh", "shush"]) assert.equal(actionsFor(text)[0], "opt_out", text);
+  assert.equal(actionsFor("i dont want it")[0], "fuzzy_opt_out");
+  assert.equal(actionsFor("thank you very much").includes("no_action"), false);
+});
+
+test("opt-out instruction boilerplate is an opt out unless it is a question or page wording", () => {
+  for (const text of ["stop to opt out", "STOP to end", "Welcome to Rewards! Learn more: https://x.co  STOP to End", "unsubscribe by texting stop"]) {
+    assert.equal(actionsFor(text)[0], "opt_out", text);
+  }
+  for (const text of ["what does stop to end mean", "the page says reply stop to end"]) {
+    assert.equal(actionsFor(text).includes("opt_out"), false, text);
+  }
+});
+
+test("priority runs reaction, emoji stop, emoji only, Hot Topic, then the categories in order", () => {
+  const s = settings();
+  const priority = (id) => core.getRulePriority(ruleById(id), s);
+  assert.ok(priority("R0005") < priority("R0008"), "reaction before emoji stop");
+  assert.ok(priority("R0007") === priority("R0008"), "both stop-emoji rules share a tier");
+  assert.ok(priority("R0008") < priority("R0006"), "emoji stop before emoji only");
+  assert.ok(priority("R0006") < priority("R0001"), "emoji only before Hot Topic");
+  const categories = ["opt_out", "fuzzy_opt_out", "tmt", "txt", "reply", "close"].map((tag) => s.categories[tag].priority);
+  assert.ok(priority("R0001") < categories[0], "Hot Topic before opt out");
+  assert.deepEqual([...categories].sort((a, b) => a - b), categories, "opt out, fuzzy, tmt, txt, reply, close");
+  assert.equal(Object.hasOwn(s.categories, "no_action"), false, "no action never outranks a category");
+});
+
+test("emoji stop outranks everything else; other rules read the message without emojis", () => {
+  assert.equal(actionsFor("🛑")[0], "opt_out");
+  assert.equal(actionsFor("🖕 thanks")[0], "opt_out");
+  assert.equal(actionsFor("👍")[0], "close");
+  // A raw-text rule no longer misses a phrase an emoji sits inside.
+  assert.equal(actionsFor("fuck 😠 you")[0], "opt_out");
+  assert.equal(actionsFor("Thank you 😊").includes("opt_out"), false);
+});
+
+test("matches ARRÊT as an opt out", () => {
+  const stop = ruleById("R0187");
+  assert.equal(core.collectMatches("ARRÊT", [stop], settings()).length, 1);
+});
+
+test("matches Spanish and French stop, end, revoke, out, opt out, and unsubscribe phrases", () => {
+  const stop = ruleById("R0187");
+  for (const text of ["Cancelar", "PARAR", "Arrêt", "Annuler", "Désabonner"]) {
+    assert.equal(core.collectMatches(text, [stop], settings()).length, 1, text);
+  }
+  const spanish = ruleById("R0141");
+  for (const text of ["quiero cancelar mi suscripción", "Revoco mi consentimiento", "quiero salir de la lista"]) {
+    assert.equal(core.collectMatches(text, [spanish], settings()).length, 1, text);
+  }
+  const french = ruleById("R0142");
+  for (const text of ["Je veux annuler mon abonnement", "Désinscrivez-moi", "Retirez-moi de la liste"]) {
+    assert.equal(core.collectMatches(text, [french], settings()).length, 1, text);
+  }
+});
+
+test("matches 'enough' of the texts as an opt out, but not 'not enough'", () => {
+  const enough = ruleById("R0229");
+  for (const text of ["Enough of the text messages", "enough text messages", "enough texts", "Enough of the texts!", "I've had enough of these texts", "enough with the messages", "enough already with the texting", "enough of your sms"]) {
+    assert.equal(core.collectMatches(text, [enough], settings()).length, 1, text);
+  }
+  for (const text of ["not enough texts", "there is enough time", "enough food"]) {
+    assert.equal(core.collectMatches(text, [enough], settings()).length, 0, text);
+  }
 });

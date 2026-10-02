@@ -149,8 +149,8 @@ test("customer highlight count badge is URL-gated and uses logical rendered grou
   assert.match(contentSource, /countVisibleHighlightsForBadge/);
   assert.match(contentSource, /amh-highlight-count/);
   assert.match(contentSource, /existingBadges\.forEach\(\(badge\) => badge\.remove\(\)\)/);
-  assert.doesNotMatch(cssSource, /\.amh-customer-heading-row/);
-  assert.match(cssSource, /\.amh-highlight-count[\s\S]*margin-left:\s*8px/);
+  assert.match(cssSource, /\.amh-customer-heading-row/);
+  assert.match(cssSource, /\.amh-highlight-count[\s\S]*right:\s*38px/);
   assert.match(cssSource, /\.amh-highlight-count[\s\S]*border-radius:\s*6px/);
 });
 

@@ -108,7 +108,7 @@ test("answers stats and refresh requests from the popup", async () => {
   await waitFor(() => isHighlighted(document.querySelector("#multi")));
 
   const stats = await dispatchRuntimeMessage(stub, { type: "AMH_GET_STATS" });
-  assert.equal(stats.stats.loadedRules, 211);
+  assert.equal(stats.stats.loadedRules, 214);
   const refreshed = await dispatchRuntimeMessage(stub, { type: "AMH_REFRESH", settings: { customKeywords: ["hello"] } });
   assert.ok(refreshed.stats.highlightedElements >= 3);
   assert.equal(await dispatchRuntimeMessage(stub, { type: "OTHER" }), undefined);

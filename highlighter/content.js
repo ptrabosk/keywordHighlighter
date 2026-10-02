@@ -352,14 +352,20 @@
     }
 
     const section = heading.parentElement;
-    let badge = section.querySelector(':scope > .amh-highlight-count');
+    let headingRow = section.querySelector(':scope > .amh-customer-heading-row');
+    if (!headingRow) {
+      headingRow = document.createElement('div');
+      headingRow.className = 'amh-customer-heading-row';
+      section.insertBefore(headingRow, heading);
+      headingRow.appendChild(heading);
+    }
 
     const count = state.settings.enabled ? countVisibleHighlightsForBadge() : 0;
     existingBadges.forEach((badge) => {
-      if (badge.parentElement !== section) badge.remove();
+      if (badge.parentElement !== headingRow) badge.remove();
     });
 
-    badge ||= document.createElement('span');
+    const badge = headingRow.querySelector(':scope > .amh-highlight-count') || document.createElement('span');
     if (!count) {
       badge.remove();
       return;
@@ -368,7 +374,7 @@
     if (!badge.parentElement) {
       badge.className = 'amh-highlight-count';
       badge.setAttribute('aria-live', 'polite');
-      heading.insertAdjacentElement('afterend', badge);
+      headingRow.appendChild(badge);
     }
     if (badge.textContent !== String(count)) badge.textContent = String(count);
     badge.setAttribute('aria-label', `${count} highlight${count === 1 ? '' : 's'}`);

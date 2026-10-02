@@ -19,14 +19,22 @@
   filter: brightness(0.96);
 }
 
+.amh-customer-heading-row {
+  position: relative !important;
+  display: block !important;
+  align-items: center;
+  width: 100%;
+}
+
 .amh-highlight-count {
-  position: relative;
-  vertical-align: middle;
-  margin-left: 8px;
+  position: absolute;
+  top: 50%;
+  right: 38px;
   display: grid;
   place-items: center;
   width: 20px;
   height: 20px;
+  transform: translateY(-50%);
   color: #000000;
   background: #faecb9;
   border: 1px solid #f6da71;

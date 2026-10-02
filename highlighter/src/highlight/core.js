@@ -8,8 +8,9 @@
   const MAX_CUSTOM_KEYWORDS = 40;
   const EXPECTED_SCHEMA_VERSION = 2;
   const EXPECTED_REGISTRY_NAME = 'unified_deterministic_opt_out_rules';
-  const EXPECTED_RULE_COUNT = 211;
-  const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'txt', 'tmt', 'close']);
+  const EXPECTED_RULE_COUNT = 214;
+  // no_action rules are valid registry entries but have no category, so they never highlight.
+  const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'txt', 'tmt', 'close', 'no_action']);
   const TARGETS = new Set(['raw_customer', 'normalized_customer', 'combined']);
   const MATCH_TYPES = new Set(['regex_search', 'full_match', 'bounded_phrase', 'exact', 'exact_set', 'detector']);
   // Each detector receives (rawText, normalizedText). Hot Topic detectors need
@@ -22,7 +23,7 @@
     reaction_reply: (raw) => isTapbackReaction(raw),
     emoji_only_non_stop: (raw) => isEmojiOnlyWithoutStopSignal(raw),
     no_notifications: (_raw, text) => text.includes('not receiving notifications if this is urgent reply urgent to send a notification through with your original message'),
-    driving_auto_reply: (_raw, text) => isDrivingAutoReply(text),
+    driving_auto_reply: (raw) => isDrivingAutoReply(raw),
     unavailable_auto_reply: (_raw, text) => isUnavailableAutoReply(text),
     device_not_working: (_raw, text) => isDeviceNotWorking(text),
     txt_origin_question: (_raw, text) => isTextOriginQuestion(text),
@@ -48,9 +49,11 @@
   const RULE_ENUM_FIELDS =Object.freeze([['action', ACTIONS], ['target', TARGETS], ['match_type', MATCH_TYPES]]);
   const SAFE_COLLISION_WORDS = new Set([
     'no', 'price', 'shop', 'top', 'the', 'nice', 'oh', 'save', 'sri', 'test',
-    'ok', 'yes', 'okay', 'email', 'url', 'chat'
+    'ok', 'yes', 'okay', 'email', 'url', 'chat',
+    'spot', 'atop', 'stip', 'inscribe', 'banned', 'canceled', 'cancellation'
   ]);
   const STOP_SIGNAL_EMOJIS = new Set(['🖕', '🛑', '✋', '🙅', '🚫', '🔕']);
+  const EMOJI_RE = /[\p{Extended_Pictographic}\p{Emoji_Modifier}\p{Regional_Indicator}\uFE0E\uFE0F\u200D\u20E3\u{E0020}-\u{E007F}]/gu;
 
   function validateRuleRegistry(payload) {
     if (!isPlainObject(payload)) throw new Error('Rule registry must be a JSON object.');
@@ -144,7 +147,27 @@
     } else if (rule.matchType === 'regex_search' || rule.matchType === 'full_match') {
       rule.regexes = [compileRegistryRegex(rule, rule.pattern)];
     }
+    rule.readsEmoji = readsEmoji(rule);
+    rule.emojiStop = rule.readsEmoji && rule.action === 'opt_out' && mentionsStopEmoji(rule.pattern);
     return rule;
+  }
+
+  // A raw-message rule whose pattern contains an emoji must see the message as written;
+  // every other rule reads it with emojis removed.
+  function decodeEscapes(pattern) {
+    return String(pattern || '')
+      .replace(/\\U([0-9a-fA-F]{8})/g, (_match, hex) => String.fromCodePoint(Number.parseInt(hex, 16)))
+      .replace(/\\u\{([0-9a-fA-F]{1,6})\}/g, (_match, hex) => String.fromCodePoint(Number.parseInt(hex, 16)))
+      .replace(/\\u([0-9a-fA-F]{4})/g, (_match, hex) => String.fromCharCode(Number.parseInt(hex, 16)));
+  }
+
+  function readsEmoji(rule) {
+    return rule.target === 'raw_customer' && /\p{Extended_Pictographic}/u.test(decodeEscapes(rule.pattern));
+  }
+
+  function mentionsStopEmoji(pattern) {
+    const decoded = decodeEscapes(pattern);
+    return Array.from(STOP_SIGNAL_EMOJIS).some((emoji) => decoded.includes(emoji));
   }
 
   function describeRule(rule) {
@@ -252,9 +275,13 @@
     return [...getCustomKeywordRules(settings), ...configuredRules];
   }
 
+  // Reaction, emoji stop, emoji only and Hot Topic outrank every category; the categories then
+  // run opt out, fuzzy opt out, tmt, txt, reply, close (no_action has no category and never paints).
   function getRulePriority(rule, settings) {
-    if (rule.detector === 'reaction_reply' || rule.detector === 'emoji_only_non_stop') return 0;
-    if (rule.detector === 'hot_topic_opt_out' || rule.detector === 'hot_topic_not_opt_out') return 1;
+    if (rule.detector === 'reaction_reply') return 0;
+    if (rule.emojiStop) return 1;
+    if (rule.detector === 'emoji_only_non_stop') return 2;
+    if (rule.detector === 'hot_topic_opt_out' || rule.detector === 'hot_topic_not_opt_out') return 3;
     return settings.categories[rule.tag]?.priority ?? 999;
   }
 
@@ -348,7 +375,13 @@
   function collectMatches(text, activeRules, settings) {
     const messageText = String(text || '');
     const rawContext = { text: messageText, normalized: false, rawSpans: null };
+    // Same text with every emoji blanked out (same length, so spans still map to the message).
+    rawContext.withoutEmoji = { text: messageText.replace(EMOJI_RE, (emoji) => ' '.repeat(emoji.length)), normalized: false, rawSpans: null };
     const normalizedContext = normalizeSearchTextWithMapping(messageText);
+    // Regex rules are also tried against the text with apostrophes as spaces ("doesn t"),
+    // matching the zapOptOuts engine; registry patterns are authored against both forms.
+    const spacedContext = normalizeSearchTextWithMapping(messageText, true);
+    normalizedContext.alternate = spacedContext.text === normalizedContext.text ? null : spacedContext;
     const candidates = activeRules.flatMap((rule) => collectAllowedRuleMatches(rule, messageText, rawContext, normalizedContext));
     candidates.sort((a, b) => compareCandidates(a, b, settings));
     return selectNonOverlapping(candidates);
@@ -389,8 +422,10 @@
     if (WHOLE_MESSAGE_MATCH_TYPES.has(rule.matchType)) {
       return wholeMessageRuleMatches(rule, messageText, normalizedContext.text) ? [wholeMessageCandidate(messageText, rule)] : [];
     }
-    const context = rule.target === 'raw_customer' ? rawContext : normalizedContext;
-    return (rule.regexes || []).flatMap((regex) => collectRegexMatches(rule, regex, context, messageText));
+    const contexts = rule.target === 'raw_customer'
+      ? [rule.readsEmoji || rule.tag === 'user_added' ? rawContext : rawContext.withoutEmoji]
+      : [normalizedContext, normalizedContext.alternate].filter(Boolean);
+    return contexts.flatMap((context) => (rule.regexes || []).flatMap((regex) => collectRegexMatches(rule, regex, context, messageText)));
   }
 
   function wholeMessageRuleMatches(rule, messageText, normalizedText) {
@@ -424,9 +459,38 @@
     return detect ? detect(rawText, normalizedText) : false;
   }
 
-  function isDrivingAutoReply(text) {
-    return /^(?:im driving sent from|im driving with focus turned on|driving cant text)\b/.test(text)
-      || (/\bdriving\b/.test(text) && /\b(?:cant|cannot|can not)\s+(?:text|reply|respond)\b/.test(text));
+  // Driving auto-replies. The patterns and known variations are generated from the DRIVING_*
+  // constants in zapOptOuts/optout_classifier/deterministic_rules.py so both engines agree;
+  // regenerate them when zap's change. The "can't text" form is matched on the raw message.
+  const DRIVING_DATA = {
+    "normalized": "^i ?m not receiving notifications if this is urgent reply urgent to send a notification through with your original message i ?m driving with do not disturb while driving turned on i ?ll see your message when i get where i ?m going if this is urgent please call me$|^(?:auto reply )?(?:i am|i m|im) driving$|^driving can ?t text$|^estoy conduciendo$|^je suis au volant$|^i m driving(?: with focus turned on| and can t receive texts) i ll see your message when i get where i m going(?: thanks)?(?: i m not receiving notifications if this is urgent reply urgent to send a notification through with your original message)?$",
+    "cantText": "^\\s*(?:driving,\\s*can(?:['’`]|\\s)?t\\s+text|manejan\\.,\\s*no\\s+puedo\\s+escrib)[.!-]?\\s*-?\\s*sent\\s+from[ \\t]*[^\\r\\n]{0,20}?(?:\\s*(?:driving,\\s*can(?:['’`]|\\s)?t\\s+text|manejan\\.,\\s*no\\s+puedo\\s+escrib)[.!-]?\\s*-?\\s*sent\\s+from[ \\t]*[^\\r\\n]{0,20}?)*\\s*$",
+    "variations": [
+      "I’m driving with Do Not Disturb While Driving. I’ll see your message when I get where I’m going. If this is urgent please call me! 😊<br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)",
+      "I’m driving with Focus turned on. I’ll see your message when I get where I’m going. If this is urgent, please call.<br><br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)",
+      "I’m driving. I’ll see your message when I get where I’m going. Or please call my cell phone<br><br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)",
+      "I am currently driving and cannot reply to text. If needed, please call my phone and I can talk via Bluetooth. Thanks! Powered by TRUCE.",
+      "I’m driving with Do Not Disturb While Driving turned on. I’ll see your message when I get where I’m going. If this is urgent please call me.<br><br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)",
+      "(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)<br><br>I’m driving with Do Not Disturb While Driving turned on. I’ll see your message when I get where I’m going. If urgent please call me. Safe travels.",
+      "I’m driving and can’t respond to text messages right now. If you need to reach me, please call me.<br><br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)",
+      "I’ currently driving and not able to respond by text. If this is urgent please call. Thanks!Shelley<br><br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)",
+      "Uuhhh, her driving with her hands on 10 & 2! 🙄Her don’t text and drive, that’s ILLEGAL! 😬 She promises to holla back when she gets where she’s going. ❤️🌹<br><br>(I’m not receiving notifications. If this is urgent, reply “urgent” to send a notification through with your original message.)"
+    ]
+  };
+  const DRIVING_AUTO_REPLY = new RegExp(DRIVING_DATA.normalized);
+  const DRIVING_CANT_TEXT = new RegExp(DRIVING_DATA.cantText, 'i');
+  const DRIVING_VARIATIONS = new Set(DRIVING_DATA.variations.map((value) => normalizeComparableText(stripHtmlBreaks(value))));
+
+  function stripHtmlBreaks(value) {
+    return String(value || '').replace(/<br\s*\/?>/gi, ' ');
+  }
+
+  // Zap also tries the text with apostrophes as spaces ("i m driving").
+  function isDrivingAutoReply(rawText) {
+    const raw = stripHtmlBreaks(rawText);
+    const variants = new Set([normalizeComparableText(raw), normalizeSearchTextWithMapping(raw, true).text]);
+    return [...variants].some((value) => DRIVING_VARIATIONS.has(value) || DRIVING_AUTO_REPLY.test(value))
+      || DRIVING_CANT_TEXT.test(String(rawText || ''));
   }
 
   function hasBoundedBlockIntent(text) {
@@ -434,22 +498,111 @@
       || /\b(?:im|i am|ill|i will)\s+(?:block|blocking)\s+(?:(?:your|this|the)\s+)?(?:you|u|this|these|texts?|messages?|number|sender)\b/.test(text);
   }
 
-  // A tapback is the entire message: a reaction verb followed by the quoted
-  // original (or a media noun). Any trailing text means the customer wrote
-  // something of their own, so it is not treated as a reaction.
-  const QUOTED_ORIGINAL = '["\\u201C\\u201D][\\s\\S]*["\\u201C\\u201D]';
-  const TAPBACK_VERB = '(?:liked|loved|disliked|laughed at|emphasized|questioned)';
-  const TAPBACK_MEDIA = '(?:an?\\s+(?:image|photo|video|movie|attachment|sticker|gif|audio message|voice message|link))';
-  const TAPBACK_PATTERNS = Object.freeze([
-    new RegExp(`^${TAPBACK_VERB}\\s+(?:${QUOTED_ORIGINAL}|${TAPBACK_MEDIA})$`, 'iu'),
-    new RegExp(`^removed\\s+(?:an?\\s+[a-z ]+?|\\S+)\\s+from\\s+(?:${QUOTED_ORIGINAL}|${TAPBACK_MEDIA})$`, 'iu'),
-    new RegExp(`^reacted\\s+(?:with\\s+)?\\S+\\s+to\\s+(?:${QUOTED_ORIGINAL}|${TAPBACK_MEDIA})$`, 'iu'),
-    new RegExp(`^reacted\\s+to\\s+${QUOTED_ORIGINAL}\\s+with\\s+\\S+$`, 'iu')
+  // A tapback is the entire message: a reaction prefix followed by the quoted original.
+  // Any trailing text means the customer wrote something of their own, so it is not
+  // treated as a reaction. Reaction (tapback) detection. The pattern data below is generated from the REACTION_*
+  // constants in zapOptOuts/optout_classifier/deterministic_rules.py so both engines recognize
+  // the same prefixes, quote pairs and nested/suffix forms; regenerate it when zap's change.
+  const REACTION_DATA = {
+    "prefixes": [
+      "liked|loved|emphasized|emphasised|laughed at|disliked|questioned",
+      "(?:[\\u{1f000}-\\u{1faff}\\u2600-\\u27bf]\\ufe0f?|!!\\ufe0f?)\\s+(?:a|to)",
+      "reacted(?:\\s+with\\s+a\\s+(?:sticker|photomoji)|\\s+\\S+)?\\s+to",
+      "removed(?:\\s+\\S+){0,4}\\s+from",
+      "reacciono\\s+con\\s+(?:\\S+|un\\s+sticker)\\s+a|se\\s+ha\\s+reaccionado\\s+con\\s+\\S+\\s+a",
+      "se\\s+ha\\s+anadido\\s+\\S+\\s+a",
+      "se\\s+quito\\s+\\S+\\s+de|elimino\\s+\\S+\\s+de|ha\\s+eliminado(?:\\s+\\S+){0,4}\\s+de",
+      "dudo\\s+sobre|duda\\s+sobre|dejo\\s+de\\s+dudar\\s+sobre|ya\\s+no\\s+duda\\s+sobre",
+      "exclamo\\s+por|dejo\\s+de\\s+exclamar\\s+por",
+      "le\\s+(?:gusto|dio\\s+risa|encanta|gusta|sorprende|hace\\s+gracia|encanto)",
+      "no\\s+le\\s+(?:gusto|gusta)|ya\\s+no\\s+le\\s+(?:gusta|hace\\s+gracia|encanta)",
+      "dejo\\s+de\\s+(?:gustarle|darle\\s+risa|encantarle|no\\s+gustarle)",
+      "questionou|riu\\s+de|curtiu|nao\\s+curtiu|gostou\\s+de|adorou",
+      "reagiu\\s+com\\s+\\S+\\s+a|removeu\\s+(?:\\S+|uma\\s+(?:risada|exclamacao))\\s+de|enfatizou",
+      "a\\s+ajoute\\s+(?:un\\s+rire|un\\s+point\\s+d.interrogation|des\\s+points\\s+d.exclamation)\\s+a",
+      "a\\s+reagi(?:\\s+avec)?\\s+\\S+\\s+a",
+      "ha\\s+aggiunto\\s+(?:un\\s+cuoricino|il\\s+punto\\s+interrogativo|i\\s+punti\\s+esclamativi)\\s+a",
+      "ha\\s+reagito\\s+con\\s+\\S+\\s+a|ha\\s+rimosso\\s+\\S+\\s+da|trova\\s+divertente",
+      "Đa\\s+(?:xoa|tha|tuong\\s+tac|nhan\\s+manh|nghi\\s+van|yeu\\s+thich|khong\\s+thich|thich)\\b(?:\\s+\\S+){0,4}",
+      "用\\S+回应了|已用\\S+回應|喜欢|喜歡|不喜欢|不喜歡|惊叹|驚嘆",
+      "Посмеялись\\s+над|Отмечено|Не\\s+понравилось|Понравилось",
+      "Отреагировал\\(а\\)\\s+\\S+\\s+на\\s+сообщение|Подобається|Піддає\\s+сумніву",
+      "وضع\\(ت\\)\\s+(?:إعجابًا|عدم\\s+إعجاب)\\s+على|ضحك\\(ت\\)\\s+على",
+      "أحب.{0,20}?\\(ت\\)|تساءل\\(ت\\)\\s+عن|تفاعل\\(ت\\)\\s+\\S+\\s+على|أك.{0,20}?د\\(ت\\)\\s+على",
+      "Αντεδρασε\\s+με\\s+\\S+\\s+σε|reageerde\\s+met\\s+\\S+\\s+op|gaf\\s+een\\s+hartje\\s+aan",
+      "verwijderde\\s+een\\s+duim\\s+omlaag\\s+van",
+      "bereaksi\\s+\\S+\\s+terhadap|menyukai",
+      "(?:soru\\s+isareti|gulme\\s+isareti|kalp)\\s+eklendi:|soru\\s+isareti\\s+silindi:|begenildi:",
+      "ชอบ|ตั้งคําถาม|føjede\\s+et\\s+hjerte\\s+til|l’ha\\s+sorpres",
+      "[\\u{1f000}-\\u{1faff}\\u2600-\\u27bf]\\ufe0f?\\s+ចំពោះ"
+    ],
+    "quotePairs": [
+      [
+        "\"",
+        "\""
+      ],
+      [
+        "“",
+        "”"
+      ],
+      [
+        "‘",
+        "’"
+      ],
+      [
+        "'",
+        "'"
+      ],
+      [
+        "«",
+        "»"
+      ],
+      [
+        "‹",
+        "›"
+      ],
+      [
+        "「",
+        "」"
+      ],
+      [
+        "『",
+        "』"
+      ],
+      [
+        "�",
+        "�"
+      ]
+    ],
+    "payloadMax": 2000,
+    "nested": "(?:(?:a\\s+ajoute\\s+un|a\\s+attribue\\s+la\\s+mention)\\s+@@P@@\\s+a\\s+@@P@@|a\\s+retire\\s+son\\s+@@P@@\\s+de\\s+@@P@@|ha\\s+aggiunto\\s+@@P@@\\s+a\\s+@@P@@|reagiu\\s+com\\s+@@P@@\\s+a\\s+@@P@@|reagira\\s+s\\s+@@P@@\\s+na\\s+@@P@@|Додано\\s+реакцію\\s+@@P@@\\s+на\\s+@@P@@)",
+    "suffix": "(?:对\\s*@@P@@\\s*表示了?\\s*\\S+|vond\\s+@@P@@\\s+(?:niet\\s+leuk|leuk))",
+    "maxChars": 4000
+  };
+  const REACTION_PAYLOAD = `(?:${REACTION_DATA.quotePairs.map(([open, close]) => {
+    const body = close === "'" || close === '\u2019' ? `(?:[^${close}]|(?<=\\w)${close}(?=\\w))` : `[^${close}]`;
+    return `${open}${body}{0,${REACTION_DATA.payloadMax}}${close}`;
+  }).join('|')})`;
+  const REACTION_SEGMENT = `(?:(?:${REACTION_DATA.prefixes.join('|')})\\s*${REACTION_PAYLOAD}|${REACTION_DATA.nested.replaceAll('@@P@@', REACTION_PAYLOAD)}|${REACTION_DATA.suffix.replaceAll('@@P@@', REACTION_PAYLOAD)})`;
+  const REACTION_REPLY = new RegExp(`^\\s*${REACTION_SEGMENT}(?:\\s*${REACTION_SEGMENT})*(?:\\s*[.!?])?(?:\\s*(?:cool|wow))?\\s*$`, 'isu');
+  const REACTION_NORMALIZED_REPLIES = new Set([
+    'emphasized an image', 'laughed at an image', 'liked a contact', 'liked an image',
+    'loved a contact', 'loved an image', 'reacted to an image'
   ]);
 
+  // Same folding as zap's fold_text_variants, then zero-width characters are removed.
+  function foldReactionText(value) {
+    return repairCommonMojibake(String(value || '').replace(/<br\s*\/?>/gi, ' '))
+      .normalize('NFKC').normalize('NFKD').replace(/[̀-ͯ]+/g, '').normalize('NFKC')
+      .replace(/[\u200B-\u200D\uFEFF]/g, '');
+  }
+
   function isTapbackReaction(value) {
-    const text = String(value || '').trim();
-    return Boolean(text) && TAPBACK_PATTERNS.some((pattern) => pattern.test(text));
+    let text = foldReactionText(value).trim();
+    if (text.length > REACTION_DATA.maxChars) return false;
+    if (text.startsWith('"') && text.endsWith('"') && text.includes('\u201C')) text = text.slice(1, -1).trim();
+    if (REACTION_REPLY.test(text)) return true;
+    return REACTION_NORMALIZED_REPLIES.has(normalizeComparableText(text));
   }
 
   // The Hot Topic survey asks for one of four numbered choices. Only a reply
@@ -493,7 +646,7 @@
 
   function classifyHotTopicReply(text) {
     const normalized = normalizeComparableText(text);
-    if (/^(?:(?:4|four)(?: never)?|never)$/.test(normalized)) return 'hot_topic_opt_out';
+    if (/^(?:4|four)$/.test(normalized) || /\bnever\b/.test(normalized)) return 'hot_topic_opt_out';
     if (/^(?:(?:1|one)(?: same)?|same|(?:2|two)(?: weekly)?|weekly|(?:3|three)(?: monthly)?|monthly)$/.test(normalized)) {
       return 'hot_topic_not_opt_out';
     }
@@ -502,7 +655,10 @@
 
   function isEmojiOnlyWithoutStopSignal(value) {
     const text = String(value || '').trim();
-    if (!text || Array.from(STOP_SIGNAL_EMOJIS).some((emoji) => text.includes(emoji))) return false;
+    if (!text) return false;
+    // Up to 8 emojis containing a stop signal belong to the emoji-stop tier; longer runs do not.
+    const emojiCount = (text.match(/\p{Extended_Pictographic}/gu) || []).length;
+    if (emojiCount <= 8 && Array.from(STOP_SIGNAL_EMOJIS).some((emoji) => text.includes(emoji))) return false;
     try {
       return /\p{Extended_Pictographic}/u.test(text)
         && /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|[\u200D\uFE0E\uFE0F\s])+$/u.test(text);
@@ -512,7 +668,8 @@
   }
 
   function isUnavailableAutoReply(text) {
-    return /^(?:hey i m currently unavailable i ll get back to you as soon as i can|sorry i cant talk(?: right)? now|sorry cant talk(?: right)? now|thank you for contacting me i m unable to chat right now but i ll reply to your text as soon as i can thanks|thanks for reaching out i cant chat(?: at the moment| now) but i ll text you back as soon as i can(?: thanks.*)?)$/.test(text)
+    // Normalized text drops apostrophes ("im", "ill", "cant"); "i ?m" also accepts the spaced form.
+    return /^(?:hey i ?m currently unavailable i ?ll get back to you as soon as i can|sorry i ?cant talk(?: right)? now|sorry (?:can ?t|cant) talk(?: right)? now|thank you for contacting me i ?m unable to chat right now but i ?ll reply to your text as soon as i can thanks|thanks for reaching out i (?:can ?t|cant) chat(?: at the moment| now) but i ?ll text you back as soon as i can(?: thanks.*)?)$/.test(text)
       || text.includes('not receiving notifications if this is urgent reply urgent');
   }
 
@@ -526,7 +683,9 @@
     return /\b(?:how|where) did (?:you|u) get my (?:number|phone number|contact)\b/.test(text)
       || /\bwho gave (?:you|u) my (?:number|phone number|contact)\b/.test(text)
       || /\bwhy (?:am i|do i) (?:getting|get|receive|receiving) (?:these )?(?:texts?|text messages?|messages?|msgs?)\b/.test(text)
-      || /\bwhy (?:are|r) (?:you|u) (?:texting|messaging|msging|contacting) me\b/.test(text)
+      || /\bwhy (?:the fuck )?(?:are|r) (?:you|u) (?:texting|messaging|msging|contacting) me\b/.test(text)
+      || /\bwhy do (?:you|u) (?:text|message|msg) me\b/.test(text)
+      || /\bwhy do (?:you|u) keep (?:texting|messaging|contacting)(?: me)?\b/.test(text)
       || /\bwhy (?:are|r) (?:you|u) sending (?:me )?(?:texts?|text messages?|messages?|msgs?)\b/.test(text)
       || /\bwhy did (?:you|u) (?:text|message|msg|contact) me\b/.test(text)
       || /\bwhy did i get (?:this|these) (?:text|texts|message|messages|msg|msgs)\b/.test(text)
@@ -543,6 +702,8 @@
 
   function isConservativeNonOptOutLanguage(text) {
     if (!text || /\b(?:stop|unsub|unsubscribe|opt out|remove|delete|block|cancel|dnc)\b/.test(text)) return false;
+    // "sh", "shh", "shhh" are shush requests (opt out), not gibberish.
+    if (/^(?:sh+|shush)$/.test(text)) return false;
     if (SAFE_COLLISION_WORDS.has(text)) return true;
     return /^[a-z]{4,12}$/.test(text) && !/[aeiou]/.test(text);
   }
@@ -557,7 +718,7 @@
     switch (guard) {
       case 'unsubscribe_intent':
         if (/\bstop by\b/.test(text)) return false;
-        return /^(?:stop|unsubscribe|unsub|opt out|optout|dnc|remove me|please remove|go away|beat it|leave me alone|close|cancel)$/.test(text)
+        return /^(?:stop|unsubscribe|unsub|opt out|optout|dnc|remove me|please remove|go away|beat it|leave me alone|close|cancel|sh+|shush)$/.test(text)
           || /\b(?:stop|end|halt|remove|delete|unsubscribe|unsub|opt out|dnc|dont|do not|never|no more|take|pull)\b.*\b(?:me|my|texts?|messages?|sms|emails?|calls?|contact|communication|number|list|again|anymore)\b/.test(text)
           || /\b(?:leave me alone|take me off|turn (?:that|this|it) off|get out|shut up)\b/.test(text);
       case 'offensive_intent':
@@ -572,7 +733,12 @@
         return /\b(?:block|blocking|blocked|uninstall|uninstalled|uninstaller)\b/.test(text)
           && /\b(?:i|im|ill|you|u|texts?|messages?|number|all)\b/.test(text);
       case 'opt_in_intent':
-        return text === 'start' || /\b(?:subscribe|opt in|sign me up|unstop|start (?:texts?|messages?))\b/.test(text);
+        return /^start(?:s|ed|ing)?$/.test(text) || /\b(?:subscribe|opt in|sign me up|unstop|start (?:texts?|messages?))\b/.test(text);
+      case 'opt_out_instruction':
+        // Zap's opt_out_instruction_signal ignores questions and reported/page wording.
+        return !(/\b(?:page|website|instructions?|screen) (?:say|says|said|show|shows|showed)\b/.test(text)
+          || /\b(?:what does|what is|how do i|why does)\b.{0,40}\b(?:stop|unsubscribe|opt out)\b/.test(text)
+          || /\b(?:customer|person|user|they|he|she) (?:said|says|wrote|asked|texted|typed|sent)\b.{0,40}\b(?:stop|unsubscribe|remove me)\b/.test(text));
       default:
         return false;
     }
@@ -580,20 +746,44 @@
 
   function implicitGuardForRule(rule) {
     if (rule.id === 'R0170') return 'not_interested_intent';
+    if (rule.id === 'R0228') return 'opt_out_instruction';
     return '';
   }
 
+  // Mirrors the harmonized legal-intent rule (opt_out_19 / legal-intent-v2): a message
+  // is legal intent when any independently authored clause is a first-person legal threat
+  // or names a regulator. Normalized text has no punctuation, so only "but"/"however" split it.
+  const LEGAL_AUTHORITY = '(?:(?:the )?police|(?:an? )?(?:attorney|lawyer|regulator))';
+  const LEGAL_AGENCY = '(?:bbb|better business bureau|fcc|federal communications commission|ftsa|tcpa|florida telephone solicitation act|telephone consumer protection act)';
+  const LEGAL_NEGATED = new RegExp(`\\b(?:not|never|wont|wouldnt|dont) (?:be |go |going to )?(?:sue|report|press charges|(?:call|contact) ${LEGAL_AUTHORITY})\\b`);
+  const LEGAL_REPORTED = /\b(?:said|says|asked|asks|wonder(?:ed|ing)?|what does|how do i)\b.{0,40}\b(?:sue|legal action|press charges|report fraud|call (?:the )?police)\b/;
+  // Kept from the previous highlighter rule: "where do I report this" is a question, not a threat.
+  const LEGAL_HOW_TO_REPORT = /\b(?:who|where|how|what) (?:can|could|do|should|would) i (?:report|file|make|submit|lodge)\b/;
+  const LEGAL_BARE = new RegExp(`^(?:sue|legal action|press charges|call (?:the )?police|bbb|report fraud|(?:call|contact) ${LEGAL_AUTHORITY})$`);
+  const LEGAL_THREAT = new RegExp(`\\b(?:(?:i|we) (?:am |are )?(?:going to |gonna )?(?:sue|report|reporting you|press charges|(?:call|contact) ${LEGAL_AUTHORITY})|(?:i|we) will (?:sue|report|press charges|(?:call|contact) ${LEGAL_AUTHORITY})|you (?:are getting|will be) sued|fil(?:e|ing) (?:a )?(?:complaint|lawsuit)|this is against the law)\\b`);
+  const LEGAL_AGENCY_ACTION = new RegExp(`\\b(?:report(?:ing)? you to|contact(?:ing)?|call(?:ing)?|fil(?:e|ing) (?:a )?complaint with) (?:the )?${LEGAL_AGENCY}\\b`);
+  const LEGAL_AGENCY_VIOLATION = new RegExp(`\\b(?:this|that|you|your (?:texts?|messages?)|these (?:texts?|messages?)) (?:violates?|is in violation of) (?:the )?${LEGAL_AGENCY}\\b`);
+
   function hasLegalIntent(text) {
-    if (/\b(?:who|where|how|what)\s+(?:can|could|do|should|would)\s+i\s+(?:report|file|make|submit|lodge)\b/.test(text)) return false;
-    // "complaint" alone is usually about an order; it only signals legal intent
-    // when it is filed/lodged or aimed at the sender or a regulator.
-    if (/\b(?:file|filing|filed|lodge|lodging|lodged|submit|submitting|submitted|make|making|made)\s+(?:a\s+)?(?:formal\s+)?complaints?\b/.test(text)
-      || /\bcomplaints?\s+(?:against|on)\s+(?:you|u|this|your|the)\b/.test(text)
-      || /\bcomplaints?\s+(?:with|to)\s+(?:the\s+)?(?:bbb|better business bureau|fcc|ftc|attorney general|consumer protection|authorities)\b/.test(text)) {
-      return true;
-    }
-    return /\b(?:law|lawyer|attorney|sue|suing|sued|lawsuit|legal action|bbb|better business bureau|fcc|ftsa|tcpa|federal communications commission|telephone consumer protection act)\b/.test(text)
-      || /\breport(?:ing|ed)?\s+(?:(?:you|u)\b|(?:this|your)\s+(?:company|business|brand|businesses)\b|(?:me|us)\s+to\s+(?:the\s+)?(?:bbb|better business bureau|fcc|ftc|attorney general|consumer protection|police|authorities)\b)/.test(text);
+    return String(text || '')
+      .split(/\b(?:but|however)\b/)
+      .map((clause) => compactCommonContractions(normalizeComparableText(clause)))
+      .filter(Boolean)
+      .some(isLegalIntentClause);
+  }
+
+  function compactCommonContractions(text) {
+    return text.replace(/\bi m\b/g, 'im').replace(/\b(don|can|doesn|isn|wasn|won|shouldn|wouldn|couldn) t\b/g, '$1t');
+  }
+
+  function isLegalIntentClause(text) {
+    if (LEGAL_NEGATED.test(text) || LEGAL_REPORTED.test(text) || LEGAL_HOW_TO_REPORT.test(text)) return false;
+    return LEGAL_BARE.test(text)
+      || /\b(?:i am|i m|im|we are|we re) reporting you\b/.test(text)
+      || LEGAL_THREAT.test(text)
+      || /\b(?:bbb|better business bureau)\b/.test(text)
+      || LEGAL_AGENCY_ACTION.test(text)
+      || LEGAL_AGENCY_VIOLATION.test(text);
   }
 
   function hasNotInterestedIntent(text) {
@@ -610,12 +800,12 @@
 
   // Lowercases, strips accents, and collapses punctuation/space runs to one
   // space, recording for every output character the raw span it came from.
-  function normalizeSearchTextWithMapping(value) {
+  function normalizeSearchTextWithMapping(value, spaceApostrophes = false) {
     const state = { chars: [], rawSpans: [], pendingSpaceSpan: null };
     let rawIndex = 0;
     for (const codePoint of String(value || '')) {
       const sourceSpan = { start: rawIndex, end: rawIndex + codePoint.length };
-      for (const char of codePoint.normalize('NFKD').toLowerCase()) appendSearchChar(state, char, sourceSpan);
+      for (const char of codePoint.normalize('NFKD').toLowerCase()) appendSearchChar(state, char, sourceSpan, spaceApostrophes);
       rawIndex += codePoint.length;
     }
     return { text: state.chars.join(''), normalized: true, rawSpans: state.rawSpans };
@@ -623,8 +813,8 @@
 
   // Letters and digits are kept; combining marks and apostrophes are dropped;
   // any other run becomes a single space, emitted only between words.
-  function appendSearchChar(state, char, sourceSpan) {
-    if (/\p{M}/u.test(char) || isIgnorableSearchPunctuation(char)) return;
+  function appendSearchChar(state, char, sourceSpan, spaceApostrophes = false) {
+    if (/\p{M}/u.test(char) || (!spaceApostrophes && isIgnorableSearchPunctuation(char))) return;
     if (!/[\p{L}\p{N}]/u.test(char)) {
       if (state.chars.length) state.pendingSpaceSpan = extendSpan(state.pendingSpaceSpan, sourceSpan);
       return;
