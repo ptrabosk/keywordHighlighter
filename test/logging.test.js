@@ -42,7 +42,7 @@ function createChromeMock() {
     },
     api: {
       runtime: {
-        getManifest: () => ({ version: "1.0.0" }),
+        getManifest: () => ({ version: "1.1.0" }),
         sendMessage: async (message) => {
           messages.push(message);
         },
@@ -128,7 +128,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
 
   assert.equal(sanitized.eventType, "unexpected_exception");
   assert.equal(sanitized.severity, "error");
-  assert.equal(sanitized.extensionVersion, "1.0.0");
+  assert.equal(sanitized.extensionVersion, "1.1.0");
   assert.equal(sanitized.surface, "content");
   assert.equal(sanitized.pageHost, undefined);
   assert.equal(sanitized.pageUrl, "https://ui.attentivemobile.com/concierge/conversation/123");
@@ -638,11 +638,11 @@ test("diagnostics endpoints and reduced render telemetry hooks are present", () 
   assert.match(contentSource, /loggedEvent\.pageUrl = window\.location\.href/);
 });
 
-test("tooltips show only the category label for messages and escalation notes", () => {
+test("tooltips show only the category label for messages, not escalation notes", () => {
   const contentSource = fs.readFileSync(path.join(__dirname, "../highlighter/content.js"), "utf8");
 
   assert.match(contentSource, /element\.dataset\.amhTooltipTitle = category\.label \|\| rule\.tag/);
-  assert.match(contentSource, /span\.dataset\.amhTooltipTitle = match\.rule\.label/);
+  assert.doesNotMatch(contentSource, /span\.dataset\.amhTooltipTitle/);
   assert.match(contentSource, /TOOLTIP_TARGET_SELECTOR = '\.amh-escalation-highlight, \.amh-message-highlight'/);
   // Rendered as text, never HTML, and no guidance or matched message text is kept.
   assert.match(contentSource, /tooltip\.textContent = title/);

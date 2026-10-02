@@ -28,7 +28,7 @@ function validEvent(overrides = {}) {
     eventType: "highlight_detected",
     severity: "info",
     result: "success",
-    extensionVersion: "1.0.6",
+    extensionVersion: "1.1.0",
     surface: "content",
     uploadState: "pending",
     uploadAttempts: 0,

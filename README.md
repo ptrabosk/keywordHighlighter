@@ -11,12 +11,12 @@ A Manifest V3 Chrome extension that highlights inbound message text using the sc
 div[class*="type-INBOUND"] p[class*="variant-caption"]
 ```
 
-- Validates and loads all 214 built-in rules from `highlighter/data/rules/opt_out_rules.json`; startup fails if the registry does not contain exactly 214 rules.
+- Validates and loads all 215 built-in rules from `highlighter/data/rules/opt_out_rules.json`; startup fails if the registry does not contain exactly 215 rules.
 - Colors each matching inbound message by its winning action: `opt_out`, `fuzzy_opt_out`, `tmt`, `txt`, `reply`, `close`, or a user-added keyword. Categories are always on; there is no per-category toggle.
 - Classifies a message once as a whole. When a message has several paragraphs, the highest-priority match across all of them wins.
 - Highlights escalation bullets in inbound and brand notes.
 - Classifies replies to the Hot Topic frequency survey from the preceding brand prompt. Only the inbound reply is highlighted, and only when it is nothing but a choice (`4`/`four`/`never` is an opt-out; `1`/`2`/`3`/`same`/`weekly`/`monthly` is close). Any other reply is left to the regular rules.
-- Shows the category label (for example "Opt out") when hovering over a highlighted message or escalation note.
+- Shows the category label (for example "OPT OUT") when hovering over a highlighted message; escalation notes have no hover.
 - Lets users add custom keywords (at least 3 characters, up to 40, within Chrome's 8 KB sync-storage item limit) from the popup. Keywords match as case-insensitive substrings.
 - Lets users export and import custom keyword backups as CSV.
 - Watches the SPA DOM with a `MutationObserver`, so new conversation messages are highlighted without a page reload.

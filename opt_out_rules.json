@@ -2305,6 +2305,15 @@
       "flags": "i",
       "max_customer_message_chars": 500,
       "rule_id": "R0229"
+    },
+    {
+      "action": "opt_out",
+      "target": "normalized_customer",
+      "match_type": "bounded_phrase",
+      "patterns": [
+        "ستوب"
+      ],
+      "rule_id": "R0230"
     }
   ]
 }

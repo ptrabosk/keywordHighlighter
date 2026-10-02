@@ -47,7 +47,7 @@ test("canonical and packaged schema-v2 registries are byte-identical", () => {
   const payload = loadRegistry();
   assert.equal(payload.schema_version, 2);
   assert.equal(payload.registry_name, "unified_deterministic_opt_out_rules");
-  assert.equal(payload.rules.length, 214);
+  assert.equal(payload.rules.length, 215);
   assert.deepEqual(
     payload.rules.map((rule) => rule.rule_id),
     JSON.parse(fs.readFileSync(rootRegistryPath, "utf8")).rules.map((rule) => rule.rule_id)
@@ -73,17 +73,17 @@ test("registry validation rejects incompatible or incomplete payloads", () => {
 
   const truncated = loadRegistry();
   truncated.rules.pop();
-  assert.throws(() => core.buildRules(truncated), /exactly 214 rules/);
+  assert.throws(() => core.buildRules(truncated), /exactly 215 rules/);
 
   const noAction = loadRegistry();
   noAction.rules[0].action = "bogus_action";
   assert.throws(() => core.buildRules(noAction), /unsupported action bogus_action/);
 });
 
-test("builds all 214 rules with the schema-v2 runtime interface", () => {
+test("builds all 215 rules with the schema-v2 runtime interface", () => {
   const rules = buildRules();
-  assert.equal(rules.length, 214);
-  assert.equal(new Set(rules.map((rule) => rule.id)).size, 214);
+  assert.equal(rules.length, 215);
+  assert.equal(new Set(rules.map((rule) => rule.id)).size, 215);
   for (const rule of rules) {
     assert.match(rule.id, /^R\d{4}$/);
     assert.equal(rule.name, rule.id);
@@ -120,7 +120,7 @@ test("default action colors and no-action behavior remain unchanged", () => {
   assert.equal(defaults.categories.fuzzy_opt_out.color, "#ffcb99");
   assert.equal(defaults.categories.tmt.color, "#8fded4");
   assert.equal(defaults.categories.txt.color, defaults.categories.tmt.color);
-  assert.equal(defaults.categories.txt.label, "Texting Explanation");
+  assert.equal(defaults.categories.txt.label, "TXT");
   assert.equal(defaults.categories.reply.color, "#5C9E3E");
   assert.equal(defaults.categories.close.color, "#E0A800");
 
@@ -131,7 +131,7 @@ test("default action colors and no-action behavior remain unchanged", () => {
     }
   });
   assert.equal(Object.hasOwn(migrated.categories, "test"), false);
-  assert.equal(migrated.categories.txt.label, "Texting Explanation");
+  assert.equal(migrated.categories.txt.label, "TXT");
   assert.equal(migrated.categories.txt.color, "#8fded4");
 
   assert.equal(Object.hasOwn(defaults.categories, "no_action"), false);
@@ -238,7 +238,7 @@ test("uses Unicode-aware bounded phrases", () => {
 test("every configured literal phrase matches its owning rule", () => {
   const rules = buildRules().filter((rule) => ["exact", "exact_set", "bounded_phrase"].includes(rule.matchType) && !rule.guard);
   const phrases = rules.flatMap((rule) => rule.patterns.map((phrase) => [rule, phrase]));
-  assert.equal(phrases.length, 506);
+  assert.equal(phrases.length, 507);
   for (const [rule, phrase] of phrases) {
     assert.equal(core.collectMatches(phrase, [rule], settings()).length, 1, `${rule.id}: ${phrase}`);
   }
@@ -561,5 +561,12 @@ test("matches 'enough' of the texts as an opt out, but not 'not enough'", () => 
   }
   for (const text of ["not enough texts", "there is enough time", "enough food"]) {
     assert.equal(core.collectMatches(text, [enough], settings()).length, 0, text);
+  }
+});
+
+test("matches Arabic-script 'stop' as an opt out", () => {
+  const arabic = ruleById("R0230");
+  for (const text of ["ستوب", "ستوب!", "  ستوب  "]) {
+    assert.equal(core.collectMatches(text, [arabic], settings()).length, 1, text);
   }
 });

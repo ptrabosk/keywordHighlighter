@@ -39,8 +39,8 @@ test("highlights whole inbound messages by priority, Hot Topic replies, and note
   await waitFor(() => isHighlighted(multi));
 
   // "STOP" in the second paragraph outranks "customer service" in the first.
-  assert.equal(multi.dataset.amhTooltipTitle, "Opt out");
-  assert.equal(document.querySelector('[data-message-id="m1"]').dataset.amhTooltipTitle, "Opt out");
+  assert.equal(multi.dataset.amhTooltipTitle, "OPT OUT");
+  assert.equal(document.querySelector('[data-message-id="m1"]').dataset.amhTooltipTitle, "OPT OUT");
   assert.equal(isHighlighted(document.querySelector("#plain")), false);
   assert.equal(isHighlighted(document.querySelector('[data-speaker="Brand"]')), false, "brand prompts are never highlighted");
   assert.equal(document.querySelectorAll(".amh-escalation-highlight").length, 1);
@@ -74,7 +74,7 @@ test("highlights messages added later through the mutation observer", async () =
   added.innerHTML = '<p class="variant-caption">wrong number</p>';
   document.querySelector(".messages").append(added);
   await waitFor(() => isHighlighted(added));
-  assert.equal(added.dataset.amhTooltipTitle, "Opt out");
+  assert.equal(added.dataset.amhTooltipTitle, "OPT OUT");
 });
 
 test("shows the category label on hover and un-hovers when moving between messages", async () => {
@@ -87,7 +87,7 @@ test("shows the category label on hover and un-hovers when moving between messag
     target.dispatchEvent(new window.MouseEvent(type, { bubbles: true, clientX: 5, clientY: 5, relatedTarget }));
   hover("mouseover", multi.querySelector("p"));
   const tooltip = document.querySelector(".amh-tooltip");
-  assert.equal(tooltip.textContent, "Opt out");
+  assert.equal(tooltip.textContent, "OPT OUT");
   assert.equal(tooltip.dataset.visible, "true");
   hover("mousemove", multi);
 
@@ -100,7 +100,7 @@ test("shows the category label on hover and un-hovers when moving between messag
   assert.equal(tooltip.dataset.visible, "false");
 
   hover("mouseover", document.querySelector(".amh-escalation-highlight"));
-  assert.equal(tooltip.textContent, "Escalation action");
+  assert.notEqual(tooltip.dataset.visible, "true");
 });
 
 test("answers stats and refresh requests from the popup", async () => {
@@ -108,7 +108,7 @@ test("answers stats and refresh requests from the popup", async () => {
   await waitFor(() => isHighlighted(document.querySelector("#multi")));
 
   const stats = await dispatchRuntimeMessage(stub, { type: "AMH_GET_STATS" });
-  assert.equal(stats.stats.loadedRules, 214);
+  assert.equal(stats.stats.loadedRules, 215);
   const refreshed = await dispatchRuntimeMessage(stub, { type: "AMH_REFRESH", settings: { customKeywords: ["hello"] } });
   assert.ok(refreshed.stats.highlightedElements >= 3);
   assert.equal(await dispatchRuntimeMessage(stub, { type: "OTHER" }), undefined);

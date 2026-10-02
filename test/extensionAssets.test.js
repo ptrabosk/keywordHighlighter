@@ -75,10 +75,10 @@ test("service worker retains telemetry without an in-product consent dependency"
   assert.match(source, /initializeLoggingServiceWorker/);
 });
 
-test("manifest identifies the 1.0.6 release", () => {
+test("manifest identifies the 1.1.0 release", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
-  assert.equal(manifest.version, "1.0.6");
+  assert.equal(manifest.version, "1.1.0");
 });
 
 test("manifest exposes the options page and narrow resource scope", () => {

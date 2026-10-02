@@ -503,8 +503,6 @@
       span.className = 'amh-escalation-highlight';
       span.textContent = text.slice(match.start, match.end);
       applyEscalationHighlightStyle(span);
-      span.dataset.amhRuleTag = match.rule.tag;
-      span.dataset.amhTooltipTitle = match.rule.label;
       fragment.appendChild(span);
       cursor = match.end;
     }

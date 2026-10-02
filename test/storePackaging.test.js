@@ -49,7 +49,7 @@ test("Store packager creates a production-only ZIP with injected release configu
     const configText = fs.readFileSync(path.join(extractDirectory, "src/logging/config.js"), "utf8");
 
     assert.deepEqual(manifest.permissions, ["storage", "alarms"]);
-    assert.equal(manifest.version, "1.0.6");
+    assert.equal(manifest.version, "1.1.0");
     assert.deepEqual(manifest.options_ui, { page: "options.html", open_in_tab: true });
     assert.doesNotMatch(manifestText, /localhost|127\.0\.0\.1|"tabs"/);
     assert.match(configText, /test-deployment/);

@@ -8,7 +8,7 @@
   const MAX_CUSTOM_KEYWORDS = 40;
   const EXPECTED_SCHEMA_VERSION = 2;
   const EXPECTED_REGISTRY_NAME = 'unified_deterministic_opt_out_rules';
-  const EXPECTED_RULE_COUNT = 214;
+  const EXPECTED_RULE_COUNT = 215;
   // no_action rules are valid registry entries but have no category, so they never highlight.
   const ACTIONS = new Set(['opt_out', 'fuzzy_opt_out', 'reply', 'txt', 'tmt', 'close', 'no_action']);
   const TARGETS = new Set(['raw_customer', 'normalized_customer', 'combined']);
