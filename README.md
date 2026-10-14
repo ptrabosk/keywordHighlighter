@@ -23,25 +23,23 @@ div[class*="type-INBOUND"] p[class*="variant-caption"]
 - Documents local data practices and operational telemetry in the published privacy policy.
 - Records limited usage information as described in the published privacy policy. Each highlighted message is reported once per page session (re-renders do not resend it). A `Shift+D/N/B/C/E` press is reported when at least one message or note highlight is on the page. Full supported-page URLs are recorded for highlight, shortcut, and content-error events; message text, profile emails, field contents, and arbitrary keystrokes are not separately added to telemetry, though values embedded by the site in a full URL are included as part of that URL. URLs from other sites and unrelated browsing activity are never recorded.
 - Provides a focused popup and options page for adding and editing custom keywords.
-- Queues privacy-safe operational logs locally and uploads them to the Google Apps Script receiver when a packaged build contains a valid `/exec` URL and ingestion token.
+- Queues privacy-safe operational logs locally and uploads them to the Offsight Operations collector (`https://opsportal.online/keyword-highlighter/logs`, stored in PostgreSQL). No ingestion token is involved.
 
 ## Package for Chrome Web Store
 
-The committed production manifest has only the supported Operations and logging hosts. Build the Store ZIP with release credentials supplied through the process environment:
+The committed production manifest has only the supported Operations and logging hosts. The logging endpoint is committed in `highlighter/src/logging/config.js`; the collector needs no secret. Build the Store ZIP with:
 
 ```powershell
-$env:KEYWORD_HIGHLIGHTER_ENDPOINT_URL = "https://script.google.com/macros/s/DEPLOYMENT_ID/exec"
-$env:KEYWORD_HIGHLIGHTER_API_KEY = "a-new-release-ingestion-token"
 # Optional after the dashboard supplies the item's public key:
 $env:KEYWORD_HIGHLIGHTER_STORE_PUBLIC_KEY = "BASE64_PUBLIC_KEY"
 npm run package:store
 ```
 
-The ZIP is written under ignored `dist/`. The shared ingestion token is extractable from the installed package and must be treated as abuse resistance, not user authentication. Rotate the previously exposed token before release.
+`KEYWORD_HIGHLIGHTER_ENDPOINT_URL` may override the endpoint (for example in a Development build) but must still be `https://opsportal.online/keyword-highlighter/logs`. The ZIP is written under ignored `dist/`. The packager refuses a Store build whose config has placeholders, an API key, or the retired Google Sheets endpoint.
 
 For localhost QA, create a separate unpacked development package with `npm run package:dev`, then extract the resulting development ZIP and load that folder. The production package never includes localhost access. Set the same endpoint/token environment variables first if the development build should upload logs; otherwise it runs with uploads unconfigured.
 
-Use `store-release/store-listing.md` as the finalized listing and reviewer-instructions source. Host `docs/index.html` at the public HTTPS URL entered in the Store privacy-policy field before submission.
+Use `store-release/store-listing.md` as the finalized listing and reviewer-instructions source. The policy is served publicly by the Offsight Operations collector at `https://opsportal.online/keyword-highlighter/privacy` (enter that URL in the Store privacy-policy field); keep `docs/index.html` and the collector's `privacy.html` identical.
 
 ## Local install
 
@@ -69,13 +67,11 @@ Use the popup buttons:
 
 ## Logging setup
 
-The Apps Script receiver lives in `google-apps-script/Code.gs` and writes to these tabs in the same spreadsheet/API setup used by `workflowExtension`:
+Operational events are uploaded to the Offsight Operations collector at `https://opsportal.online/keyword-highlighter/logs`. It is a Fastify service in the offsight-operations repository (`services/webhook-app/keyword-highlighter/`) that writes to the `keyword_highlighter` schema of the PostgreSQL database (`events`, `upload_batches`, and the `warnings_and_errors` and `shortcut_usage_daily` views). See `docs/keyword-highlighter.md` there for deployment, retention and queries.
 
-- `Events_keywordHighlighter`
-- `Upload_Batches_keywordHighlighter`
-- hidden `Event_ID_Index_keywordHighlighter`
+The upload is a JSON batch (`batchId`, `extensionVersion`, `sentAt`, `reason`, `events`) with no secret; the collector checks the `chrome-extension://` origin, validates every event against the same contract as the client sanitizer, applies daily quotas (events that exceed them are deferred, not lost), and acknowledges each accepted event so the extension can drop it from its queue. `config.js` and `config.example.js` hold the endpoint and queue limits; `config.local.js` stays ignored. Chrome extension service workers do not support dynamic imports, so `config.local.js` is not a runtime configuration mechanism.
 
-Both `config.js` and `config.example.js` are tracked and contain placeholders only; `config.local.js` is the ignored file. The packaging script stages `config.js` (falling back to the example if it is missing), and Store builds inject the endpoint URL and ingestion token into that staged copy from the `KEYWORD_HIGHLIGHTER_ENDPOINT_URL` and `KEYWORD_HIGHLIGHTER_API_KEY` environment variables. Local source files are unchanged, and credentials never enter Git. Chrome extension service workers do not support dynamic imports, so `config.local.js` is not a runtime configuration mechanism. Use the deployed Apps Script `/exec` URL, not the Sheet ID or `/dev` URL.
+`google-apps-script/` holds the retired Google Sheets receiver and its test; it is no longer used.
 
 ## Tests
 
@@ -98,7 +94,7 @@ Without `--coverage`, fallow estimates test coverage and over-reports risk, beca
 keywordHighlighter/
 |-- README.md
 |-- package.json
-|-- google-apps-script/
+|-- google-apps-script/           (retired Google Sheets receiver)
 |   |-- Code.gs
 |   `-- README.md
 |-- docs/

@@ -1,7 +1,7 @@
 export const LOGGING_CONFIG = {
   enabled: true,
-  endpointUrl: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",
-  apiKey: "REPLACE_WITH_LOCAL_API_KEY",
+  // Offsight Operations collector (PostgreSQL). It takes no secret: it checks the extension origin and rate-limits instead.
+  endpointUrl: "https://opsportal.online/keyword-highlighter/logs",
 
   uploadIntervalMinutes: 15,
   maxBatchEvents: 200,
@@ -22,4 +22,15 @@ export const LOGGING_CONFIG = {
 
 export async function getLoggingConfig(_options = {}) {
   return LOGGING_CONFIG;
+}
+
+// Logging is on only with an https endpoint that is not a leftover placeholder.
+export function isLoggingConfigured(config) {
+  const endpointUrl = config.endpointUrl || "";
+  return Boolean(
+    config.enabled &&
+    /^https:\/\//.test(endpointUrl) &&
+    !endpointUrl.includes("REPLACE_WITH_") &&
+    !endpointUrl.includes("YOUR_DEPLOYMENT_ID")
+  );
 }

@@ -4,7 +4,7 @@ Use these declarations in the Chrome Web Store Developer Dashboard. Keep them sy
 
 ## Privacy policy URL
 
-`https://ptrabosk.github.io/keywordHighlighter/`
+`https://opsportal.online/keyword-highlighter/privacy`
 
 Confirm that this rendered HTTPS page opens without authentication immediately before submission.
 
@@ -22,7 +22,7 @@ Declare that the extension handles user data. Select only the categories the das
 | Web browsing activity / URLs | Yes | Highlight detections, supported shortcut presses, and content-script errors include the full current URL on `https://ui.attentivemobile.com/concierge/*`. The URL may contain conversation identifiers, query parameters, or fragments. No URLs from other sites or general browsing history are collected. | Diagnose highlighting behavior and failures on the supported workspace |
 | Authentication information | No | The extension does not collect passwords, cookies, tokens, or login credentials. | — |
 
-For each declared category, select the use that corresponds to providing or improving the extension's single purpose. Do not select advertising, advertising measurement, credit/lending, or sale to data brokers. If the dashboard asks whether data is sold, answer **No**. If it asks whether data is shared with third parties, answer **Yes** and identify Google as the provider of Chrome Sync for synchronized settings and Google Apps Script and Google Sheets for operational telemetry. Describe those transfers as necessary to provide, secure, troubleshoot, synchronize settings for, and measure the extension.
+For each declared category, select the use that corresponds to providing or improving the extension's single purpose. Do not select advertising, advertising measurement, credit/lending, or sale to data brokers. If the dashboard asks whether data is sold, answer **No**. If it asks whether data is shared with third parties, answer **Yes** and identify Google as the provider of Chrome Sync for synchronized settings. Operational telemetry goes to the publisher's own collector and database; the publisher's server hosting provider and Cloudflare process it only as service providers. Describe those transfers as necessary to provide, secure, troubleshoot, synchronize settings for, and measure the extension.
 
 ## Telemetry
 
@@ -37,7 +37,7 @@ Telemetry is described on this privacy policy page. The extension does not show 
 
 ## Limited Use certification text
 
-The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements. User data is used only to provide or improve the extension's single purpose of highlighting configured rule matches and related operational reliability. It is transferred only to Google Chrome Sync for synchronized settings and to Google Apps Script and Google Sheets for operational telemetry when necessary for that purpose, or when needed for security or legal compliance. It is never used or transferred for personalized, retargeted, or interest-based advertising, and it is not sold to data brokers or other information resellers. Human access is not permitted except with the user's express consent for specific support data, when required for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.
+The use of information received by this extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements. User data is used only to provide or improve the extension's single purpose of highlighting configured rule matches and related operational reliability. It is transferred only to Google Chrome Sync for synchronized settings and to the publisher's own collector (Offsight Operations) for operational telemetry when necessary for that purpose, or when needed for security or legal compliance. It is never used or transferred for personalized, retargeted, or interest-based advertising, and it is not sold to data brokers or other information resellers. Human access is not permitted except with the user's express consent for specific support data, when required for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.
 
 ## Reviewer note
 

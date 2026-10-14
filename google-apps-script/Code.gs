@@ -1,7 +1,7 @@
 const KW_EVENTS_SHEET_NAME = "Events_keywordHighlighter";
 const KW_BATCHES_SHEET_NAME = "Upload_Batches_keywordHighlighter";
 const KW_INDEX_SHEET_NAME = "Event_ID_Index_keywordHighlighter";
-const KW_RECEIVER_VERSION = "1.6.0";
+const KW_RECEIVER_VERSION = "1.7.0";
 const KW_DAILY_QUOTA_PROPERTY = "KEYWORD_HIGHLIGHTER_DAILY_QUOTA";
 const KW_DAILY_EVENT_LIMIT = 25000;
 const KW_DAILY_SHORTCUT_LIMIT = 10000;
@@ -125,35 +125,27 @@ const KW_INDEX_HEADERS = ["Event ID", "Status", "Reserved At", "Batch ID", "Writ
 
 function setupLoggingSheets() {
   const spreadsheet = getSpreadsheet_();
-  ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
-  ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
+  const eventsSheet = ensureSheet_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS);
+  const batchesSheet = ensureSheet_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS);
   const indexSheet = ensureSheet_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS);
   indexSheet.hideSheet();
+  setTextColumns_(eventsSheet, [2, 3, 4, 16]);
+  setTextColumns_(batchesSheet, [1, 2, 6, 7]);
+  setTextColumns_(indexSheet, [1, 3, 4, 5]);
   ensureRetentionTrigger_();
 }
 
+// Keeps IDs and timestamps as text so Sheets never coerces them to numbers or dates.
+function setTextColumns_(sheet, columns) {
+  const rows = Math.max(sheet.getMaxRows() - 1, 1);
+  columns.forEach(function(column) {
+    sheet.getRange(2, column, rows, 1).setNumberFormat("@");
+  });
+}
+
+// Public health check: reports the receiver version only, nothing about the spreadsheet.
 function doGet() {
-  try {
-    const spreadsheet = getSpreadsheet_();
-    const sheetStatus = [
-      sheetHealth_(spreadsheet, KW_EVENTS_SHEET_NAME, KW_EVENTS_HEADERS),
-      sheetHealth_(spreadsheet, KW_BATCHES_SHEET_NAME, KW_BATCH_HEADERS),
-      sheetHealth_(spreadsheet, KW_INDEX_SHEET_NAME, KW_INDEX_HEADERS)
-    ];
-    return jsonResponse_({
-      success: true,
-      receiverVersion: KW_RECEIVER_VERSION,
-      spreadsheetConfigured: true,
-      sheets: sheetStatus
-    });
-  } catch (error) {
-    return jsonResponse_({
-      success: false,
-      receiverVersion: KW_RECEIVER_VERSION,
-      spreadsheetConfigured: false,
-      errorCode: error.publicCode || "SERVER_ERROR"
-    });
-  }
+  return jsonResponse_({ success: true, receiverVersion: KW_RECEIVER_VERSION });
 }
 
 function doPost(e) {
@@ -175,12 +167,15 @@ function doPost(e) {
     const acceptedEventIds = [];
     const newRows = [];
     const rejected = [];
+    // Over-quota events are neither accepted nor rejected, so the extension keeps them queued and retries later.
+    const deferred = [];
     const acceptedTimestamps = [];
     const rowsToMarkWritten = [];
     const seenEventIds = Object.create(null);
     const quota = loadDailyQuota_(receivedAt);
     const quotaStartTotal = quota.total;
     const quotaStartShortcuts = quota.shortcuts;
+    if (quotaStartTotal === 0) ensureRetentionTriggerSafely_();
 
     body.events.forEach(function(event) {
       const validation = validateEvent_(event);
@@ -219,7 +214,7 @@ function doPost(e) {
 
       if (!record) {
         if (!consumeQuota_(quota, event)) {
-          rejected.push({ eventId: event.eventId, reason: "RATE_LIMITED" });
+          deferred.push({ eventId: event.eventId, reason: "RATE_LIMITED" });
           return;
         }
         newIndexRows.push([
@@ -231,8 +226,9 @@ function doPost(e) {
         ]);
         newIndexEvents.push(event);
       } else if (record.status === "reserved") {
+        // A reservation left by an interrupted request never saved its quota, so it is counted here.
         if (!consumeQuota_(quota, event)) {
-          rejected.push({ eventId: event.eventId, reason: "RATE_LIMITED" });
+          deferred.push({ eventId: event.eventId, reason: "RATE_LIMITED" });
           return;
         }
         newRows.push(eventToRow_(event, body.batchId, receivedAt));
@@ -275,15 +271,16 @@ function doPost(e) {
       sortedTimestamps[0] || "",
       sortedTimestamps[sortedTimestamps.length - 1] || "",
       sheetSafe_(safeString_(body.extensionVersion, 40)),
-      rejected.length ? "PARTIAL_SUCCESS" : "SUCCESS",
-      sheetSafe_(rejectionSummary_(rejected))
+      rejected.length || deferred.length ? "PARTIAL_SUCCESS" : "SUCCESS",
+      sheetSafe_(rejectionSummary_(rejected, deferred))
     ]]);
 
     return jsonResponse_({
       success: true,
       batchId: body.batchId,
       acceptedEventIds: acceptedEventIds,
-      rejected: rejected
+      rejected: rejected,
+      deferred: deferred
     });
   } catch (error) {
     return jsonResponse_({
@@ -323,7 +320,17 @@ function validateRequestShape_(body) {
 
 function validateApiKey_(apiKey) {
   const expected = PropertiesService.getScriptProperties().getProperty("KEYWORD_HIGHLIGHTER_LOG_API_KEY");
-  if (!expected || apiKey !== expected) throw publicError_("UNAUTHORIZED");
+  if (!expected || !constantTimeEquals_(apiKey, expected)) throw publicError_("UNAUTHORIZED");
+}
+
+function constantTimeEquals_(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  let diff = a.length ^ b.length;
+  const length = Math.max(a.length, b.length);
+  for (let i = 0; i < length; i++) {
+    diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return diff === 0;
 }
 
 function validateEvent_(event) {
@@ -450,6 +457,15 @@ function ensureRetentionTrigger_() {
     return handlers.indexOf(trigger.getHandlerFunction()) !== -1;
   });
   if (!exists) ScriptApp.newTrigger("purgeExpiredEvents").timeBased().everyDays(1).atHour(3).create();
+}
+
+// Called on the first upload of each UTC day so retention runs even if setupLoggingSheets was never run.
+function ensureRetentionTriggerSafely_() {
+  try {
+    ensureRetentionTrigger_();
+  } catch (error) {
+    // Upload handling must not depend on trigger permissions.
+  }
 }
 
 function purgeExpiredEvents() {
@@ -579,57 +595,38 @@ function migrateEventsSheet_(sheet) {
   sheet.getRange(1, 9).setValue("Page URL");
 }
 
+// Maps each wanted ID to its row by reading the ID column once, instead of one text search per ID.
+function findRowsByIds_(values, wanted) {
+  const wantedSet = Object.create(null);
+  wanted.forEach(function(id) { wantedSet[id] = true; });
+  const rows = Object.create(null);
+  values.forEach(function(cells, index) {
+    const id = String(cells[0]);
+    if (wantedSet[id] && !rows[id]) rows[id] = index + 2;
+  });
+  return rows;
+}
+
 function loadIndexRecords_(indexSheet, eventIds) {
   const records = {};
   const wanted = uniqueValues_(eventIds);
   const lastRow = indexSheet.getLastRow();
   if (lastRow < 2 || !wanted.length) return records;
+  const values = indexSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+  const rows = findRowsByIds_(values, wanted);
   wanted.forEach(function(eventId) {
-    const row = findRowByExactCellValue_(indexSheet, 1, eventId);
+    const row = rows[eventId];
     if (!row) return;
-    records[eventId] = {
-      row: row,
-      status: indexSheet.getRange(row, 2).getValue() || "written"
-    };
+    records[eventId] = { row: row, status: values[row - 2][1] || "written" };
   });
   return records;
 }
 
 function findExistingEventRows_(eventsSheet, eventIds) {
-  const rows = {};
   const wanted = uniqueValues_(eventIds);
   const lastRow = eventsSheet.getLastRow();
-  if (lastRow < 2 || !wanted.length) return rows;
-  wanted.forEach(function(eventId) {
-    const row = findRowByExactCellValue_(eventsSheet, 3, eventId);
-    if (row) rows[eventId] = row;
-  });
-  return rows;
-}
-
-function findRowByExactCellValue_(sheet, column, value) {
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2 || !value) return null;
-  const finder = sheet.getRange(2, column, lastRow - 1, 1)
-    .createTextFinder(value)
-    .matchEntireCell(true);
-  const match = finder.findNext();
-  return match ? match.getRow() : null;
-}
-
-function sheetHealth_(spreadsheet, name, headers) {
-  const sheet = spreadsheet.getSheetByName(name);
-  if (!sheet) return { name: name, exists: false, headersReady: false };
-  const actual = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
-  const headersReady = headers.every(function(header, index) {
-    return actual[index] === header;
-  });
-  return {
-    name: name,
-    exists: true,
-    headersReady: headersReady,
-    rows: Math.max(0, sheet.getLastRow() - 1)
-  };
+  if (lastRow < 2 || !wanted.length) return {};
+  return findRowsByIds_(eventsSheet.getRange(2, 3, lastRow - 1, 1).getValues(), wanted);
 }
 
 function uniqueValues_(values) {
@@ -647,13 +644,16 @@ function markIndexWritten_(indexSheet, row, writtenAt) {
   indexSheet.getRange(row, 2, 1, 4).setValues([["written", "", "", writtenAt]]);
 }
 
-function rejectionSummary_(rejected) {
-  if (!rejected.length) return "";
+function rejectionSummary_(rejected, deferred) {
   const counts = {};
   rejected.forEach(function(item) {
     counts[item.reason] = (counts[item.reason] || 0) + 1;
   });
-  return JSON.stringify(counts);
+  (deferred || []).forEach(function(item) {
+    const key = "DEFERRED_" + item.reason;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return Object.keys(counts).length ? JSON.stringify(counts) : "";
 }
 
 function jsonResponse_(body) {
@@ -686,7 +686,7 @@ function safeString_(value, maxLength) {
 
 function sheetSafe_(value) {
   if (typeof value !== "string") return value;
-  return /^[=+\-@]/.test(value) ? "'" + value : value;
+  return /^[=+\-@\t\r]/.test(value) ? "'" + value : value;
 }
 
 function jsonBytes_(value) {

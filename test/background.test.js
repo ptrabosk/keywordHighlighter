@@ -34,21 +34,22 @@ test("queues logged events and failures from extension pages", async () => {
 });
 
 test("reports logging diagnostics for unconfigured, configured, and malformed endpoints", async () => {
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "" });
   const unconfigured = await send({ type: "highlighter:getDiagnostics" });
   assert.equal(unconfigured.ok, true);
   assert.equal(unconfigured.diagnostics.loggingConfig.configured, false);
 
-  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://script.google.com/macros/s/abc/exec", apiKey: "k".repeat(32) });
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://opsportal.online/keyword-highlighter/logs" });
   globalThis.fetch = async () => ({ ok: false, status: 500, json: async () => ({}) });
   const configured = await send({ type: "highlighter:runDiagnosticsUpload" });
   assert.equal(configured.diagnostics.loggingConfig.configured, true);
-  assert.equal(configured.diagnostics.loggingConfig.endpointHost, "script.google.com");
+  assert.equal(configured.diagnostics.loggingConfig.endpointHost, "opsportal.online");
 
   Object.assign(LOGGING_CONFIG, { endpointUrl: "not a url" });
   const malformed = await send({ type: "highlighter:getDiagnostics" });
   assert.equal(malformed.diagnostics.loggingConfig.endpointHost, "");
 
-  Object.assign(LOGGING_CONFIG, { endpointUrl: "", apiKey: "" });
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "" });
   assert.equal((await send({ type: "highlighter:getDiagnostics" })).diagnostics.loggingConfig.configured, false);
   Object.assign(LOGGING_CONFIG, originalConfig);
   globalThis.fetch = undefined;

@@ -32,13 +32,13 @@ The extension sends only bounded operational information over HTTPS: random iden
 - `storage`: stores synchronized settings and queues bounded operational events before upload.
 - `alarms`: schedules retry attempts for operational uploads.
 - `https://ui.attentivemobile.com/concierge/*`: highlights inbound message content in the supported Operations workspace.
-- `https://script.google.com/macros/s/*` and `https://script.googleusercontent.com/macros/*`: send sanitized operational events over HTTPS to the publisher's Apps Script receiver and follow its redirect.
+- `https://opsportal.online/keyword-highlighter/*`: send sanitized operational events over HTTPS to the publisher's own collector.
 
 ## Privacy disclosure
 
 The privacy policy contains the extension's complete data-use disclosure and is hosted at:
 
-https://ptrabosk.github.io/keywordHighlighter/
+https://opsportal.online/keyword-highlighter/privacy
 
 The publisher must also enter this same working URL in the Chrome Web Store Privacy tab and complete the data-use declarations and Limited Use certification before submission.
 

@@ -1,3 +1,5 @@
+> **Retired.** Operational logs now go to the Offsight Operations PostgreSQL collector (`https://opsportal.online/keyword-highlighter/logs`). This receiver and its test are kept for reference only; do not deploy it for new builds. Existing rows in the Sheet are untouched.
+
 # Keyword Highlighter Logging Receiver
 
 This Apps Script receives privacy-safe operational logs from the Chrome extension and writes them to Google Sheets. The extension does not use Google OAuth.
@@ -6,11 +8,11 @@ This Apps Script receives privacy-safe operational logs from the Chrome extensio
 
 1. Create a Google Sheet.
 2. Open **Extensions > Apps Script** from the sheet.
-3. Add the contents of `Code.gs`.
+3. Add the contents of `Code.gs` to a project that has no other `doGet` or `doPost`. All files in an Apps Script project share one global scope, so a second handler (for example from another extension's receiver) silently overrides this one and uploads fail with `UPLOAD_INVALID_RESPONSE`. Use a separate Apps Script project for each receiver.
 4. In Apps Script, open **Project Settings > Script Properties** and add:
    - `KEYWORD_HIGHLIGHTER_LOG_API_KEY`: a locally generated shared key.
    - `KEYWORD_HIGHLIGHTER_SPREADSHEET_ID`: the ID from the Google Sheet URL.
-5. Run `setupLoggingSheets()` once and approve spreadsheet and trigger access. This also installs the daily event-retention job.
+5. Run `setupLoggingSheets()` once and approve spreadsheet and trigger access. This also installs the daily event-retention job and formats the ID and timestamp columns as plain text.
 6. Deploy with **Deploy > New deployment > Web app**.
 7. Set **Execute as** to **Me**.
 8. Set **Who has access** to **Anyone**.
@@ -33,12 +35,14 @@ The script creates these tabs if missing:
 
 `Received At`, `Event Timestamp`, `Event ID`, `Session ID`, `Event Type`, `Severity`, `Result`, `Surface`, `Page URL`, `Rule Source`, `Duration Ms`, `Extension Version`, `Error Code`, `Error Message`, `Metadata JSON`, `Batch ID`.
 
-Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. Shortcut events must name one of `Shift+D`, `Shift+N`, `Shift+B`, `Shift+C`, or `Shift+E` with a highlight count from 1 to 1000. `Shift+E` requires receiver version 1.6.0, so redeploy `Code.gs` before shipping an extension build that sends it. Highlight detections, supported shortcut presses, and content-script errors may include the current URL on `https://ui.attentivemobile.com/concierge/*`. The schema has no profile-email, message-text, or matched-text field; unknown fields are rejected. The extension sanitizes bounded error and metadata strings before upload.
+Only session lifecycle, popup/rules activity, highlight, failure, shortcut, and upload-failure events are accepted. Shortcut events must name one of `Shift+D`, `Shift+N`, `Shift+B`, `Shift+C`, or `Shift+E` with a highlight count from 1 to 1000. `Shift+E` requires receiver version 1.6.0, so redeploy `Code.gs` (receiver 1.6.0 or later) before shipping an extension build that sends it. Highlight detections, supported shortcut presses, and content-script errors may include the current URL on `https://ui.attentivemobile.com/concierge/*`. The schema has no profile-email, message-text, or matched-text field; unknown fields are rejected. The extension sanitizes bounded error and metadata strings before upload.
 
 `Event_ID_Index_keywordHighlighter` is used for deduplication so retrying the same batch does not duplicate rows. It stores event ID reservation and write status under a script lock so interrupted uploads can be retried safely.
 
-The receiver accepts at most 25,000 new events and 10,000 new shortcut events per UTC day. Events beyond either limit are rejected as `RATE_LIMITED`. Duplicate retries of already-written events remain idempotent and do not consume quota.
+The receiver accepts at most 25,000 new events and 10,000 new shortcut events per UTC day. Events beyond either limit are returned in a `deferred` list with reason `RATE_LIMITED`. They are neither accepted nor rejected, so the extension keeps them queued and retries after the UTC day rolls over; the batch row counts them as `DEFERRED_RATE_LIMITED` in its rejection summary. Duplicate retries of already-written events remain idempotent and do not consume quota.
 
-`purgeExpiredEvents()` runs daily and removes event rows, their deduplication IDs, and upload-batch audit rows after 90 days. Run the function manually after deployment to verify its authorization and inspect the execution log.
+The retention job is also re-installed on the first upload of each UTC day if it is missing. `purgeExpiredEvents()` runs daily and removes event rows, their deduplication IDs, and upload-batch audit rows after 90 days. Run the function manually after deployment to verify its authorization and inspect the execution log.
 
 When the receiver first sees the previous 17-column event sheet, it clears and removes only the legacy profile-email column while retaining its Page URL column. A 15-column URL-less event sheet is upgraded by inserting an empty Page URL column.
+
+`GET` on the `/exec` URL returns only `{"success":true,"receiverVersion":"1.7.0"}`. Use it to confirm the URL serves this script; it reveals nothing about the spreadsheet. Redeploy as a new version of the existing deployment to keep the URL.

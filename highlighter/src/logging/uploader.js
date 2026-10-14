@@ -1,4 +1,4 @@
-import { getLoggingConfig } from "./config.js";
+import { getLoggingConfig, isLoggingConfigured } from "./config.js";
 import { buildFailureStatus, clearPermanentFailureStatus, isPermanentUploadFailure, shouldRetry } from "./retry.js";
 import { createUuid, getExtensionVersion, sanitizeEvent, utcNow } from "./sanitize.js";
 import { ERROR_CODES, STORAGE_KEYS } from "./types.js";
@@ -16,22 +16,8 @@ import {
 } from "./storageQueue.js";
 import { enqueueEvent } from "./storageQueue.js";
 
-function isConfigured(config) {
-  const endpointUrl = config.endpointUrl || "";
-  const apiKey = config.apiKey || "";
-  return Boolean(
-    config.enabled &&
-    endpointUrl &&
-    apiKey &&
-    !endpointUrl.includes("REPLACE_WITH_") &&
-    !endpointUrl.includes("YOUR_DEPLOYMENT_ID") &&
-    !apiKey.includes("REPLACE_WITH_") &&
-    !apiKey.includes("replace-with-")
-  );
-}
-
 function configFingerprint(config) {
-  const text = `${config.endpointUrl || ""}|${config.apiKey || ""}`;
+  const text = config.endpointUrl || "";
   let hash = 0;
   for (let index = 0; index < text.length; index += 1) {
     hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
@@ -89,7 +75,7 @@ export async function uploadPendingLogs(reason = "scheduled") {
   });
   if (!events.length) return { uploaded: false, reason: "empty" };
 
-  const body = { apiKey: config.apiKey, batchId, extensionVersion: getExtensionVersion(), sentAt: utcNow(), reason, events };
+  const body = { batchId, extensionVersion: getExtensionVersion(), sentAt: utcNow(), reason, events };
   if (new TextEncoder().encode(JSON.stringify(body)).length > config.maxBatchBytes) {
     return rejectOversizedBatch(batchId, uploadStatus, fingerprint);
   }
@@ -107,7 +93,7 @@ export async function uploadPendingLogs(reason = "scheduled") {
 // Resolves to { stopped } when no upload should happen, else { uploadStatus }.
 async function prepareUploadStatus(config, fingerprint, reason) {
   if (!config.enabled) return { stopped: await recordConfigurationFailure("UPLOAD_DISABLED", fingerprint, "disabled") };
-  if (!isConfigured(config)) {
+  if (!isLoggingConfigured(config)) {
     return { stopped: await recordConfigurationFailure("UPLOAD_INVALID_CONFIGURATION", fingerprint, "not_configured") };
   }
   let uploadStatus = await getUploadStatus();
@@ -134,7 +120,7 @@ async function rejectOversizedBatch(batchId, uploadStatus, fingerprint) {
 async function sendBatch(endpointUrl, body, batchId) {
   const response = await fetch(endpointUrl, {
     method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
     redirect: "follow"
   });

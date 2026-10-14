@@ -42,7 +42,7 @@ function createChromeMock() {
     },
     api: {
       runtime: {
-        getManifest: () => ({ version: "1.1.0" }),
+        getManifest: () => ({ version: "1.2.0" }),
         sendMessage: async (message) => {
           messages.push(message);
         },
@@ -90,8 +90,7 @@ function resetEnvironment() {
   delete globalThis.window;
   Object.assign(LOGGING_CONFIG, originalConfig, {
     enabled: true,
-    endpointUrl: "REPLACE_WITH_APPS_SCRIPT_EXEC_URL",
-    apiKey: "REPLACE_WITH_LOCAL_API_KEY"
+    endpointUrl: "REPLACE_WITH_COLLECTOR_URL"
   });
   return chromeMock;
 }
@@ -128,7 +127,7 @@ test("sanitizes events with allowlisted metadata, truncation, version, and byte 
 
   assert.equal(sanitized.eventType, "unexpected_exception");
   assert.equal(sanitized.severity, "error");
-  assert.equal(sanitized.extensionVersion, "1.1.0");
+  assert.equal(sanitized.extensionVersion, "1.2.0");
   assert.equal(sanitized.surface, "content");
   assert.equal(sanitized.pageHost, undefined);
   assert.equal(sanitized.pageUrl, "https://ui.attentivemobile.com/concierge/conversation/123");
@@ -239,17 +238,16 @@ test("logging keeps only the requested event contract and diagnostics", () => {
   }
 });
 
-test("tracked logging config contains safe placeholders for clean checkouts", () => {
+test("tracked logging config points at the Offsight collector and carries no secret", () => {
   const configSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.example.js"), "utf8");
   const runtimeConfigSource = fs.readFileSync(path.join(__dirname, "../highlighter/src/logging/config.js"), "utf8");
   const gitignoreSource = fs.readFileSync(path.join(__dirname, "../.gitignore"), "utf8");
 
-  assert.match(configSource, /YOUR_DEPLOYMENT_ID/);
-  assert.match(configSource, /REPLACE_WITH_LOCAL_API_KEY/);
-  assert.doesNotMatch(configSource, /script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}\/exec/);
-  assert.doesNotMatch(configSource, /\bimport\s*\(/);
-  assert.match(runtimeConfigSource, /YOUR_DEPLOYMENT_ID/);
-  assert.match(runtimeConfigSource, /REPLACE_WITH_LOCAL_API_KEY/);
+  for (const source of [configSource, runtimeConfigSource]) {
+    assert.match(source, /endpointUrl: "https:\/\/opsportal\.online\/keyword-highlighter\/logs"/);
+    assert.doesNotMatch(source, /apiKey|script\.google\.com/);
+    assert.doesNotMatch(source, /\bimport\s*\(/);
+  }
   assert.doesNotMatch(gitignoreSource, /highlighter\/src\/logging\/config\.js/);
   assert.match(gitignoreSource, /highlighter\/src\/logging\/config\.local\.js/);
 });
@@ -352,10 +350,7 @@ test("removes accepted and rejected events without failing on duplicate acknowle
 
 test("uploads batches, removes acknowledgements, handles malformed responses, and restores failures", async () => {
   resetEnvironment();
-  Object.assign(LOGGING_CONFIG, {
-    endpointUrl: "https://script.google.com/macros/s/test/exec",
-    apiKey: "local-key"
-  });
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://opsportal.online/keyword-highlighter/logs" });
 
   await enqueueEvent(event({ eventId: "accepted-1" }));
   await enqueueEvent(event({ eventId: "rejected-1" }));
@@ -393,6 +388,24 @@ test("uploads batches, removes acknowledgements, handles malformed responses, an
   assert.equal((await getQueueStats()).eventCount, 1);
 });
 
+test("uploads go to the Offsight collector as JSON with no secret in the payload", async () => {
+  resetEnvironment();
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://opsportal.online/keyword-highlighter/logs" });
+  await enqueueEvent(event({ eventId: "plain-1" }));
+  let sent = null;
+  globalThis.fetch = async (url, request) => {
+    sent = { url, request, body: JSON.parse(request.body) };
+    return { ok: true, json: async () => ({ success: true, batchId: sent.body.batchId, acceptedEventIds: ["plain-1"], rejected: [], deferred: [] }) };
+  };
+  const result = await uploadPendingLogs("test");
+  assert.equal(result.uploaded, true);
+  assert.equal(sent.url, "https://opsportal.online/keyword-highlighter/logs");
+  assert.equal(sent.request.method, "POST");
+  assert.equal(sent.request.headers["Content-Type"], "application/json");
+  assert.deepEqual(Object.keys(sent.body).sort(), ["batchId", "events", "extensionVersion", "reason", "sentAt"]);
+  assert.deepEqual(sent.body.events.map((item) => item.eventId), ["plain-1"]);
+});
+
 test("retry timing backs off, gates retries, and resets after success status updates", () => {
   const now = new Date("2026-07-19T12:00:00.000Z");
   assert.equal(nextRetryTimestamp(1, now, () => 0), "2026-07-19T12:05:00.000Z");
@@ -406,10 +419,7 @@ test("retry timing backs off, gates retries, and resets after success status upd
 
 test("permanent upload failures block recurring retries until config changes or diagnostics run", async () => {
   resetEnvironment();
-  Object.assign(LOGGING_CONFIG, {
-    endpointUrl: "https://script.google.com/macros/s/test/exec",
-    apiKey: "local-key"
-  });
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://opsportal.online/keyword-highlighter/logs" });
   await enqueueEvent(event({ eventId: "blocked-1" }));
   globalThis.fetch = async () => ({ ok: false, status: 401, json: async () => ({}) });
 
@@ -426,7 +436,7 @@ test("permanent upload failures block recurring retries until config changes or 
   assert.equal(blocked.reason, "backoff_active");
   assert.equal(fetchCount, 0);
 
-  Object.assign(LOGGING_CONFIG, { apiKey: "local-key-rotated" });
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://opsportal.online/keyword-highlighter/logs?rotated=1" });
   globalThis.fetch = async (_url, request) => {
     fetchCount += 1;
     const body = JSON.parse(request.body);
@@ -442,10 +452,7 @@ test("permanent upload failures block recurring retries until config changes or 
 
 test("placeholder logging configuration is treated as not configured", async () => {
   resetEnvironment();
-  Object.assign(LOGGING_CONFIG, {
-    endpointUrl: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",
-    apiKey: "REPLACE_WITH_LOCAL_API_KEY"
-  });
+  Object.assign(LOGGING_CONFIG, { endpointUrl: "https://example.invalid/macros/s/YOUR_DEPLOYMENT_ID/exec" });
   await enqueueEvent(event({ eventId: "placeholder-1" }));
 
   let fetchCalled = false;
@@ -588,7 +595,8 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /SHEET_HEADER_MISMATCH/);
   assert.match(source, /function sheetSafe_/);
   assert.doesNotMatch(source, /pageHost/);
-  assert.match(source, /function findRowByExactCellValue_/);
+  assert.match(source, /function findRowsByIds_/);
+  assert.doesNotMatch(source, /createTextFinder/);
   assert.match(source, /KW_DAILY_EVENT_LIMIT = 25000/);
   assert.match(source, /KW_DAILY_SHORTCUT_LIMIT = 10000/);
   assert.match(source, /function consumeQuota_/);
@@ -596,8 +604,7 @@ test("Apps Script source reserves IDs before writes and escapes sheet formulas",
   assert.match(source, /KW_RETENTION_DAYS = 90/);
   assert.match(source, /function purgeExpiredEvents/);
   assert.match(source, /ensureRetentionTrigger_/);
-  assert.match(source, /createTextFinder/);
-  assert.match(source, /matchEntireCell\(true\)/);
+  assert.match(source, /DEFERRED_/);
   assert.doesNotMatch(source, /console\.error/);
 });
 

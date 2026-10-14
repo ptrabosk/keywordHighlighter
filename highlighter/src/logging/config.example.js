@@ -1,7 +1,7 @@
 export const LOGGING_CONFIG = {
   enabled: true,
-  endpointUrl: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",
-  apiKey: "REPLACE_WITH_LOCAL_API_KEY",
+  // Offsight Operations collector (PostgreSQL). It takes no secret: it checks the extension origin and rate-limits instead.
+  endpointUrl: "https://opsportal.online/keyword-highlighter/logs",
 
   uploadIntervalMinutes: 15,
   maxBatchEvents: 200,

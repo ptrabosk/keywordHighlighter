@@ -8,12 +8,13 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const source = fs.readFileSync(path.join(__dirname, "../google-apps-script/Code.gs"), "utf8");
 
-function loadReceiver() {
+function loadReceiver(globals = {}) {
   const context = vm.createContext({
     console,
     Utilities: {
       newBlob: (value) => ({ getBytes: () => new TextEncoder().encode(value) })
-    }
+    },
+    ...globals
   });
   vm.runInContext(source, context, { filename: "Code.gs" });
   return context;
@@ -122,4 +123,141 @@ test("retention removes orphaned reservations and uses written time when present
     ["written", "2026-04-01T00:00:00.000Z", "batch-3", "2026-05-02T00:00:00.000Z"]
   ];
   assert.deepEqual(Array.from(receiver.expiredIndexRows_(values, cutoff)), [2, 4]);
+});
+
+const plain = (value) => JSON.parse(JSON.stringify(value));
+
+function fakeSheet() {
+  const rows = [];
+  const columns = () => rows.reduce((max, row) => Math.max(max, row.length), 0);
+  return {
+    rows,
+    hideSheet() {},
+    setNumberFormat() {},
+    getMaxRows: () => 1000,
+    getLastRow: () => rows.length,
+    getLastColumn: columns,
+    getRange(row, column, rowCount = 1, columnCount = 1) {
+      return {
+        getValues: () => Array.from({ length: rowCount }, (_, r) =>
+          Array.from({ length: columnCount }, (_, c) => (rows[row - 1 + r] || [])[column - 1 + c] ?? "")),
+        setValues: (values) => values.forEach((cells, r) => cells.forEach((value, c) => {
+          rows[row - 1 + r] = rows[row - 1 + r] || [];
+          rows[row - 1 + r][column - 1 + c] = value;
+        })),
+        setValue: (value) => {
+          rows[row - 1] = rows[row - 1] || [];
+          rows[row - 1][column - 1] = value;
+        },
+        setNumberFormat() {}
+      };
+    }
+  };
+}
+
+function receiverWithSheets({ quota } = {}) {
+  const sheets = {};
+  const properties = {
+    KEYWORD_HIGHLIGHTER_LOG_API_KEY: "secret",
+    KEYWORD_HIGHLIGHTER_SPREADSHEET_ID: "sheet-id"
+  };
+  if (quota) properties.KEYWORD_HIGHLIGHTER_DAILY_QUOTA = JSON.stringify(quota);
+  const triggers = [];
+  const receiver = loadReceiver({
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    PropertiesService: {
+      getScriptProperties: () => ({
+        getProperty: (key) => properties[key] ?? null,
+        setProperty: (key, value) => { properties[key] = value; }
+      })
+    },
+    SpreadsheetApp: {
+      openById: () => ({
+        getSheetByName: (name) => sheets[name] || null,
+        insertSheet: (name) => (sheets[name] = fakeSheet())
+      })
+    },
+    ScriptApp: {
+      getProjectTriggers: () => [],
+      newTrigger: () => ({ timeBased: () => ({ everyDays: () => ({ atHour: () => ({ create: () => triggers.push("created") }) }) }) })
+    },
+    ContentService: {
+      MimeType: { JSON: "json" },
+      createTextOutput: (text) => ({ text, setMimeType() { return this; } })
+    }
+  });
+  return { receiver, sheets, properties, triggers };
+}
+
+function post(receiver, events, batchId = "batch-1") {
+  const body = { apiKey: "secret", batchId, extensionVersion: "1.1.0", sentAt: "2026-10-04T10:00:00.000Z", reason: "alarm", events };
+  return JSON.parse(receiver.doPost({ postData: { contents: JSON.stringify(body) } }).text);
+}
+
+test("doGet reports only the receiver version", () => {
+  const { receiver } = receiverWithSheets();
+  assert.deepEqual(JSON.parse(receiver.doGet().text), { success: true, receiverVersion: "1.7.0" });
+});
+
+test("API key comparison rejects wrong, missing and different-length keys", () => {
+  const receiver = loadReceiver();
+  assert.equal(receiver.constantTimeEquals_("secret", "secret"), true);
+  assert.equal(receiver.constantTimeEquals_("secret", "secreT"), false);
+  assert.equal(receiver.constantTimeEquals_("secret", "secret1"), false);
+  assert.equal(receiver.constantTimeEquals_("", "secret"), false);
+  assert.equal(receiver.constantTimeEquals_(undefined, "secret"), false);
+});
+
+test("sheetSafe_ escapes formula, tab and carriage-return prefixes", () => {
+  const receiver = loadReceiver();
+  for (const prefix of ["=", "+", "-", "@", "\t", "\r"]) {
+    assert.equal(receiver.sheetSafe_(`${prefix}x`), `'${prefix}x`);
+  }
+  assert.equal(receiver.sheetSafe_("plain"), "plain");
+  assert.equal(receiver.sheetSafe_(5), 5);
+});
+
+test("findRowsByIds_ matches IDs that Sheets coerced to numbers and ignores others", () => {
+  const receiver = loadReceiver();
+  const values = [["abc"], [12345], ["other"], ["abc"]];
+  assert.deepEqual(plain(receiver.findRowsByIds_(values, ["abc", "12345", "missing"])), { abc: 2, 12345: 3 });
+});
+
+test("quota overflow is deferred: not accepted, not rejected, and not written", () => {
+  const { receiver, sheets } = receiverWithSheets({ quota: { day: new Date().toISOString().slice(0, 10), total: 24999, shortcuts: 0 } });
+  const first = validEvent({ eventId: "event-a" });
+  const second = validEvent({ eventId: "event-b" });
+  const response = post(receiver, [first, second]);
+
+  assert.equal(response.success, true);
+  assert.deepEqual(response.acceptedEventIds, ["event-a"]);
+  assert.deepEqual(response.rejected, []);
+  assert.deepEqual(response.deferred, [{ eventId: "event-b", reason: "RATE_LIMITED" }]);
+  const written = sheets.Events_keywordHighlighter.rows.slice(1).map((row) => row[2]);
+  assert.deepEqual(written, ["event-a"]);
+  const batchRow = sheets.Upload_Batches_keywordHighlighter.rows[1];
+  assert.equal(batchRow[8], "PARTIAL_SUCCESS");
+  assert.equal(batchRow[9], '{"DEFERRED_RATE_LIMITED":1}');
+});
+
+test("a retried batch is idempotent and a bad key is refused", () => {
+  const { receiver, sheets } = receiverWithSheets();
+  const events = [validEvent({ eventId: "event-a" })];
+  assert.deepEqual(post(receiver, events).acceptedEventIds, ["event-a"]);
+  assert.deepEqual(post(receiver, events, "batch-2").acceptedEventIds, ["event-a"]);
+  assert.equal(sheets.Events_keywordHighlighter.rows.length, 2);
+
+  const denied = JSON.parse(receiver.doPost({ postData: { contents: JSON.stringify({ apiKey: "wrong", batchId: "b", extensionVersion: "1", sentAt: "2026-10-04T10:00:00.000Z", events: [] }) } }).text);
+  assert.equal(denied.success, false);
+  assert.equal(denied.errorCode, "UNAUTHORIZED");
+});
+
+test("the retention trigger is ensured on the first upload of a UTC day only", () => {
+  const first = receiverWithSheets();
+  post(first.receiver, [validEvent({ eventId: "event-a" })]);
+  assert.equal(first.triggers.length, 1);
+
+  const later = receiverWithSheets({ quota: { day: new Date().toISOString().slice(0, 10), total: 5, shortcuts: 0 } });
+  post(later.receiver, [validEvent({ eventId: "event-b" })]);
+  assert.equal(later.triggers.length, 0);
 });

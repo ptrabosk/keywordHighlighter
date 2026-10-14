@@ -37,8 +37,8 @@ function Assert-ReleaseEndpoint([string]$EndpointUrl) {
   } catch {
     throw "KEYWORD_HIGHLIGHTER_ENDPOINT_URL must be a valid URL."
   }
-  if ($uri.Scheme -ne "https" -or $uri.Host -ne "script.google.com" -or -not $uri.AbsolutePath.EndsWith("/exec")) {
-    throw "KEYWORD_HIGHLIGHTER_ENDPOINT_URL must be an HTTPS script.google.com /exec URL."
+  if ($uri.Scheme -ne "https" -or $uri.Host -ne "opsportal.online" -or $uri.AbsolutePath -ne "/keyword-highlighter/logs") {
+    throw "KEYWORD_HIGHLIGHTER_ENDPOINT_URL must be https://opsportal.online/keyword-highlighter/logs."
   }
 }
 
@@ -53,14 +53,20 @@ function Write-Utf8NoBom([string]$Path, [string]$Value) {
   [IO.File]::WriteAllText($Path, $Value, [Text.UTF8Encoding]::new($false))
 }
 
-function Set-PackagedLoggingConfig([string]$EndpointUrl, [string]$ApiKey) {
+function Set-PackagedLoggingConfig([string]$EndpointUrl) {
   $configPath = Join-Path $stageRoot "src\logging\config.js"
   $configSource = Get-Content -LiteralPath $configPath -Raw
   $endpointLiteral = $EndpointUrl | ConvertTo-Json -Compress
-  $apiKeyLiteral = $ApiKey | ConvertTo-Json -Compress
-  $configSource = [regex]::Replace($configSource, '(?m)(endpointUrl:\s*)"[^"]*"', ('$1' + $endpointLiteral))
-  $configSource = [regex]::Replace($configSource, '(?m)(apiKey:\s*)"[^"]*"', ('$1' + $apiKeyLiteral))
+  # Evaluator, not a replacement string: "$" in a value must stay literal.
+  $endpointEvaluator = { param($match) $match.Groups[1].Value + $endpointLiteral }.GetNewClosure()
+  $configSource = [regex]::Replace($configSource, '(?m)(endpointUrl:\s*)"[^"]*"', [Text.RegularExpressions.MatchEvaluator]$endpointEvaluator)
   Write-Utf8NoBom $configPath $configSource
+
+  $written = Get-Content -LiteralPath $configPath -Raw
+  if (-not $written.Contains("endpointUrl: $endpointLiteral")) {
+    throw "Packaged logging configuration does not match KEYWORD_HIGHLIGHTER_ENDPOINT_URL."
+  }
+  [Console]::Error.WriteLine("Logging endpoint set to $EndpointUrl.")
 }
 
 function Write-DeterministicZip([string]$SourceDirectory, [string]$ZipPath) {
@@ -122,35 +128,27 @@ try {
   $manifestPath = Join-Path $stageRoot "manifest.json"
   $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
-  if ($Mode -eq "Store") {
-    $endpointUrl = $env:KEYWORD_HIGHLIGHTER_ENDPOINT_URL
-    $apiKey = $env:KEYWORD_HIGHLIGHTER_API_KEY
-    $storePublicKey = $env:KEYWORD_HIGHLIGHTER_STORE_PUBLIC_KEY
-    if (-not $endpointUrl) { throw "KEYWORD_HIGHLIGHTER_ENDPOINT_URL is required for Store packaging." }
-    if (-not $apiKey -or $apiKey.Length -lt 24) { throw "KEYWORD_HIGHLIGHTER_API_KEY must contain at least 24 characters." }
-    Assert-ReleaseEndpoint $endpointUrl
-    if ($apiKey -match "REPLACE_WITH_|replace-with-") { throw "KEYWORD_HIGHLIGHTER_API_KEY still contains a placeholder." }
+  # The collector needs no secret. The tracked config already names it; the variable only overrides it (and must still name it).
+  $endpointOverride = $env:KEYWORD_HIGHLIGHTER_ENDPOINT_URL
+  if ($endpointOverride) {
+    Assert-ReleaseEndpoint $endpointOverride
+    Set-PackagedLoggingConfig $endpointOverride
+  }
 
+  if ($Mode -eq "Store") {
+    $storePublicKey = $env:KEYWORD_HIGHLIGHTER_STORE_PUBLIC_KEY
     if ($storePublicKey) {
       try { [Convert]::FromBase64String($storePublicKey) | Out-Null } catch { throw "KEYWORD_HIGHLIGHTER_STORE_PUBLIC_KEY must be base64." }
       $manifest | Add-Member -NotePropertyName "key" -NotePropertyValue $storePublicKey -Force
     } else {
       $manifest.PSObject.Properties.Remove("key")
     }
-
-    Set-PackagedLoggingConfig $endpointUrl $apiKey
   } else {
     $manifest | Add-Member -NotePropertyName "key" -NotePropertyValue $developmentKey -Force
     $localMatches = @("http://localhost/*", "http://127.0.0.1/*")
     $manifest.host_permissions = @($manifest.host_permissions) + $localMatches
     $manifest.content_scripts[0].matches = @($manifest.content_scripts[0].matches) + $localMatches
     $manifest.web_accessible_resources[0].matches = @($manifest.web_accessible_resources[0].matches) + $localMatches
-    $developmentEndpoint = $env:KEYWORD_HIGHLIGHTER_ENDPOINT_URL
-    $developmentApiKey = $env:KEYWORD_HIGHLIGHTER_API_KEY
-    if ($developmentEndpoint -and $developmentApiKey) {
-      Assert-ReleaseEndpoint $developmentEndpoint
-      Set-PackagedLoggingConfig $developmentEndpoint $developmentApiKey
-    }
   }
 
   Write-Utf8NoBom $manifestPath ($manifest | ConvertTo-Json -Depth 20)
@@ -170,7 +168,8 @@ try {
     $manifestText = Get-Content -LiteralPath $manifestPath -Raw
     if ($manifestText -match 'localhost|127\.0\.0\.1|"tabs"') { throw "Store manifest contains development access or the unused tabs permission." }
     $runtimeConfigText = Get-Content -LiteralPath (Join-Path $stageRoot "src\logging\config.js") -Raw
-    if ($runtimeConfigText -match "REPLACE_WITH_|YOUR_DEPLOYMENT_ID|replace-with-") { throw "Store runtime configuration contains an unresolved placeholder." }
+    if ($runtimeConfigText -match "REPLACE_WITH_|YOUR_DEPLOYMENT_ID|replace-with-|apiKey|script\.google\.com") { throw "Store runtime configuration contains a placeholder, a key, or the retired Google Sheets endpoint." }
+    if ($runtimeConfigText -notmatch 'endpointUrl: "https://opsportal\.online/keyword-highlighter/logs"') { throw "Store runtime configuration must point at the Offsight collector." }
   }
 
   $version = $validatedManifest.version

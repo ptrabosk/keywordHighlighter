@@ -1,6 +1,6 @@
 # Offsight Highlighter Privacy Policy
 
-Last updated: October 1, 2026
+Last updated: October 12, 2026
 
 Offsight Highlighter highlights configured rule matches on its supported work page and collects limited usage and diagnostic information needed to operate and improve the extension.
 
@@ -24,15 +24,15 @@ The extension may also collect privacy-limited technical diagnostics needed to d
 
 ## Use, storage, and sharing
 
-Information is used only to provide, secure, troubleshoot, and measure the performance and reliability of the extension's highlighting feature. Operational telemetry is queued in Chrome extension storage and sent over HTTPS to a Google Apps Script endpoint that writes to a restricted Google Sheet controlled by the extension publisher. Google provides Chrome Sync for synchronized settings and Google Apps Script and Google Sheets for operational telemetry. Data is not sold, used for advertising, or shared with unrelated third parties.
+Information is used only to provide, secure, troubleshoot, and measure the performance and reliability of the extension's highlighting feature. Operational telemetry is queued in Chrome extension storage and sent over HTTPS to a collector operated by the extension publisher (Offsight Operations), which stores it in the publisher's own PostgreSQL database. Google provides Chrome Sync for synchronized settings. The publisher's server hosting provider and Cloudflare process requests to deliver and protect the collector. Data is not sold, used for advertising, or shared with unrelated third parties.
 
-Locally queued informational events are scheduled for deletion after 7 days, warnings after 14 days, and errors after 30 days, and are removed by the next scheduled maintenance run. Storage-pressure cleanup may remove them sooner. Uploaded events, deduplication identifiers, and upload-batch audit records are automatically deleted after 90 days. Batch audit records contain the batch identifier, receipt time, event and acceptance counts, first and last event timestamps, extension version, processing result, and aggregate rejection reasons. Synchronized settings remain until the user removes or resets them, subject to the user's Chrome Sync settings and Google's applicable terms.
+Locally queued informational events are scheduled for deletion after 7 days, warnings after 14 days, and errors after 30 days, and are removed by the next scheduled maintenance run. Storage-pressure cleanup may remove them sooner. Uploaded events (including their identifiers) and upload-batch audit records are automatically deleted from the database after 90 days; whole-database backups may retain older records until those backups expire. Batch audit records contain the batch identifier, receipt time, event and acceptance counts, first and last event timestamps, extension version, processing result, and aggregate rejection reasons. Synchronized settings remain until the user removes or resets them, subject to the user's Chrome Sync settings and Google's applicable terms.
 
 The complete data-use disclosure is provided on this privacy policy page.
 
 ## Security and deletion requests
 
-Uploads use HTTPS, an allowlisted and bounded event schema, daily ingestion quotas, and restricted access to the receiving Sheet and Apps Script project. Unknown fields and URLs outside the supported Operations page are rejected, and the extension sanitizes bounded diagnostic strings before upload. The publisher does not permit people to read telemetry except when the user expressly authorizes support access to specific data, when needed for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.
+Uploads use HTTPS, an allowlisted and bounded event schema, extension-origin checks, per-address and per-session rate limits, daily ingestion quotas, and a dedicated database account that can reach only the telemetry tables. Unknown fields and URLs outside the supported Operations page are rejected, and the extension sanitizes bounded diagnostic strings before upload. The publisher does not permit people to read telemetry except when the user expressly authorizes support access to specific data, when needed for security or abuse investigation, when required by law, or when data has been aggregated and anonymized for internal operations.
 
 For privacy questions and deletion requests, contact [info@offsightoperations.com](mailto:info@offsightoperations.com). Because operational telemetry contains no Chrome or Google account identifier, the publisher may need a supported-page URL or an event, session, or batch identifier to locate specific records and may be unable to associate other records with a requester.
 

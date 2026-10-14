@@ -1,5 +1,5 @@
 import "./settings.js";
-import { getLoggingConfig } from "./src/logging/config.js";
+import { getLoggingConfig, isLoggingConfigured } from "./src/logging/config.js";
 import { logEvent, logFailure } from "./src/logging/logger.js";
 import { pruneLogs } from "./src/logging/prune.js";
 import { startSession, endSession } from "./src/logging/session.js";
@@ -12,25 +12,15 @@ let loggingInitialized = false;
 
 function summarizeLoggingConfig(config) {
   const endpointUrl = config.endpointUrl || "";
-  const apiKey = config.apiKey || "";
   let endpointHost = "";
   try {
     endpointHost = endpointUrl ? new URL(endpointUrl).hostname : "";
   } catch {
     endpointHost = "";
   }
-  const configured = Boolean(
-    config.enabled &&
-    endpointUrl &&
-    apiKey &&
-    !endpointUrl.includes("REPLACE_WITH_") &&
-    !endpointUrl.includes("YOUR_DEPLOYMENT_ID") &&
-    !apiKey.includes("REPLACE_WITH_") &&
-    !apiKey.includes("replace-with-")
-  );
   return {
     enabled: config.enabled !== false,
-    configured,
+    configured: isLoggingConfigured(config),
     endpointHost,
     uploadIntervalMinutes: config.uploadIntervalMinutes,
     maxBatchEvents: config.maxBatchEvents,

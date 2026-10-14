@@ -9,7 +9,6 @@ import "../highlighter/src/highlight/regexNormalization.js";
 import "../highlighter/src/highlight/core.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootRegistryPath = path.join(__dirname, "../opt_out_rules.json");
 const packagedRegistryPath = path.join(__dirname, "../highlighter/data/rules/opt_out_rules.json");
 const core = globalThis.AMH_HIGHLIGHT_CORE;
 const defaults = globalThis.DEFAULT_SETTINGS;
@@ -41,17 +40,14 @@ function actionsFor(text, rules = activeRules()) {
   return core.collectMatches(text, rules, settings()).map((match) => match.rule.action);
 }
 
-test("canonical and packaged schema-v2 registries are byte-identical", () => {
-  assert.deepEqual(fs.readFileSync(packagedRegistryPath), fs.readFileSync(rootRegistryPath));
-
+// The packaged file is the only copy of the registry (there is no separate root-level source to keep in sync).
+test("packaged schema-v2 registry has the expected shape and unique rule ids", () => {
   const payload = loadRegistry();
   assert.equal(payload.schema_version, 2);
   assert.equal(payload.registry_name, "unified_deterministic_opt_out_rules");
   assert.equal(payload.rules.length, 215);
-  assert.deepEqual(
-    payload.rules.map((rule) => rule.rule_id),
-    JSON.parse(fs.readFileSync(rootRegistryPath, "utf8")).rules.map((rule) => rule.rule_id)
-  );
+  const ids = payload.rules.map((rule) => rule.rule_id);
+  assert.equal(new Set(ids).size, ids.length);
 });
 
 test("registry validation rejects incompatible or incomplete payloads", () => {
